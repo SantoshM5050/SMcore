@@ -10,7 +10,7 @@ import { Palette, Send, Save, Check, Trash2, RefreshCw } from 'lucide-react';
 
 export default function EmbedBuilderPage() {
   const searchParams = useSearchParams();
-  const guildId = searchParams.get('guildId') || '100000000000000000';
+  const guildId = searchParams.get('guildId') || '';
 
   const [title, setTitle] = useState('🎮 Gaming Role Verification Request');
   const [description, setDescription] = useState(

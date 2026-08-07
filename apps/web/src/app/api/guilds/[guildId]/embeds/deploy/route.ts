@@ -45,7 +45,7 @@ export async function POST(request: Request, { params }: { params: { guildId: st
         guildId,
         title: '🎮 Gaming Role Verification Request',
         description: 'Click below to apply for official rank roles! Select your target role and fill out your in-game credentials.',
-        footerText: 'Powered by Nexus',
+        footerText: 'Powered by SMCore',
         colorHex: '#5865F2',
         buttonLabel: 'Apply for Role',
         buttonEmoji: '🎮',
@@ -161,7 +161,7 @@ export async function POST(request: Request, { params }: { params: { guildId: st
     return NextResponse.json(
       {
         success: false,
-        error: `Could not send embed to Discord channel. Error: ${deployError}. Please verify that Nexus Bot is in your server and has "Send Messages" permission in channel #${channelId}.`,
+        error: `Could not send embed to Discord channel. Error: ${deployError}. Please verify that SMCore Bot is in your server and has "Send Messages" permission in channel #${channelId}.`,
       },
       { status: 400 }
     );

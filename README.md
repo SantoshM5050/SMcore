@@ -1,4 +1,4 @@
-# Nexus Discord Bot (Enterprise SaaS)
+# SMCore Discord Bot (Enterprise SaaS)
 
 > Enterprise-grade, production-ready full-stack Discord Role Management & Verification SaaS platform engineered for high-concurrency gaming communities, built with Next.js 14, Discord.js v14, Prisma, PostgreSQL, and Redis.
 
@@ -13,7 +13,7 @@
 
 ## ⚡ Key Features
 
-- **Carl-Bot Style Guild Switcher**: Seamlessly switch across unlimited managed Discord servers directly from the **Nexus Dashboard** header.
+- **Carl-Bot Style Guild Switcher**: Seamlessly switch across unlimited managed Discord servers directly from the **SMCore Dashboard** header.
 - **Pure Interaction Bot Flow**: No raw slash commands required for members. Applications are submitted via interactive Buttons, Select Menus, and Modals.
 - **Visual Panel Embed Builder**: Real-time canvas supporting Title, Description, Footer, Color Hex, Thumbnail, Banner, Button Label, Button Emoji, Live Preview, Deploy, Update, and Delete.
 - **Template Variables Engine**: Supports dynamic tags `{user}`, `{server}`, `{date}`, `{role}` inside panel embeds.
@@ -30,11 +30,11 @@
 ```
 e:\BOT\
 ├── apps/
-│   ├── bot/                 # nexus-bot: Discord.js v14 Gateway Client & Event Handlers
-│   └── web/                 # nexus-dashboard: Next.js 14 App Router Web Dashboard & REST API
+│   ├── bot/                 # smcore-bot: Discord.js v14 Gateway Client & Event Handlers
+│   └── web/                 # smcore-dashboard: Next.js 14 App Router Web Dashboard & REST API
 ├── packages/
 │   └── database/            # @repo/database: Prisma Schema, Client & Migrations
-├── docker-compose.yml       # Production Stack (nexus-postgres, nexus-redis, nexus-dashboard, nexus-bot)
+├── docker-compose.yml       # Production Stack (smcore-postgres, smcore-redis, smcore-dashboard, smcore-bot)
 ├── .env.example             # Documented Environment Variables
 └── Documentation/
     ├── ARCHITECTURE.md      # Detailed system flow and sequence diagrams
@@ -53,8 +53,8 @@ e:\BOT\
 
 ### 1. Installation
 ```bash
-git clone https://github.com/SantoshM5050/nexus-discord-bot.git
-cd nexus-discord-bot
+git clone https://github.com/SantoshM5050/smcore-discord-bot.git
+cd smcore-discord-bot
 npm install
 ```
 
@@ -73,7 +73,7 @@ npm run db:seed
 
 ### 4. Run Development Stack
 ```bash
-npm run dev:web   # Launches Nexus Dashboard on http://localhost:3000
+npm run dev:web   # Launches SMCore Dashboard on http://localhost:3000
 npm run dev:bot   # Launches Nexus Bot Client
 ```
 
@@ -81,7 +81,7 @@ npm run dev:bot   # Launches Nexus Bot Client
 
 ## 🛠️ Docker Deployment
 
-Launch full production stack (`nexus-postgres`, `nexus-redis`, `nexus-dashboard`, `nexus-bot`) with a single command:
+Launch full production stack (`smcore-postgres`, `smcore-redis`, `smcore-dashboard`, `smcore-bot`) with a single command:
 
 ```bash
 docker compose up --build -d
@@ -93,3 +93,4 @@ Access the dashboard at `http://localhost:3000`.
 
 ## 📄 License
 Released under the [MIT License](LICENSE). Powered by **Nexus**.
+

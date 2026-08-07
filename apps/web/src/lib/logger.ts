@@ -8,7 +8,7 @@ export class Logger {
   private formatMessage(level: string, message: string, meta?: any) {
     const timestamp = new Date().toISOString();
     const metaString = meta ? ` | ${JSON.stringify(meta)}` : '';
-    return `[${timestamp}] [${level.toUpperCase()}] [Nexus:${this.context}]: ${message}${metaString}`;
+    return `[${timestamp}] [${level.toUpperCase()}] [SMCore:${this.context}]: ${message}${metaString}`;
   }
 
   info(message: string, meta?: any) {
@@ -30,4 +30,4 @@ export class Logger {
   }
 }
 
-export const logger = new Logger('NexusWeb');
+export const logger = new Logger('SMCoreWeb');

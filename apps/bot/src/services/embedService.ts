@@ -31,7 +31,7 @@ export class EmbedService {
           guildId,
           title: '🎮 Gaming Role Verification Request',
           description: 'Click below to apply for official rank roles! Select your target role and fill out your in-game credentials.',
-          footerText: 'Powered by Nexus',
+          footerText: 'Powered by SMCore',
           colorHex: '#5865F2',
           buttonLabel: 'Apply for Role',
           buttonEmoji: '🎮',
@@ -143,7 +143,7 @@ export class EmbedService {
         { name: 'In-Game Level', value: `\`${application.currentRank}\``, inline: true },
         { name: 'Submitted At', value: `<t:${Math.floor(new Date(application.createdAt).getTime() / 1000)}:F>`, inline: false }
       )
-      .setFooter({ text: `Powered by Nexus • Application ID: ${application.id}` })
+      .setFooter({ text: `Powered by SMCore • Application ID: ${application.id}` })
       .setTimestamp();
 
     if (application.userAvatar) {

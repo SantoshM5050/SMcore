@@ -247,7 +247,7 @@ export class ApplicationService {
       if (user) {
         await user
           .send({
-            content: `⚡ **Nexus Discord Bot – Role Application Approved!**\nYour role request for **${application.roleName}** has been approved by staff (${reviewerTag}). The role has been granted and your nickname updated to **${application.inGameName} | ${application.inGameId}**!`,
+            content: `⚡ **SMCore Discord Bot – Role Application Approved!**\nYour role request for **${application.roleName}** has been approved by staff (${reviewerTag}). The role has been granted and your nickname updated to **${application.inGameName} | ${application.inGameId}**!`,
           })
           .catch(() => null);
       }
@@ -330,7 +330,7 @@ export class ApplicationService {
       if (user) {
         await user
           .send({
-            content: `❌ **Nexus Discord Bot – Role Application Update**\nYour role request for **${application.roleName}** was reviewed by staff (${reviewerTag}) and rejected.\n\n**Reason:** ${rejectionReason}`,
+            content: `❌ **SMCore Discord Bot – Role Application Update**\nYour role request for **${application.roleName}** was reviewed by staff (${reviewerTag}) and rejected.\n\n**Reason:** ${rejectionReason}`,
           })
           .catch(() => null);
       }

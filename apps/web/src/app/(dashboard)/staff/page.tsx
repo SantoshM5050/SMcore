@@ -22,7 +22,7 @@ interface DiscordRoleItem {
 
 export default function StaffPage() {
   const searchParams = useSearchParams();
-  const guildId = searchParams.get('guildId') || '100000000000000000';
+  const guildId = searchParams.get('guildId') || '';
 
   const [staffList, setStaffList] = useState<StaffPerm[]>([]);
   const [availableRoles, setAvailableRoles] = useState<DiscordRoleItem[]>([]);

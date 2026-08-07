@@ -14,7 +14,7 @@ import { ApplicationItem } from '@/types';
 
 export default function ApplicationsPage() {
   const searchParams = useSearchParams();
-  const guildId = searchParams.get('guildId') || '100000000000000000';
+  const guildId = searchParams.get('guildId') || '';
 
   const [applications, setApplications] = useState<ApplicationItem[]>([]);
   const [loading, setLoading] = useState(true);

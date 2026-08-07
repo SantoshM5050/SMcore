@@ -2,17 +2,17 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Nexus Dashboard',
-  description: 'Nexus Discord Bot - Enterprise Server Management & Role Verification Platform',
+  title: 'SMCore Dashboard',
+  description: 'SMCore Discord Bot - Enterprise Server Management & Role Verification Platform',
   openGraph: {
-    title: 'Nexus Dashboard',
+    title: 'SMCore Dashboard',
     description: 'Enterprise Discord Server Management & Verification Platform',
-    siteName: 'Nexus',
+    siteName: 'SMCore',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Nexus Dashboard',
+    title: 'SMCore Dashboard',
     description: 'Enterprise Discord Server Management & Verification Platform',
   },
 };

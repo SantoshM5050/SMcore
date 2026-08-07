@@ -9,7 +9,7 @@ import { AnalyticsSummary } from '@/types';
 
 export default function AnalyticsPage() {
   const searchParams = useSearchParams();
-  const guildId = searchParams.get('guildId') || '100000000000000000';
+  const guildId = searchParams.get('guildId') || '';
 
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [loading, setLoading] = useState(true);

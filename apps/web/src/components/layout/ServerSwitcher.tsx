@@ -14,7 +14,7 @@ export function ServerSwitcher() {
   const [activeGuild, setActiveGuild] = useState<GuildItem | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  const currentGuildId = searchParams.get('guildId') || '100000000000000000';
+  const currentGuildId = searchParams.get('guildId') || '';
 
   useEffect(() => {
     fetch('/api/guilds')
@@ -26,11 +26,11 @@ export function ServerSwitcher() {
           if (found) {
             setActiveGuild(found);
           } else {
-            const firstReal = data.find((g) => g.id !== '100000000000000000') || data[0];
-            setActiveGuild(firstReal);
-            if (firstReal && (currentGuildId === '100000000000000000' || !searchParams.get('guildId'))) {
+            const firstGuild = data[0];
+            setActiveGuild(firstGuild);
+            if (firstGuild && (!searchParams.get('guildId') || currentGuildId !== firstGuild.id)) {
               const newParams = new URLSearchParams(searchParams.toString());
-              newParams.set('guildId', firstReal.id);
+              newParams.set('guildId', firstGuild.id);
               router.replace(`${pathname}?${newParams.toString()}`);
             }
           }
@@ -59,12 +59,12 @@ export function ServerSwitcher() {
         <div className="hidden md:block pr-2">
           <div className="flex items-center gap-1.5">
             <span className="text-xs font-bold text-white leading-none">
-              {activeGuild?.name || 'Loading Server...'}
+              {activeGuild?.name || 'Select Server...'}
             </span>
             <Shield className="w-3 h-3 text-primary" />
           </div>
           <span className="text-[10px] text-gray-400">
-            ID: {activeGuild?.id || currentGuildId}
+            ID: {activeGuild?.id || 'N/A'}
           </span>
         </div>
         <ChevronDown className="w-4 h-4 text-gray-400 ml-auto" />
@@ -74,7 +74,7 @@ export function ServerSwitcher() {
       {isOpen && (
         <div className="absolute top-full left-0 mt-2 w-64 bg-card border border-border rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in duration-150">
           <div className="p-2 border-b border-border text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-            Switch Server (Carl-bot Selector)
+            Switch Server
           </div>
           <div className="max-h-60 overflow-y-auto p-1 space-y-1">
             {guilds.map((g) => (

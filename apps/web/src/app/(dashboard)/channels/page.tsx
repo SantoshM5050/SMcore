@@ -14,7 +14,7 @@ interface DiscordChannel {
 
 export default function ChannelsPage() {
   const searchParams = useSearchParams();
-  const guildId = searchParams.get('guildId') || '100000000000000000';
+  const guildId = searchParams.get('guildId') || '';
 
   const [channels, setChannels] = useState<DiscordChannel[]>([]);
   const [requestChannelId, setRequestChannelId] = useState<string>('');

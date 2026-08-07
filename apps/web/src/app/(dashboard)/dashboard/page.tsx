@@ -13,7 +13,7 @@ import { ApplicationItem } from '@/types';
 
 export default function DashboardPage() {
   const searchParams = useSearchParams();
-  const guildId = searchParams.get('guildId') || '100000000000000000';
+  const guildId = searchParams.get('guildId') || '';
 
   const [stats, setStats] = useState({
     totalPending: 0,
@@ -97,11 +97,11 @@ export default function DashboardPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-white">Nexus Server Instance</h3>
+                <h3 className="text-lg font-bold text-white">SMCore Server Instance</h3>
                 <Badge variant="primary">Active</Badge>
               </div>
               <p className="text-xs text-gray-400 mt-1">
-                Nexus Discord Bot is listening for role application button interactions. All requests are logged in PostgreSQL.
+                SMCore Discord Bot is listening for role application button interactions. All requests are logged in PostgreSQL.
               </p>
             </div>
           </div>

@@ -10,7 +10,7 @@ import { Settings as SettingsIcon, Save, Check } from 'lucide-react';
 
 export default function SettingsPage() {
   const searchParams = useSearchParams();
-  const guildId = searchParams.get('guildId') || '100000000000000000';
+  const guildId = searchParams.get('guildId') || '';
 
   const [cooldownMinutes, setCooldownMinutes] = useState(5);
   const [autoDmEnabled, setAutoDmEnabled] = useState(true);

@@ -21,7 +21,7 @@ interface RoleConfig {
 
 export default function RolesPage() {
   const searchParams = useSearchParams();
-  const guildId = searchParams.get('guildId') || '100000000000000000';
+  const guildId = searchParams.get('guildId') || '';
 
   const [roles, setRoles] = useState<RoleConfig[]>([]);
   const [loading, setLoading] = useState(true);
@@ -160,7 +160,7 @@ export default function RolesPage() {
         {loading ? (
           <div className="py-12 text-center text-gray-500 text-sm">Syncing server roles...</div>
         ) : roles.length === 0 ? (
-          <div className="py-12 text-center text-gray-500 text-sm">No roles found for this server. Make sure Nexus Bot is added to your server!</div>
+          <div className="py-12 text-center text-gray-500 text-sm">No roles found for this server. Make sure SMCore Bot is added to your server!</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
