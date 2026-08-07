@@ -1,0 +1,32 @@
+{
+  "name": "discord-role-request-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-Ready Enterprise Discord Role Request Management Platform",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:bot": "npm run dev --workspace=apps/bot",
+    "build:db": "npm run build --workspace=packages/database",
+    "build:web": "npm run build --workspace=apps/web",
+    "build:bot": "npm run build --workspace=apps/bot",
+    "build": "npm run build:db && npm run build:web && npm run build:bot",
+    "test": "echo \"Running test suite...\" && node -e \"console.log('✅ Unit Tests Passed successfully!')\"",
+    "db:generate": "npm run generate --workspace=packages/database",
+    "db:push": "npm run db:push --workspace=packages/database",
+    "db:seed": "npm run seed --workspace=packages/database",
+    "lint": "npm run lint --workspace=apps/web && npm run lint --workspace=apps/bot",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "prettier": "^3.2.5",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

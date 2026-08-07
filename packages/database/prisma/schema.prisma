@@ -1,0 +1,242 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum StaffPermissionLevel {
+  HIGH_COMMAND
+  ROLE_REQUEST_MANAGER
+}
+
+enum AuditAction {
+  APPLICATION_SUBMITTED
+  APPLICATION_APPROVED
+  APPLICATION_REJECTED
+  SETTINGS_UPDATED
+  PANEL_DEPLOYED
+  PANEL_UPDATED
+  PANEL_DELETED
+  DASHBOARD_LOGIN
+  ROLE_UPDATED
+  ROLE_ADDED
+  ROLE_REMOVED
+  CHANNEL_UPDATED
+  PERMISSION_CHANGED
+}
+
+model Guild {
+  id          String   @id
+  name        String
+  icon        String?
+  ownerId     String
+  botJoinedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  settings         GuildSettings?
+  channels         ChannelConfiguration?
+  roles            RoleConfiguration[]
+  applications     Application[]
+  auditLogs        AuditLog[]
+  staffPermissions StaffPermission[]
+  embeds           EmbedConfig[]
+  panelMessages    PanelMessage[]
+}
+
+model GuildSettings {
+  id                 String   @id @default(cuid())
+  guildId            String   @unique
+  cooldownMinutes    Int      @default(0)
+  autoDmEnabled      Boolean  @default(true)
+  loggingEnabled     Boolean  @default(true)
+  screenshotRequired Boolean  @default(false)
+  screenshotAllowed  Boolean  @default(true)
+  onePendingOnly     Boolean  @default(true)
+  defaultEmbedColor  String   @default("#5865F2")
+  timezone           String   @default("UTC")
+  language           String   @default("en")
+  updatedAt          DateTime @updatedAt
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+}
+
+model ChannelConfiguration {
+  id               String   @id @default(cuid())
+  guildId          String   @unique
+  requestChannelId String?
+  reviewChannelId  String?
+  logsChannelId    String?
+  updatedAt        DateTime @updatedAt
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+}
+
+model RoleConfiguration {
+  id              String   @id @default(cuid())
+  guildId         String
+  roleId          String
+  roleName        String
+  roleColor       String   @default("#99AAB5")
+  isRequestable   Boolean  @default(true)
+  enabled         Boolean  @default(true)
+  displayOrder    Int      @default(0)
+  minRankRequired String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  guild        Guild         @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  applications Application[]
+
+  @@unique([guildId, roleId])
+  @@index([guildId, enabled, isRequestable])
+}
+
+model Application {
+  id                 String            @id @default(cuid())
+  guildId            String
+  userId             String
+  userTag            String
+  userAvatar         String?
+  roleId             String
+  roleName           String
+  inGameName         String
+  inGameId           String
+  currentRank        String
+  screenshotUrl      String?
+  status             ApplicationStatus @default(PENDING)
+  rejectionReason    String?
+  reviewerId         String?
+  reviewerTag        String?
+  reviewChannelMsgId String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  guild      Guild                @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  roleConfig RoleConfiguration?   @relation(fields: [guildId, roleId], references: [guildId, roleId], onDelete: SetNull)
+  history    ApplicationHistory[]
+  comments   ApplicationComment[]
+
+  @@index([guildId, status, createdAt])
+  @@index([userId, status])
+}
+
+model ApplicationComment {
+  id            String   @id @default(cuid())
+  applicationId String
+  authorId      String
+  authorTag     String
+  comment       String
+  createdAt     DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  @@index([applicationId])
+}
+
+model ApplicationHistory {
+  id             String            @id @default(cuid())
+  applicationId  String
+  actorId        String
+  actorTag       String
+  previousStatus ApplicationStatus
+  newStatus      ApplicationStatus
+  reason         String?
+  createdAt      DateTime          @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  @@index([applicationId])
+}
+
+model AuditLog {
+  id        String      @id @default(cuid())
+  guildId   String
+  userId    String
+  userTag   String
+  action    AuditAction
+  details   Json
+  ipAddress String?
+  createdAt DateTime    @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  @@index([guildId, createdAt])
+  @@index([guildId, action])
+}
+
+model StaffPermission {
+  id              String               @id @default(cuid())
+  guildId         String
+  roleId          String
+  roleName        String
+  permissionLevel StaffPermissionLevel
+  createdAt       DateTime             @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@unique([guildId, roleId, permissionLevel])
+  @@index([guildId])
+}
+
+model EmbedConfig {
+  id            String   @id @default(cuid())
+  guildId       String
+  title         String   @default("Role Application Panel")
+  description   String   @default("Select a role below and click Apply to request your gaming server rank role!")
+  footerText    String?  @default("Gaming Server Role Verification")
+  footerIconUrl String?
+  thumbnailUrl  String?
+  imageUrl      String?
+  colorHex      String   @default("#5865F2")
+  buttonLabel   String   @default("Apply for Role")
+  buttonEmoji   String?  @default("🎮")
+  messageId     String?
+  channelId     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  @@index([guildId])
+}
+
+model PanelMessage {
+  id        String   @id @default(cuid())
+  guildId   String
+  channelId String
+  messageId String   @unique
+  createdAt DateTime @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  @@index([guildId])
+}
+
+model User {
+  id            String    @id @default(cuid())
+  discordId     String    @unique
+  username      String
+  discriminator String    @default("0")
+  avatar        String?
+  email         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions Session[]
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}

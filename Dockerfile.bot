@@ -1,0 +1,24 @@
+FROM node:20-alpine AS base
+
+WORKDIR /app
+
+# Install dependencies needed for native modules
+RUN apk add --no-libc6-compat python3 make g++
+
+# Copy root files
+COPY package.json package-lock.json* tsconfig.json ./
+COPY packages/database ./packages/database
+COPY apps/bot ./apps/bot
+
+# Install all workspace dependencies
+RUN npm ci
+
+# Generate Prisma Client
+RUN npm run db:generate
+
+# Build Bot
+RUN npm run build:bot
+
+ENV NODE_ENV=production
+
+CMD ["npm", "run", "start", "--workspace=apps/bot"]
