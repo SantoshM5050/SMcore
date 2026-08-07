@@ -1,24 +1,27 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { BarChart3, Download, Award, Users, CheckCircle, XCircle } from 'lucide-react';
 import { AnalyticsSummary } from '@/types';
 
 export default function AnalyticsPage() {
-  const sampleGuildId = '100000000000000000';
+  const searchParams = useSearchParams();
+  const guildId = searchParams.get('guildId') || '100000000000000000';
 
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/guilds/${sampleGuildId}/analytics`)
+    setLoading(true);
+    fetch(`/api/guilds/${guildId}/analytics`)
       .then((res) => res.json())
       .then((data) => setAnalytics(data))
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
-  }, []);
+  }, [guildId]);
 
   const handleExportCSV = () => {
     if (!analytics) return;
@@ -58,7 +61,7 @@ export default function AnalyticsPage() {
         <div className="space-y-8">
           {/* Key Rates Row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <Card className="flex items-center gap-4">
+            <Card className="flex items-center gap-4 p-6">
               <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
                 <CheckCircle className="w-6 h-6" />
               </div>
@@ -69,7 +72,7 @@ export default function AnalyticsPage() {
               </div>
             </Card>
 
-            <Card className="flex items-center gap-4">
+            <Card className="flex items-center gap-4 p-6">
               <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
                 <XCircle className="w-6 h-6" />
               </div>
@@ -80,7 +83,7 @@ export default function AnalyticsPage() {
               </div>
             </Card>
 
-            <Card className="flex items-center gap-4">
+            <Card className="flex items-center gap-4 p-6">
               <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
                 <BarChart3 className="w-6 h-6" />
               </div>
@@ -99,7 +102,7 @@ export default function AnalyticsPage() {
                 <BarChart3 className="w-5 h-5 text-primary" /> Daily Application Submissions (14 Days)
               </CardTitle>
             </CardHeader>
-            <div className="h-48 flex items-end justify-between gap-2 pt-6 px-4">
+            <div className="h-48 flex items-end justify-between gap-2 p-6 pt-0">
               {analytics.applicationsPerDay.map((day) => {
                 const maxCount = Math.max(...analytics.applicationsPerDay.map((d) => d.count), 1);
                 const heightPercent = Math.max((day.count / maxCount) * 100, 8);
@@ -132,9 +135,9 @@ export default function AnalyticsPage() {
                 </CardTitle>
               </CardHeader>
               {analytics.mostRequestedRoles.length === 0 ? (
-                <p className="text-xs text-gray-500 py-6 text-center">No role data available yet.</p>
+                <p className="text-xs text-gray-500 p-6 pt-0 text-center">No role data available yet.</p>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-3 p-6 pt-0">
                   {analytics.mostRequestedRoles.map((role) => (
                     <div key={role.roleName} className="flex items-center justify-between p-3 bg-secondary/40 border border-border/50 rounded-lg">
                       <span className="font-semibold text-white text-sm">{role.roleName}</span>
@@ -155,9 +158,9 @@ export default function AnalyticsPage() {
                 </CardTitle>
               </CardHeader>
               {analytics.mostActiveStaff.length === 0 ? (
-                <p className="text-xs text-gray-500 py-6 text-center">No staff review activity yet.</p>
+                <p className="text-xs text-gray-500 p-6 pt-0 text-center">No staff review activity yet.</p>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-3 p-6 pt-0">
                   {analytics.mostActiveStaff.map((staff) => (
                     <div key={staff.staffTag} className="flex items-center justify-between p-3 bg-secondary/40 border border-border/50 rounded-lg">
                       <span className="font-bold text-gray-200 text-sm">{staff.staffTag}</span>

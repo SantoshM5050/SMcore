@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { AuthService } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const redirectUri = `${appUrl}/api/auth/callback`;
+  const appUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const redirectUri = process.env.DISCORD_REDIRECT_URI || `${appUrl}/api/auth/callback`;
 
   if (!code) {
     return NextResponse.redirect(`${appUrl}/login?error=missing_code`);

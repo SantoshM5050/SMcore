@@ -45,9 +45,9 @@ export async function handleSelectMenuInteraction(interaction: StringSelectMenuI
 
     const rankInput = new TextInputBuilder()
       .setCustomId('current_rank_input')
-      .setLabel('Current In-Game Rank')
+      .setLabel('In-Game Level')
       .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g., Radiant #50 / Apex Predator')
+      .setPlaceholder('e.g., Level 50 / Level 100')
       .setRequired(true)
       .setMaxLength(50);
 

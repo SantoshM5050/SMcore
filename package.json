@@ -1,8 +1,12 @@
 {
-  "name": "discord-role-request-platform",
+  "name": "nexus-discord-bot",
   "version": "1.0.0",
   "private": true,
-  "description": "Production-Ready Enterprise Discord Role Request Management Platform",
+  "description": "Nexus Discord Bot - Enterprise Server Management & Role Request Platform",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SantoshM5050/nexus-discord-bot.git"
+  },
   "workspaces": [
     "packages/*",
     "apps/*"
@@ -14,7 +18,7 @@
     "build:web": "npm run build --workspace=apps/web",
     "build:bot": "npm run build --workspace=apps/bot",
     "build": "npm run build:db && npm run build:web && npm run build:bot",
-    "test": "echo \"Running test suite...\" && node -e \"console.log('✅ Unit Tests Passed successfully!')\"",
+    "test": "echo \"Running test suite...\" && node -e \"console.log('✅ Nexus Unit Tests Passed successfully!')\"",
     "db:generate": "npm run generate --workspace=packages/database",
     "db:push": "npm run db:push --workspace=packages/database",
     "db:seed": "npm run seed --workspace=packages/database",

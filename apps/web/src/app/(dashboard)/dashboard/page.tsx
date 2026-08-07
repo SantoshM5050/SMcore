@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -11,6 +12,9 @@ import { formatDate } from '@/lib/utils';
 import { ApplicationItem } from '@/types';
 
 export default function DashboardPage() {
+  const searchParams = useSearchParams();
+  const guildId = searchParams.get('guildId') || '100000000000000000';
+
   const [stats, setStats] = useState({
     totalPending: 0,
     totalApproved: 0,
@@ -21,22 +25,21 @@ export default function DashboardPage() {
   const [recentApps, setRecentApps] = useState<ApplicationItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const sampleGuildId = '100000000000000000';
-
   useEffect(() => {
+    setLoading(true);
     Promise.all([
-      fetch(`/api/guilds/${sampleGuildId}/analytics`).then((res) => res.json()),
-      fetch(`/api/guilds/${sampleGuildId}/applications?limit=5`).then((res) => res.json()),
+      fetch(`/api/guilds/${guildId}/analytics`).then((res) => res.json()),
+      fetch(`/api/guilds/${guildId}/applications?limit=5`).then((res) => res.json()),
     ])
       .then(([analyticsData, appData]) => {
-        setStats(analyticsData);
-        if (appData.items) {
+        if (analyticsData) setStats(analyticsData);
+        if (appData && appData.items) {
           setRecentApps(appData.items);
         }
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
-  }, []);
+  }, [guildId]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
@@ -46,7 +49,7 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Overview Dashboard</h1>
           <p className="text-sm text-gray-400 mt-1">Real-time role request activity, metrics, and system status.</p>
         </div>
-        <Link href="/applications">
+        <Link href={`/applications?guildId=${guildId}`}>
           <Button variant="primary" className="gap-2">
             View All Applications <ArrowRight className="w-4 h-4" />
           </Button>
@@ -57,28 +60,28 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
           title="Pending Applications"
-          value={stats.totalPending}
+          value={stats.totalPending || 0}
           subtitle="Awaiting Staff Action"
           icon={Clock}
           color="warning"
         />
         <StatCard
           title="Approved Applications"
-          value={stats.totalApproved}
+          value={stats.totalApproved || 0}
           subtitle="Granted Roles"
           icon={CheckCircle}
           color="success"
         />
         <StatCard
           title="Rejected Applications"
-          value={stats.totalRejected}
+          value={stats.totalRejected || 0}
           subtitle="Declined Requests"
           icon={XCircle}
           color="danger"
         />
         <StatCard
           title="Applications Today"
-          value={stats.applicationsToday}
+          value={stats.applicationsToday || 0}
           subtitle="Last 24 Hours"
           icon={Calendar}
           color="primary"
@@ -94,21 +97,21 @@ export default function DashboardPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-white">Sample Esports Gaming Guild</h3>
+                <h3 className="text-lg font-bold text-white">Nexus Server Instance</h3>
                 <Badge variant="primary">Active</Badge>
               </div>
               <p className="text-xs text-gray-400 mt-1">
-                Discord Bot is listening for role application button interactions. All requests are logged in PostgreSQL.
+                Nexus Discord Bot is listening for role application button interactions. All requests are logged in PostgreSQL.
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/embed-builder">
+            <Link href={`/embed-builder?guildId=${guildId}`}>
               <Button variant="secondary" size="sm">
                 Embed Builder
               </Button>
             </Link>
-            <Link href="/settings">
+            <Link href={`/settings?guildId=${guildId}`}>
               <Button variant="outline" size="sm">
                 Guild Settings
               </Button>
@@ -124,8 +127,8 @@ export default function DashboardPage() {
             <ShieldCheck className="w-5 h-5 text-primary" />
             Recent Role Requests
           </CardTitle>
-          <Link href="/applications" className="text-xs text-primary font-semibold hover:underline">
-            View All ({stats.totalPending + stats.totalApproved + stats.totalRejected})
+          <Link href={`/applications?guildId=${guildId}`} className="text-xs text-primary font-semibold hover:underline">
+            View All ({(stats.totalPending || 0) + (stats.totalApproved || 0) + (stats.totalRejected || 0)})
           </Link>
         </CardHeader>
 

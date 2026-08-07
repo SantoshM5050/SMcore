@@ -1,51 +1,32 @@
-# Database Schema & Prisma Reference
+# Nexus Discord Bot – Database Architecture
 
-The platform uses **PostgreSQL** managed through **Prisma ORM**.
+Database schema documentation for **Nexus Discord Bot**. Managed via Prisma ORM 5.22 against PostgreSQL 15.
 
 ---
 
 ## Entity Relationship Summary
 
-```
-Guild (1) ─── (1) GuildSettings
-Guild (1) ─── (1) ChannelConfiguration
-Guild (1) ─── (N) RoleConfiguration
-Guild (1) ─── (N) Application ─── (N) ApplicationHistory
-Guild (1) ─── (N) AuditLog
-Guild (1) ─── (N) StaffPermission
-Guild (1) ─── (N) EmbedConfig
-User (1)  ─── (N) Session
+```mermaid
+erDiagram
+    Guild ||--o{ GuildSettings : has
+    Guild ||--o{ ChannelConfiguration : has
+    Guild ||--o{ RoleConfiguration : has
+    Guild ||--o{ Application : receives
+    Guild ||--o{ StaffPermission : configures
+    Guild ||--o{ EmbedConfig : creates
+    Guild ||--o{ AuditLog : records
+    Application ||--o{ ApplicationComment : contains
+    Application ||--o{ ApplicationHistory : tracks
 ```
 
 ---
 
-## Table Models Breakdown
+## Model Descriptions
 
-| Table | Description | Primary Key |
-|---|---|---|
-| `Guild` | Discord Guild metadata & owner reference | `id` (Discord Guild ID) |
-| `GuildSettings` | Server rule toggles (cooldowns, DMs, screenshots, single pending) | `id` (CUID) |
-| `ChannelConfiguration` | Mappings for Request, Review, and Log channels | `id` (CUID) |
-| `RoleConfiguration` | Requestable rank roles, order, min rank requirement | `id` (CUID) |
-| `Application` | Member application details (IGN, ID, rank, status, screenshot URL) | `id` (CUID) |
-| `ApplicationHistory` | Timeline audit of status changes (Pending -> Approved/Rejected) | `id` (CUID) |
-| `AuditLog` | Platform action log with JSON payload | `id` (CUID) |
-| `StaffPermission` | High Command and Role Request Manager role bindings | `id` (CUID) |
-| `EmbedConfig` | Custom panel embed styling and button configurations | `id` (CUID) |
-| `User` | Web dashboard OAuth user accounts | `id` (CUID) |
-| `Session` | Active web authentication tokens | `id` (CUID) |
-
----
-
-## Useful Prisma Commands
-
-```bash
-# Generate Prisma Client after schema changes
-npm run db:generate
-
-# Push schema directly to database (development)
-npm run db:push
-
-# Run seed script
-npm run db:seed
-```
+- **Guild**: Stores registered Discord servers, owner IDs, and bot join timestamps.
+- **GuildSettings**: Stores cooldowns, DMs, logging toggle, screenshot rules, embed colors, timezone.
+- **ChannelConfiguration**: Binds request, review, and log channel IDs per guild.
+- **RoleConfiguration**: Stores requestable roles, min rank requirements, and display order.
+- **Application**: Tracks user role requests, applicant info, screenshot proof, status, rejection reason, reviewer tags.
+- **ApplicationComment**: Private internal staff discussion notes on applications.
+- **AuditLog**: Comprehensive audit log of all system actions.

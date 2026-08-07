@@ -22,12 +22,22 @@ export function ServerSwitcher() {
       .then((data: GuildItem[]) => {
         if (Array.isArray(data) && data.length > 0) {
           setGuilds(data);
-          const found = data.find((g) => g.id === currentGuildId) || data[0];
-          setActiveGuild(found);
+          const found = data.find((g) => g.id === currentGuildId);
+          if (found) {
+            setActiveGuild(found);
+          } else {
+            const firstReal = data.find((g) => g.id !== '100000000000000000') || data[0];
+            setActiveGuild(firstReal);
+            if (firstReal && (currentGuildId === '100000000000000000' || !searchParams.get('guildId'))) {
+              const newParams = new URLSearchParams(searchParams.toString());
+              newParams.set('guildId', firstReal.id);
+              router.replace(`${pathname}?${newParams.toString()}`);
+            }
+          }
         }
       })
       .catch((err) => console.error('Failed to fetch user guilds:', err));
-  }, [currentGuildId]);
+  }, [currentGuildId, pathname, router, searchParams]);
 
   const handleSelectGuild = (guild: GuildItem) => {
     setActiveGuild(guild);

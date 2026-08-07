@@ -4,6 +4,8 @@ import { AuthService } from '@/lib/auth';
 import { ApplicationStatus, AuditAction } from '@repo/database';
 import { logDashboardAudit } from '@/lib/auditLogger';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   request: Request,
   { params }: { params: { guildId: string; id: string } }
@@ -27,6 +29,7 @@ export async function POST(
     return NextResponse.json({ error: 'Application has already been resolved' }, { status: 400 });
   }
 
+  // Update Status in DB
   const updated = await prisma.application.update({
     where: { id },
     data: {
@@ -46,6 +49,31 @@ export async function POST(
       reason: 'Approved via Web Dashboard',
     },
   });
+
+  // Assign Discord Role and Change Server Nickname to "Name | ID" via Discord REST API
+  const rawToken = process.env.DISCORD_BOT_TOKEN || '';
+  const botToken = rawToken.trim().replace(/^["']|["']$/g, '');
+
+  if (botToken && botToken !== 'YOUR_DISCORD_BOT_TOKEN') {
+    // 1. Assign Role
+    await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${application.userId}/roles/${application.roleId}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bot ${botToken}` },
+    }).catch((err) => console.error('[REST API] Failed to assign role:', err));
+
+    // 2. Change Nickname to "Name | ID"
+    let newNick = `${application.inGameName} | ${application.inGameId}`;
+    if (newNick.length > 32) newNick = newNick.slice(0, 32);
+
+    await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${application.userId}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bot ${botToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ nick: newNick }),
+    }).catch((err) => console.error('[REST API] Failed to update nickname:', err));
+  }
 
   await logDashboardAudit(
     guildId,

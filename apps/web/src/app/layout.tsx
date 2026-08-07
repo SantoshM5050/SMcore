@@ -2,8 +2,19 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Discord Role Request Platform',
-  description: 'Enterprise Discord Role Request Management Platform for Gaming Communities',
+  title: 'Nexus Dashboard',
+  description: 'Nexus Discord Bot - Enterprise Server Management & Role Verification Platform',
+  openGraph: {
+    title: 'Nexus Dashboard',
+    description: 'Enterprise Discord Server Management & Verification Platform',
+    siteName: 'Nexus',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Nexus Dashboard',
+    description: 'Enterprise Discord Server Management & Verification Platform',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -6,6 +6,8 @@ import { AuditAction } from '@repo/database';
 import { logDashboardAudit } from '@/lib/auditLogger';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 const updateRoleSchema = z.object({
   roleId: z.string(),
   roleName: z.string(),
@@ -36,6 +38,7 @@ export async function GET(request: Request, { params }: { params: { guildId: str
         update: {
           roleName: r.name,
           roleColor: r.color === 0 ? '#99AAB5' : `#${r.color.toString(16).padStart(6, '0')}`,
+          displayOrder: r.position,
         },
         create: {
           guildId,
@@ -44,6 +47,7 @@ export async function GET(request: Request, { params }: { params: { guildId: str
           roleColor: r.color === 0 ? '#99AAB5' : `#${r.color.toString(16).padStart(6, '0')}`,
           isRequestable: false,
           enabled: true,
+          displayOrder: r.position,
         },
       });
     }

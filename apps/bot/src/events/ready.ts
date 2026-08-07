@@ -3,9 +3,9 @@ import { prisma } from '@repo/database';
 import { RoleService } from '../services/roleService';
 
 export async function onReady(client: Client) {
-  console.log(`🤖 Bot logged in as ${client.user?.tag} (ID: ${client.user?.id})`);
+  console.log(`⚡ Nexus Bot logged in as ${client.user?.tag} (ID: ${client.user?.id})`);
 
-  client.user?.setActivity('Role Request Manager 🎮', { type: ActivityType.Watching });
+  client.user?.setActivity('Nexus | Managing your server', { type: ActivityType.Custom });
 
   // Sync all guilds in database
   const guilds = client.guilds.cache;
@@ -44,5 +44,5 @@ export async function onReady(client: Client) {
     await RoleService.syncGuildRoles(guildId);
   }
 
-  console.log('✅ Guild sync complete.');
+  console.log('✅ Nexus Guild sync complete.');
 }

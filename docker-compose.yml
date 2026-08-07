@@ -1,27 +1,27 @@
 version: '3.8'
 
 services:
-  postgres:
+  nexus-postgres:
     image: postgres:15-alpine
-    container_name: discord_role_postgres
+    container_name: nexus-postgres
     restart: always
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-discord_role_management}
+      POSTGRES_DB: nexus
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-discord_role_management}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  redis:
+  nexus-redis:
     image: redis:7-alpine
-    container_name: discord_role_redis
+    container_name: nexus-redis
     restart: always
     ports:
       - "6379:6379"
@@ -33,47 +33,47 @@ services:
       timeout: 5s
       retries: 5
 
-  web:
+  nexus-dashboard:
     build:
       context: .
       dockerfile: Dockerfile.web
-    container_name: discord_role_web
+    container_name: nexus-dashboard
     restart: always
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-discord_role_management}?schema=public
-      REDIS_URL: redis://redis:6379
-      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
-      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
-      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
-      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
-      NODE_ENV: production
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@nexus-postgres:5432/nexus?schema=public
+      - REDIS_URL=redis://nexus-redis:6379
+      - NODE_ENV=production
+      - NEXTAUTH_URL=http://localhost:3000
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+      - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - DISCORD_REDIRECT_URI=${DISCORD_REDIRECT_URI:-http://localhost:3000/api/auth/callback}
+      - SESSION_SECRET=${SESSION_SECRET:-super-secret-session-key-32-chars-long!}
     depends_on:
-      postgres:
+      nexus-postgres:
         condition: service_healthy
-      redis:
+      nexus-redis:
         condition: service_healthy
 
-  bot:
+  nexus-bot:
     build:
       context: .
       dockerfile: Dockerfile.bot
-    container_name: discord_role_bot
+    container_name: nexus-bot
     restart: always
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-discord_role_management}?schema=public
-      REDIS_URL: redis://redis:6379
-      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
-      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
-      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
-      NODE_ENV: production
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@nexus-postgres:5432/nexus?schema=public
+      - REDIS_URL=redis://nexus-redis:6379
+      - NODE_ENV=production
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+      - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
     depends_on:
-      postgres:
+      nexus-postgres:
         condition: service_healthy
-      redis:
+      nexus-redis:
         condition: service_healthy
 
 volumes:

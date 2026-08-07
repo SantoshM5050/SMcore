@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Switch } from '@/components/ui/Switch';
 import { Input } from '@/components/ui/Input';
-import { ShieldCheck, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { ShieldCheck, Plus } from 'lucide-react';
 
 interface RoleConfig {
   id: string;
@@ -19,7 +20,9 @@ interface RoleConfig {
 }
 
 export default function RolesPage() {
-  const sampleGuildId = '100000000000000000';
+  const searchParams = useSearchParams();
+  const guildId = searchParams.get('guildId') || '100000000000000000';
+
   const [roles, setRoles] = useState<RoleConfig[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,54 +31,64 @@ export default function RolesPage() {
   const [newRoleName, setNewRoleName] = useState('');
   const [newMinRank, setNewMinRank] = useState('');
 
-  const fetchRoles = () => {
-    setLoading(true);
-    fetch(`/api/guilds/${sampleGuildId}/roles`)
+  const fetchRoles = (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    fetch(`/api/guilds/${guildId}/roles`)
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) setRoles(data);
       })
       .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (showLoading) setLoading(false);
+      });
   };
 
   useEffect(() => {
-    fetchRoles();
-  }, []);
+    fetchRoles(true);
+  }, [guildId]);
 
   const handleToggleRequestable = async (role: RoleConfig) => {
-    const updated = !role.isRequestable;
-    await fetch(`/api/guilds/${sampleGuildId}/roles`, {
+    const updatedValue = !role.isRequestable;
+    // Optimistic UI update (Instant toggle with zero page flicker)
+    setRoles((prev) =>
+      prev.map((r) => (r.id === role.id ? { ...r, isRequestable: updatedValue } : r))
+    );
+
+    await fetch(`/api/guilds/${guildId}/roles`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         roleId: role.roleId,
         roleName: role.roleName,
-        isRequestable: updated,
+        isRequestable: updatedValue,
       }),
-    });
-    fetchRoles();
+    }).catch((err) => console.error(err));
   };
 
   const handleToggleEnabled = async (role: RoleConfig) => {
-    const updated = !role.enabled;
-    await fetch(`/api/guilds/${sampleGuildId}/roles`, {
+    const updatedValue = !role.enabled;
+    // Optimistic UI update (Instant toggle with zero page flicker)
+    setRoles((prev) =>
+      prev.map((r) => (r.id === role.id ? { ...r, enabled: updatedValue } : r))
+    );
+
+    await fetch(`/api/guilds/${guildId}/roles`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         roleId: role.roleId,
         roleName: role.roleName,
-        enabled: updated,
+        enabled: updatedValue,
       }),
-    });
-    fetchRoles();
+    }).catch((err) => console.error(err));
   };
 
   const handleAddRole = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newRoleId || !newRoleName) return;
 
-    await fetch(`/api/guilds/${sampleGuildId}/roles`, {
+    await fetch(`/api/guilds/${guildId}/roles`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -91,7 +104,7 @@ export default function RolesPage() {
     setNewRoleId('');
     setNewRoleName('');
     setNewMinRank('');
-    fetchRoles();
+    fetchRoles(false);
   };
 
   return (
@@ -109,7 +122,7 @@ export default function RolesPage() {
             <Plus className="w-5 h-5 text-primary" /> Add New Requestable Role
           </CardTitle>
         </CardHeader>
-        <form onSubmit={handleAddRole} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <form onSubmit={handleAddRole} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-6 pt-0">
           <Input
             label="Discord Role ID"
             placeholder="e.g. 200000000000000005"
@@ -145,9 +158,9 @@ export default function RolesPage() {
         </CardHeader>
 
         {loading ? (
-          <div className="py-12 text-center text-gray-500 text-sm">Loading roles...</div>
+          <div className="py-12 text-center text-gray-500 text-sm">Syncing server roles...</div>
         ) : roles.length === 0 ? (
-          <div className="py-12 text-center text-gray-500 text-sm">No roles configured.</div>
+          <div className="py-12 text-center text-gray-500 text-sm">No roles found for this server. Make sure Nexus Bot is added to your server!</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">

@@ -1,8 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Gamepad2, ShieldCheck, Zap, Lock } from 'lucide-react';
+import { ShieldCheck, Zap, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+
+export const dynamic = 'force-dynamic';
 
 export default function LoginPage() {
   const handleDiscordLogin = () => {
@@ -16,11 +18,11 @@ export default function LoginPage() {
 
       <div className="w-full max-w-md bg-card/90 border border-border/80 rounded-2xl p-8 shadow-2xl backdrop-blur-xl relative z-10">
         <div className="text-center space-y-3 mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-primary/20 border border-primary/40 flex items-center justify-center text-primary mx-auto shadow-xl shadow-primary/20">
-            <Gamepad2 className="w-8 h-8" />
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary to-purple-600 border border-primary/40 flex items-center justify-center text-white font-black text-2xl mx-auto shadow-xl shadow-primary/30">
+            N
           </div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">Discord Role Management</h1>
-          <p className="text-sm text-gray-400">Enterprise Role Verification Platform for Gaming Servers</p>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight">Welcome to Nexus Dashboard</h1>
+          <p className="text-sm text-gray-400">Nexus Discord Bot - Enterprise Server Management Platform</p>
         </div>
 
         <div className="space-y-3 mb-8">
@@ -46,7 +48,7 @@ export default function LoginPage() {
         </Button>
 
         <p className="text-[11px] text-center text-gray-500 mt-6">
-          By signing in, you agree to grant administrator permission inspection for your Discord servers.
+          Powered by Nexus • Enterprise Server Management
         </p>
       </div>
     </main>

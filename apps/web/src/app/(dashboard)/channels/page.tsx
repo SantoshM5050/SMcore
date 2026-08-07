@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Hash, Check, Save } from 'lucide-react';
@@ -12,7 +13,8 @@ interface DiscordChannel {
 }
 
 export default function ChannelsPage() {
-  const sampleGuildId = '100000000000000000';
+  const searchParams = useSearchParams();
+  const guildId = searchParams.get('guildId') || '100000000000000000';
 
   const [channels, setChannels] = useState<DiscordChannel[]>([]);
   const [requestChannelId, setRequestChannelId] = useState<string>('');
@@ -22,7 +24,8 @@ export default function ChannelsPage() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/guilds/${sampleGuildId}/channels`)
+    setLoading(true);
+    fetch(`/api/guilds/${guildId}/channels`)
       .then((res) => res.json())
       .then((data) => {
         if (data.discordChannels) setChannels(data.discordChannels);
@@ -34,13 +37,13 @@ export default function ChannelsPage() {
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
-  }, []);
+  }, [guildId]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaved(false);
 
-    await fetch(`/api/guilds/${sampleGuildId}/channels`, {
+    await fetch(`/api/guilds/${guildId}/channels`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -75,7 +78,7 @@ export default function ChannelsPage() {
           {loading ? (
             <div className="py-12 text-center text-gray-500 text-sm">Fetching Discord text channels...</div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-6 p-6 pt-0">
               {/* Role Request Channel */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
@@ -144,7 +147,7 @@ export default function ChannelsPage() {
             </div>
           )}
 
-          <div className="pt-6 border-t border-border flex items-center justify-between mt-6">
+          <div className="pt-6 border-t border-border flex items-center justify-between p-6">
             {saved && (
               <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
                 <Check className="w-4 h-4" /> Channel settings saved successfully!

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -8,7 +9,8 @@ import { Switch } from '@/components/ui/Switch';
 import { Settings as SettingsIcon, Save, Check } from 'lucide-react';
 
 export default function SettingsPage() {
-  const sampleGuildId = '100000000000000000';
+  const searchParams = useSearchParams();
+  const guildId = searchParams.get('guildId') || '100000000000000000';
 
   const [cooldownMinutes, setCooldownMinutes] = useState(5);
   const [autoDmEnabled, setAutoDmEnabled] = useState(true);
@@ -24,7 +26,8 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/guilds/${sampleGuildId}/settings`)
+    setLoading(true);
+    fetch(`/api/guilds/${guildId}/settings`)
       .then((res) => res.json())
       .then((data) => {
         if (data) {
@@ -40,13 +43,13 @@ export default function SettingsPage() {
         }
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [guildId]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaved(false);
 
-    await fetch(`/api/guilds/${sampleGuildId}/settings`, {
+    await fetch(`/api/guilds/${guildId}/settings`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -85,7 +88,7 @@ export default function SettingsPage() {
           {loading ? (
             <div className="py-12 text-center text-gray-500 text-sm">Loading settings...</div>
           ) : (
-            <div className="space-y-6 divide-y divide-border/60">
+            <div className="space-y-6 divide-y divide-border/60 p-6 pt-0">
               <div className="pt-2">
                 <Switch
                   label="Enforce Single Pending Application"
@@ -158,7 +161,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          <div className="mt-8 pt-4 border-t border-border flex items-center justify-between">
+          <div className="mt-8 pt-4 border-t border-border flex items-center justify-between p-6">
             {saved && (
               <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
                 <Check className="w-4 h-4" /> Settings updated!

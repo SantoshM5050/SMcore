@@ -1,5 +1,5 @@
 import { TextChannel } from 'discord.js';
-import { prisma, ApplicationStatus, AuditAction, StaffPermissionLevel } from '@repo/database';
+import { prisma, ApplicationStatus, AuditAction } from '@repo/database';
 import { botClient } from '../client';
 import { EmbedService } from './embedService';
 import { LogService } from './logService';
@@ -191,7 +191,15 @@ export class ApplicationService {
     // 1. Assign Discord Role
     const roleAssigned = await RoleService.assignRoleToMember(application.guildId, application.userId, application.roleId);
 
-    // 2. Update Application Status in DB
+    // 2. Change Member Server Nickname to "Name | ID"
+    await RoleService.updateMemberNickname(
+      application.guildId,
+      application.userId,
+      application.inGameName,
+      application.inGameId
+    );
+
+    // 3. Update Application Status in DB
     const updated = await prisma.application.update({
       where: { id: applicationId },
       data: {
@@ -201,7 +209,7 @@ export class ApplicationService {
       },
     });
 
-    // 3. Create Application History
+    // 4. Create Application History
     await prisma.applicationHistory.create({
       data: {
         applicationId,
@@ -213,7 +221,7 @@ export class ApplicationService {
       },
     });
 
-    // 4. Update Review Channel Embed
+    // 5. Update Review Channel Embed
     const channelConfig = await prisma.channelConfiguration.findUnique({
       where: { guildId: application.guildId },
     });
@@ -229,7 +237,7 @@ export class ApplicationService {
       }
     }
 
-    // 5. Direct Message Applicant if enabled
+    // 6. Direct Message Applicant if enabled
     const settings = await prisma.guildSettings.findUnique({
       where: { guildId: application.guildId },
     });
@@ -239,13 +247,13 @@ export class ApplicationService {
       if (user) {
         await user
           .send({
-            content: `🎉 **Role Application Approved!**\nYour role request for **${application.roleName}** has been approved by staff (${reviewerTag}). The role has been granted to your Discord account!`,
+            content: `⚡ **Nexus Discord Bot – Role Application Approved!**\nYour role request for **${application.roleName}** has been approved by staff (${reviewerTag}). The role has been granted and your nickname updated to **${application.inGameName} | ${application.inGameId}**!`,
           })
           .catch(() => null);
       }
     }
 
-    // 6. Audit Log
+    // 7. Audit Log
     await LogService.logEvent(application.guildId, reviewerId, reviewerTag, AuditAction.APPLICATION_APPROVED, {
       applicationId,
       applicantId: application.userId,
@@ -322,7 +330,7 @@ export class ApplicationService {
       if (user) {
         await user
           .send({
-            content: `❌ **Role Application Rejected**\nYour role request for **${application.roleName}** was reviewed by staff (${reviewerTag}) and rejected.\n\n**Reason:** ${rejectionReason}`,
+            content: `❌ **Nexus Discord Bot – Role Application Update**\nYour role request for **${application.roleName}** was reviewed by staff (${reviewerTag}) and rejected.\n\n**Reason:** ${rejectionReason}`,
           })
           .catch(() => null);
       }

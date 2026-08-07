@@ -14,7 +14,7 @@ import {
   BarChart3,
   ScrollText,
   User,
-  Gamepad2,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -39,14 +39,14 @@ export function Sidebar() {
   return (
     <aside className="w-64 bg-card border-r border-border min-h-screen flex flex-col justify-between p-4 sticky top-0 h-screen z-30">
       <div>
-        {/* Brand Header */}
+        {/* Nexus Brand Header */}
         <div className="flex items-center gap-3 px-3 py-4 mb-6 border-b border-border/60">
-          <div className="w-10 h-10 rounded-xl bg-primary/20 border border-primary/40 flex items-center justify-center text-primary shadow-lg shadow-primary/20">
-            <Gamepad2 className="w-6 h-6" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-purple-600 border border-primary/40 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-primary/30">
+            N
           </div>
           <div>
-            <h1 className="font-bold text-white text-base tracking-tight leading-none">Role Verification</h1>
-            <span className="text-xs text-primary font-semibold tracking-wide">Enterprise SaaS</span>
+            <h1 className="font-extrabold text-white text-lg tracking-wider leading-none">NEXUS</h1>
+            <span className="text-[11px] text-purple-400 font-medium tracking-wide">Nexus Dashboard</span>
           </div>
         </div>
 
@@ -83,8 +83,11 @@ export function Sidebar() {
 
       {/* Footer Info */}
       <div className="p-3 bg-secondary/50 border border-border/50 rounded-lg text-center">
-        <p className="text-xs text-gray-400 font-medium">Bot Version v14.1</p>
-        <p className="text-[10px] text-gray-500 mt-0.5">Discord.js • Prisma • Next.js</p>
+        <div className="flex items-center justify-center gap-1 text-xs text-purple-400 font-semibold mb-0.5">
+          <Zap className="w-3 h-3 fill-current" />
+          <span>Powered by Nexus</span>
+        </div>
+        <p className="text-[10px] text-gray-500">Nexus Discord Bot v14.1</p>
       </div>
     </aside>
   );

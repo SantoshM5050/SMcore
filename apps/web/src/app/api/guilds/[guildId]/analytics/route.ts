@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { AuthService } from '@/lib/auth';
 import { ApplicationStatus } from '@repo/database';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request, { params }: { params: { guildId: string } }) {
   const user = await AuthService.getSessionUser();
   if (!user) {

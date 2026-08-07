@@ -1,8 +1,17 @@
 import React, { Suspense } from 'react';
+import { redirect } from 'next/navigation';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
+import { AuthService } from '@/lib/auth';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export const dynamic = 'force-dynamic';
+
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const user = await AuthService.getSessionUser();
+  if (!user) {
+    redirect('/login');
+  }
+
   return (
     <Suspense fallback={<div className="min-h-screen bg-background p-8 text-sm text-gray-500 flex items-center justify-center">Loading Dashboard...</div>}>
       <div className="flex min-h-screen bg-background text-foreground">

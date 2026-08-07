@@ -1,15 +1,15 @@
-# Contributing Guidelines
+# Contributing Guidelines for Nexus Discord Bot
 
-Thank you for contributing to the **Discord Role Request Management Platform**!
+Thank you for contributing to **Nexus Discord Bot**!
 
 ## Code Style & Standards
 
-- **TypeScript**: Strict mode enabled. Do not use `any` type without justification.
-- **Formatting**: Format code using Prettier before opening pull requests:
+- **TypeScript**: Enforce strict mode across all workspaces (`tsconfig.json`).
+- **Formatting**: Run Prettier before opening pull requests:
   ```bash
   npm run format
   ```
-- **Linting**: Ensure zero lint errors:
+- **Linting**: Ensure zero lint warnings or errors:
   ```bash
   npm run lint
   ```

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { RejectModal } from '@/components/applications/RejectModal';
-import { Search, CheckCircle2, XCircle, Eye, ExternalLink, ChevronLeft, ChevronRight, MessageSquare, Send } from 'lucide-react';
+import { Search, CheckCircle2, XCircle, Eye, ChevronLeft, ChevronRight, MessageSquare, Send } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { ApplicationItem } from '@/types';
 
@@ -176,7 +176,7 @@ export default function ApplicationsPage() {
                   <th className="py-3 px-4">Discord User</th>
                   <th className="py-3 px-4">Requested Role</th>
                   <th className="py-3 px-4">In-Game IGN</th>
-                  <th className="py-3 px-4">Rank</th>
+                  <th className="py-3 px-4">In-Game Level</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4">Submitted At</th>
                   <th className="py-3 px-4 text-right">Actions</th>
@@ -286,7 +286,7 @@ export default function ApplicationsPage() {
                 <span className="font-mono text-white">{selectedApp.inGameId}</span>
               </div>
               <div className="bg-secondary/40 p-3 rounded-lg border border-border/60">
-                <span className="text-xs text-gray-400 block font-semibold uppercase">Current Rank</span>
+                <span className="text-xs text-gray-400 block font-semibold uppercase">In-Game Level</span>
                 <span className="font-semibold text-white">{selectedApp.currentRank}</span>
               </div>
               <div className="bg-secondary/40 p-3 rounded-lg border border-border/60">

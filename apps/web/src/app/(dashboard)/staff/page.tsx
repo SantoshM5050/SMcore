@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Users, Shield, Plus, Trash2 } from 'lucide-react';
 
@@ -14,54 +14,66 @@ interface StaffPerm {
   permissionLevel: 'HIGH_COMMAND' | 'ROLE_REQUEST_MANAGER';
 }
 
+interface DiscordRoleItem {
+  id: string;
+  roleId: string;
+  roleName: string;
+}
+
 export default function StaffPage() {
-  const sampleGuildId = '100000000000000000';
+  const searchParams = useSearchParams();
+  const guildId = searchParams.get('guildId') || '100000000000000000';
+
   const [staffList, setStaffList] = useState<StaffPerm[]>([]);
+  const [availableRoles, setAvailableRoles] = useState<DiscordRoleItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [roleId, setRoleId] = useState('');
+  const [selectedRoleId, setSelectedRoleId] = useState('');
   const [roleName, setRoleName] = useState('');
   const [permissionLevel, setPermissionLevel] = useState<'HIGH_COMMAND' | 'ROLE_REQUEST_MANAGER'>('ROLE_REQUEST_MANAGER');
 
-  const fetchStaff = () => {
+  const fetchStaffAndRoles = () => {
     setLoading(true);
-    fetch(`/api/guilds/${sampleGuildId}/staff`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) setStaffList(data);
+    Promise.all([
+      fetch(`/api/guilds/${guildId}/staff`).then((res) => res.json()),
+      fetch(`/api/guilds/${guildId}/roles`).then((res) => res.json()),
+    ])
+      .then(([staffData, rolesData]) => {
+        if (Array.isArray(staffData)) setStaffList(staffData);
+        if (Array.isArray(rolesData)) setAvailableRoles(rolesData);
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    fetchStaff();
-  }, []);
+    fetchStaffAndRoles();
+  }, [guildId]);
 
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!roleId || !roleName) return;
+    if (!selectedRoleId || !roleName) return;
 
-    await fetch(`/api/guilds/${sampleGuildId}/staff`, {
+    await fetch(`/api/guilds/${guildId}/staff`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        roleId,
+        roleId: selectedRoleId,
         roleName,
         permissionLevel,
       }),
     });
 
-    setRoleId('');
+    setSelectedRoleId('');
     setRoleName('');
-    fetchStaff();
+    fetchStaffAndRoles();
   };
 
   const handleDeleteStaff = async (id: string) => {
-    await fetch(`/api/guilds/${sampleGuildId}/staff?id=${id}`, {
+    await fetch(`/api/guilds/${guildId}/staff?id=${id}`, {
       method: 'DELETE',
     });
-    fetchStaff();
+    fetchStaffAndRoles();
   };
 
   return (
@@ -82,21 +94,31 @@ export default function StaffPage() {
           </CardTitle>
         </CardHeader>
 
-        <form onSubmit={handleAddStaff} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-          <Input
-            label="Discord Role ID"
-            placeholder="e.g. 300000000000000001"
-            value={roleId}
-            onChange={(e) => setRoleId(e.target.value)}
-            required
-          />
-          <Input
-            label="Role Label / Name"
-            placeholder="e.g. Lead Moderator"
-            value={roleName}
-            onChange={(e) => setRoleName(e.target.value)}
-            required
-          />
+        <form onSubmit={handleAddStaff} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-6 pt-0">
+          <div className="space-y-1.5 md:col-span-2">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
+              Select Discord Server Role
+            </label>
+            <select
+              value={selectedRoleId}
+              onChange={(e) => {
+                const rId = e.target.value;
+                setSelectedRoleId(rId);
+                const found = availableRoles.find((r) => r.roleId === rId);
+                if (found) setRoleName(found.roleName);
+              }}
+              className="w-full bg-input border border-border rounded-lg px-3.5 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary"
+              required
+            >
+              <option value="">Select a role from your Discord Server...</option>
+              {availableRoles.map((r) => (
+                <option key={r.roleId} value={r.roleId}>
+                  {r.roleName} (ID: {r.roleId})
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
               Permission Level
@@ -110,7 +132,8 @@ export default function StaffPage() {
               <option value="HIGH_COMMAND">High Command (Full Control)</option>
             </select>
           </div>
-          <Button type="submit" variant="primary" className="gap-2">
+
+          <Button type="submit" variant="primary" disabled={!selectedRoleId} className="gap-2">
             <Plus className="w-4 h-4" /> Grant Permission
           </Button>
         </form>

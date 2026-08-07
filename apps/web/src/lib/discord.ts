@@ -32,6 +32,11 @@ export interface DiscordChannel {
 }
 
 export class DiscordApi {
+  private static getCleanBotToken(): string {
+    const rawToken = process.env.DISCORD_BOT_TOKEN || '';
+    return rawToken.trim().replace(/^["']|["']$/g, '');
+  }
+
   /**
    * Fetch authenticated user's profile using OAuth Access Token
    */
@@ -39,7 +44,10 @@ export class DiscordApi {
     const res = await fetch(`${DISCORD_API_BASE}/users/@me`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    if (!res.ok) throw new Error('Failed to fetch Discord user profile');
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Failed to fetch Discord user profile: ${res.status} - ${errText}`);
+    }
     return res.json();
   }
 
@@ -50,7 +58,10 @@ export class DiscordApi {
     const res = await fetch(`${DISCORD_API_BASE}/users/@me/guilds`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    if (!res.ok) throw new Error('Failed to fetch user guilds');
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Failed to fetch user guilds: ${res.status} - ${errText}`);
+    }
     return res.json();
   }
 
@@ -58,14 +69,21 @@ export class DiscordApi {
    * Fetch Guild Roles using Bot Token
    */
   static async getGuildRoles(guildId: string): Promise<DiscordRole[]> {
-    const botToken = process.env.DISCORD_BOT_TOKEN;
-    if (!botToken) throw new Error('DISCORD_BOT_TOKEN is not configured');
+    const botToken = this.getCleanBotToken();
+    if (!botToken || botToken === 'YOUR_DISCORD_BOT_TOKEN') {
+      throw new Error('DISCORD_BOT_TOKEN is not configured');
+    }
 
     const res = await fetch(`${DISCORD_API_BASE}/guilds/${guildId}/roles`, {
       headers: { Authorization: `Bot ${botToken}` },
+      cache: 'no-store',
     });
 
-    if (!res.ok) throw new Error(`Failed to fetch roles for guild ${guildId}`);
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error(`[DiscordApi] getGuildRoles failed for guild ${guildId}: ${res.status} - ${errText}`);
+      throw new Error(`Failed to fetch roles for guild ${guildId}: ${res.status}`);
+    }
     return res.json();
   }
 
@@ -73,19 +91,27 @@ export class DiscordApi {
    * Fetch Guild Text Channels using Bot Token
    */
   static async getGuildChannels(guildId: string): Promise<DiscordChannel[]> {
-    const botToken = process.env.DISCORD_BOT_TOKEN;
-    if (!botToken) throw new Error('DISCORD_BOT_TOKEN is not configured');
+    const botToken = this.getCleanBotToken();
+    if (!botToken || botToken === 'YOUR_DISCORD_BOT_TOKEN') {
+      throw new Error('DISCORD_BOT_TOKEN is not configured');
+    }
 
     const res = await fetch(`${DISCORD_API_BASE}/guilds/${guildId}/channels`, {
       headers: { Authorization: `Bot ${botToken}` },
+      cache: 'no-store',
     });
 
-    if (!res.ok) throw new Error(`Failed to fetch channels for guild ${guildId}`);
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error(`[DiscordApi] getGuildChannels failed for guild ${guildId}: ${res.status} - ${errText}`);
+      throw new Error(`Failed to fetch channels for guild ${guildId}: ${res.status}`);
+    }
+
     const channels: any[] = await res.json();
 
-    // Filter only text channels (type 0 = GUILD_TEXT, type 5 = GUILD_ANNOUNCEMENT)
+    // Filter text channels (type 0 = GUILD_TEXT, type 5 = GUILD_ANNOUNCEMENT, type 15 = GUILD_FORUM)
     return channels
-      .filter((c) => c.type === 0 || c.type === 5)
+      .filter((c) => c.type === 0 || c.type === 5 || c.type === 15)
       .map((c) => ({
         id: c.id,
         name: c.name,
