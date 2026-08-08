@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { Server, ChevronDown, Check, Shield } from 'lucide-react';
+import { Server, ChevronDown, Check, Shield, Plus } from 'lucide-react';
 import { GuildItem } from '@/types';
 
 export function ServerSwitcher() {
@@ -96,6 +96,19 @@ export function ServerSwitcher() {
                 {activeGuild?.id === g.id && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
               </button>
             ))}
+          </div>
+
+          <div className="p-1 border-t border-border bg-secondary/30">
+            <a
+              href="/api/bot/invite"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setIsOpen(false)}
+              className="w-full flex items-center gap-2 p-2 rounded-lg text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Bot to New Server</span>
+            </a>
           </div>
         </div>
       )}
