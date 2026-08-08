@@ -5,13 +5,14 @@
   "description": "SMCore Discord Bot - Enterprise Server Management & Role Request Platform",
   "repository": {
     "type": "git",
-    "url": "https://github.com/SantoshM5050/nexus-discord-bot.git"
+    "url": "https://github.com/SantoshM5050/SMcore.git"
   },
   "workspaces": [
     "packages/*",
     "apps/*"
   ],
   "scripts": {
+    "postinstall": "npm run build:db",
     "dev:web": "npm run dev --workspace=apps/web",
     "dev:bot": "npm run dev --workspace=apps/bot",
     "build:db": "npm run build --workspace=packages/database",
