@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { AuthService } from '@/lib/auth';
+import { getAppUrl } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
-  const appUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const appUrl = getAppUrl(request);
   const redirectUri = process.env.DISCORD_REDIRECT_URI || `${appUrl}/api/auth/callback`;
 
   if (!code) {
