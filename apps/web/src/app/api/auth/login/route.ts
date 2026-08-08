@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getAppUrl } from '@/lib/utils';
+import { getAppUrl, getRedirectUri } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   const clientId = process.env.DISCORD_CLIENT_ID;
-  const appUrl = getAppUrl(request);
-  const redirectUri = encodeURIComponent(process.env.DISCORD_REDIRECT_URI || `${appUrl}/api/auth/callback`);
+  const redirectUri = encodeURIComponent(getRedirectUri(request));
 
   if (!clientId || clientId === 'YOUR_DISCORD_CLIENT_ID') {
     return NextResponse.json(

@@ -34,3 +34,11 @@ export function getAppUrl(request?: Request): string {
 
   return (process.env.NEXTAUTH_URL || 'http://localhost:3000').replace(/\/$/, '');
 }
+
+export function getRedirectUri(request?: Request): string {
+  if (process.env.DISCORD_REDIRECT_URI && !process.env.DISCORD_REDIRECT_URI.includes('localhost')) {
+    return process.env.DISCORD_REDIRECT_URI;
+  }
+  const appUrl = getAppUrl(request);
+  return `${appUrl}/api/auth/callback`;
+}
