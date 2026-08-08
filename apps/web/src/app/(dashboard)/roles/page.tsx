@@ -138,8 +138,8 @@ export default function RolesPage() {
             required
           />
           <Input
-            label="Min Rank Required (Optional)"
-            placeholder="e.g. Global Elite / Diamond III"
+            label="Min In-Game Level (Optional)"
+            placeholder="e.g. Level 50 / Level 10"
             value={newMinRank}
             onChange={(e) => setNewMinRank(e.target.value)}
           />
@@ -168,7 +168,7 @@ export default function RolesPage() {
                 <tr>
                   <th className="py-3 px-4">Role Name</th>
                   <th className="py-3 px-4">Role ID</th>
-                  <th className="py-3 px-4">Min Rank Requirement</th>
+                  <th className="py-3 px-4">Min In-Game Level</th>
                   <th className="py-3 px-4">Requestable</th>
                   <th className="py-3 px-4">Status</th>
                 </tr>

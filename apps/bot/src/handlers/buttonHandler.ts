@@ -43,7 +43,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         new StringSelectMenuOptionBuilder()
           .setLabel(role.roleName)
           .setValue(role.roleId)
-          .setDescription(role.minRankRequired ? `Min Rank: ${role.minRankRequired}` : `Apply for ${role.roleName}`)
+          .setDescription(role.minRankRequired ? `Min Level: ${role.minRankRequired}` : `Apply for ${role.roleName}`)
           .setEmoji('🎮')
       );
     });
