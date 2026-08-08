@@ -2,12 +2,12 @@
   "name": "@repo/database",
   "version": "1.0.0",
   "private": true,
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "dotenv -e ../../.env -- prisma generate && tsc",
-    "generate": "dotenv -e ../../.env -- prisma generate",
-    "db:push": "dotenv -e ../../.env -- prisma db push",
+    "build": "prisma generate && tsc",
+    "generate": "prisma generate",
+    "db:push": "prisma db push",
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {

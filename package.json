@@ -17,6 +17,8 @@
     "build:db": "npm run build --workspace=packages/database",
     "build:web": "npm run build --workspace=apps/web",
     "build:bot": "npm run build --workspace=apps/bot",
+    "build:render:bot": "npm run build:db && npm run build:bot",
+    "start:bot": "npm run start --workspace=apps/bot",
     "build": "npm run build:db && npm run build:web && npm run build:bot",
     "test": "echo \"Running test suite...\" && node -e \"console.log('✅ SMCore Unit Tests Passed successfully!')\"",
     "db:generate": "npm run generate --workspace=packages/database",
