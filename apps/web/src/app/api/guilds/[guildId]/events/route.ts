@@ -15,11 +15,9 @@ async function autoSyncSchemaIfNeeded(err: any): Promise<boolean> {
   if (errMsg.includes('does not exist') || errMsg.includes('P2021') || errMsg.includes('P2022')) {
     console.warn('[Auto Schema Sync] Missing column detected! Executing SQL alter table...');
     try {
-      await prisma.$executeRawUnsafe(`
-        ALTER TABLE "EventSignup" ADD COLUMN IF NOT EXISTS "pingRoleId" TEXT;
-        ALTER TABLE "GuildSettings" ADD COLUMN IF NOT EXISTS "reviewPingRoleId" TEXT;
-        ALTER TABLE "GuildSettings" ADD COLUMN IF NOT EXISTS "commonRoleId" TEXT;
-      `);
+      await prisma.$executeRawUnsafe(`ALTER TABLE "EventSignup" ADD COLUMN IF NOT EXISTS "pingRoleId" TEXT;`);
+      await prisma.$executeRawUnsafe(`ALTER TABLE "GuildSettings" ADD COLUMN IF NOT EXISTS "reviewPingRoleId" TEXT;`);
+      await prisma.$executeRawUnsafe(`ALTER TABLE "GuildSettings" ADD COLUMN IF NOT EXISTS "commonRoleId" TEXT;`);
       console.log('[Auto Schema Sync] SQL migration complete!');
       return true;
     } catch (syncErr: any) {

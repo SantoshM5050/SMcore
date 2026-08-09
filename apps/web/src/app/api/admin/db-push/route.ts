@@ -5,15 +5,13 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    console.log('[DB Sync API] Running SQL schema migration...');
+    console.log('[DB Sync API] Running SQL schema migrations...');
 
-    await prisma.$executeRawUnsafe(`
-      ALTER TABLE "EventSignup" ADD COLUMN IF NOT EXISTS "pingRoleId" TEXT;
-      ALTER TABLE "GuildSettings" ADD COLUMN IF NOT EXISTS "reviewPingRoleId" TEXT;
-      ALTER TABLE "GuildSettings" ADD COLUMN IF NOT EXISTS "commonRoleId" TEXT;
-    `);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "EventSignup" ADD COLUMN IF NOT EXISTS "pingRoleId" TEXT;`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "GuildSettings" ADD COLUMN IF NOT EXISTS "reviewPingRoleId" TEXT;`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "GuildSettings" ADD COLUMN IF NOT EXISTS "commonRoleId" TEXT;`);
 
-    console.log('[DB Sync API] SQL schema migration completed!');
+    console.log('[DB Sync API] SQL schema migration completed successfully!');
 
     return NextResponse.json({
       success: true,
