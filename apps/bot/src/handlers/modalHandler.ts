@@ -23,6 +23,11 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
 
     await interaction.deferReply({ ephemeral: true });
 
+    // Clean up Step 1 select menu message so only submission success message remains
+    if (interaction.message) {
+      await interaction.message.delete().catch(() => null);
+    }
+
     try {
       const application = await ApplicationService.createApplication({
         guildId,
