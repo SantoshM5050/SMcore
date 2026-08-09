@@ -10,23 +10,17 @@ import fs from 'fs';
 
 export const dynamic = 'force-dynamic';
 
-function autoSyncSchemaIfNeeded(err: any): boolean {
+async function autoSyncSchemaIfNeeded(err: any): Promise<boolean> {
   const errMsg = err?.message || String(err);
   if (errMsg.includes('does not exist') || errMsg.includes('P2021') || errMsg.includes('P2022')) {
-    console.warn('[Auto Schema Sync] Missing column detected! Triggering prisma db push...');
+    console.warn('[Auto Schema Sync] Missing column detected! Executing SQL alter table...');
     try {
-      let schemaPath = path.resolve(process.cwd(), '../../packages/database/prisma/schema.prisma');
-      if (!fs.existsSync(schemaPath)) {
-        schemaPath = path.resolve(process.cwd(), 'packages/database/prisma/schema.prisma');
-      }
-      if (!fs.existsSync(schemaPath)) {
-        schemaPath = path.resolve(process.cwd(), '../database/prisma/schema.prisma');
-      }
-      execSync(`npx prisma db push --schema="${schemaPath}" --accept-data-loss`, {
-        stdio: 'inherit',
-        env: { ...process.env },
-      });
-      console.log('[Auto Schema Sync] Schema sync complete!');
+      await prisma.$executeRawUnsafe(`
+        ALTER TABLE "EventSignup" ADD COLUMN IF NOT EXISTS "pingRoleId" TEXT;
+        ALTER TABLE "GuildSettings" ADD COLUMN IF NOT EXISTS "reviewPingRoleId" TEXT;
+        ALTER TABLE "GuildSettings" ADD COLUMN IF NOT EXISTS "commonRoleId" TEXT;
+      `);
+      console.log('[Auto Schema Sync] SQL migration complete!');
       return true;
     } catch (syncErr: any) {
       console.error('[Auto Schema Sync Failed]:', syncErr.message);
@@ -78,7 +72,7 @@ export async function GET(request: Request, { params }: { params: { guildId: str
     return NextResponse.json(events);
   } catch (err: any) {
     console.error('Error fetching event signups from DB:', err);
-    if (autoSyncSchemaIfNeeded(err)) {
+    if (await autoSyncSchemaIfNeeded(err)) {
       try {
         const events = await prisma.eventSignup.findMany({
           where: { guildId },
@@ -212,7 +206,7 @@ export async function POST(request: Request, { params }: { params: { guildId: st
     return NextResponse.json(event);
   } catch (err: any) {
     console.error('Error creating event signup:', err);
-    if (autoSyncSchemaIfNeeded(err)) {
+    if (await autoSyncSchemaIfNeeded(err)) {
       return NextResponse.json(
         { error: 'Database schema updated! Please click Create again.' },
         { status: 409 }

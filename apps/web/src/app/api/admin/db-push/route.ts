@@ -1,42 +1,30 @@
 import { NextResponse } from 'next/server';
-import { execSync } from 'child_process';
-import path from 'path';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    let schemaPath = path.resolve(process.cwd(), '../../packages/database/prisma/schema.prisma');
-    
-    // Check fallback paths for Vercel deployment structure
-    const fs = require('fs');
-    if (!fs.existsSync(schemaPath)) {
-      schemaPath = path.resolve(process.cwd(), 'packages/database/prisma/schema.prisma');
-    }
-    if (!fs.existsSync(schemaPath)) {
-      schemaPath = path.resolve(process.cwd(), '../database/prisma/schema.prisma');
-    }
+    console.log('[DB Sync API] Running SQL schema migration...');
 
-    console.log('[DB Push API] Resolved Schema path:', schemaPath);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "EventSignup" ADD COLUMN IF NOT EXISTS "pingRoleId" TEXT;
+      ALTER TABLE "GuildSettings" ADD COLUMN IF NOT EXISTS "reviewPingRoleId" TEXT;
+      ALTER TABLE "GuildSettings" ADD COLUMN IF NOT EXISTS "commonRoleId" TEXT;
+    `);
 
-    const output = execSync(`npx prisma db push --schema="${schemaPath}" --accept-data-loss`, {
-      encoding: 'utf-8',
-      env: { ...process.env },
-    });
+    console.log('[DB Sync API] SQL schema migration completed!');
 
     return NextResponse.json({
       success: true,
-      message: 'Database schema successfully pushed and synced with production PostgreSQL!',
-      output,
+      message: 'Production Database schema successfully updated via SQL migration!',
     });
   } catch (err: any) {
-    console.error('[DB Push API Error]:', err);
+    console.error('[DB Sync API Error]:', err);
     return NextResponse.json(
       {
         success: false,
         error: err.message || String(err),
-        stdout: err.stdout?.toString(),
-        stderr: err.stderr?.toString(),
       },
       { status: 500 }
     );
