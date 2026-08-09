@@ -15,6 +15,7 @@ const settingsSchema = z.object({
   defaultEmbedColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
   timezone: z.string(),
   language: z.string(),
+  commonRoleId: z.string().nullable().optional(),
 });
 
 export async function GET(request: Request, { params }: { params: { guildId: string } }) {

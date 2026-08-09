@@ -21,25 +21,35 @@ export default function SettingsPage() {
   const [defaultEmbedColor, setDefaultEmbedColor] = useState('#5865F2');
   const [timezone, setTimezone] = useState('UTC');
   const [language, setLanguage] = useState('en');
+  const [commonRoleId, setCommonRoleId] = useState<string>('');
+  const [roles, setRoles] = useState<{ roleId: string; roleName: string }[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
+    if (!guildId) return;
     setLoading(true);
-    fetch(`/api/guilds/${guildId}/settings`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data) {
-          setCooldownMinutes(data.cooldownMinutes ?? 5);
-          setAutoDmEnabled(data.autoDmEnabled ?? true);
-          setLoggingEnabled(data.loggingEnabled ?? true);
-          setScreenshotRequired(data.screenshotRequired ?? false);
-          setScreenshotAllowed(data.screenshotAllowed ?? true);
-          setOnePendingOnly(data.onePendingOnly ?? true);
-          setDefaultEmbedColor(data.defaultEmbedColor || '#5865F2');
-          setTimezone(data.timezone || 'UTC');
-          setLanguage(data.language || 'en');
+    
+    Promise.all([
+      fetch(`/api/guilds/${guildId}/settings`).then((res) => res.json()),
+      fetch(`/api/guilds/${guildId}/roles`).then((res) => res.json()).catch(() => []),
+    ])
+      .then(([settingsData, rolesData]) => {
+        if (settingsData) {
+          setCooldownMinutes(settingsData.cooldownMinutes ?? 5);
+          setAutoDmEnabled(settingsData.autoDmEnabled ?? true);
+          setLoggingEnabled(settingsData.loggingEnabled ?? true);
+          setScreenshotRequired(settingsData.screenshotRequired ?? false);
+          setScreenshotAllowed(settingsData.screenshotAllowed ?? true);
+          setOnePendingOnly(settingsData.onePendingOnly ?? true);
+          setDefaultEmbedColor(settingsData.defaultEmbedColor || '#5865F2');
+          setTimezone(settingsData.timezone || 'UTC');
+          setLanguage(settingsData.language || 'en');
+          setCommonRoleId(settingsData.commonRoleId || '');
+        }
+        if (Array.isArray(rolesData)) {
+          setRoles(rolesData);
         }
       })
       .finally(() => setLoading(false));
@@ -62,6 +72,7 @@ export default function SettingsPage() {
         defaultEmbedColor,
         timezone,
         language,
+        commonRoleId: commonRoleId || null,
       }),
     });
 
@@ -132,6 +143,27 @@ export default function SettingsPage() {
                   checked={loggingEnabled}
                   onChange={setLoggingEnabled}
                 />
+              </div>
+
+              <div className="pt-4 space-y-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
+                  Common Approved Role (Optional)
+                </label>
+                <p className="text-xs text-gray-500 mb-2">
+                  Select a common/default role (e.g. Member or Verified) to automatically assign to the user alongside their requested role upon approval.
+                </p>
+                <select
+                  value={commonRoleId}
+                  onChange={(e) => setCommonRoleId(e.target.value)}
+                  className="w-full bg-input border border-border rounded-lg px-3.5 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">-- None (Only assign requested role) --</option>
+                  {roles.map((r) => (
+                    <option key={r.roleId} value={r.roleId}>
+                      {r.roleName} ({r.roleId})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="pt-4 grid grid-cols-1 md:grid-cols-3 gap-6">

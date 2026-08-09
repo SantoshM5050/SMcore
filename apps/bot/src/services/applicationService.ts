@@ -191,6 +191,17 @@ export class ApplicationService {
     // 1. Assign Discord Role
     const roleAssigned = await RoleService.assignRoleToMember(application.guildId, application.userId, application.roleId);
 
+    // 1b. Assign Common Role if configured in Guild Settings
+    const settings = await prisma.guildSettings.findUnique({
+      where: { guildId: application.guildId },
+    });
+
+    if (settings?.commonRoleId) {
+      await RoleService.assignRoleToMember(application.guildId, application.userId, settings.commonRoleId).catch((err) => {
+        console.warn(`[Approve] Failed to assign common role ${settings.commonRoleId}:`, err);
+      });
+    }
+
     // 2. Change Member Server Nickname to "Name | ID"
     await RoleService.updateMemberNickname(
       application.guildId,
@@ -238,10 +249,6 @@ export class ApplicationService {
     }
 
     // 6. Direct Message Applicant if enabled
-    const settings = await prisma.guildSettings.findUnique({
-      where: { guildId: application.guildId },
-    });
-
     if (settings?.autoDmEnabled !== false) {
       const user = await botClient.users.fetch(application.userId).catch(() => null);
       if (user) {

@@ -66,6 +66,7 @@ model GuildSettings {
   defaultEmbedColor  String   @default("#5865F2")
   timezone           String   @default("UTC")
   language           String   @default("en")
+  commonRoleId       String?
   updatedAt          DateTime @updatedAt
 
   guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)

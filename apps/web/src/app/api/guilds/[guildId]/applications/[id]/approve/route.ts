@@ -55,11 +55,20 @@ export async function POST(
   const botToken = rawToken.trim().replace(/^["']|["']$/g, '');
 
   if (botToken && botToken !== 'YOUR_DISCORD_BOT_TOKEN') {
-    // 1. Assign Role
+    // 1. Assign Requested Role
     await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${application.userId}/roles/${application.roleId}`, {
       method: 'PUT',
       headers: { Authorization: `Bot ${botToken}` },
     }).catch((err) => console.error('[REST API] Failed to assign role:', err));
+
+    // 1b. Assign Common Role if configured
+    const settings = await prisma.guildSettings.findUnique({ where: { guildId } });
+    if (settings?.commonRoleId) {
+      await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${application.userId}/roles/${settings.commonRoleId}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bot ${botToken}` },
+      }).catch((err) => console.error('[REST API] Failed to assign common role:', err));
+    }
 
     // 2. Change Nickname to "Name | ID"
     let newNick = `${application.inGameName} | ${application.inGameId}`;
