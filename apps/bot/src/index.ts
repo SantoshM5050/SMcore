@@ -37,8 +37,12 @@ function attachClientListeners(client: typeof botClient) {
   });
 }
 
+let useMinimalIntents = false;
+
 function doLogin() {
-  const token = (process.env.DISCORD_BOT_TOKEN || config.token || '').trim();
+  const rawToken = process.env.DISCORD_BOT_TOKEN || config.token || '';
+  const token = rawToken.trim().replace(/^["']|["']$/g, '').trim();
+
   if (!token) {
     lastLoginError = 'DISCORD_BOT_TOKEN is missing or empty in process.env';
     console.warn('⚠️ Bot started without token. Skipping login until DISCORD_BOT_TOKEN is set.');
@@ -64,31 +68,44 @@ function doLogin() {
   }
 
   isLoggingIn = true;
-  console.log(`🔑 Creating fresh Discord client & attempting login (Token length: ${token.length}, prevStatus: ${currentStatus})...`);
+  console.log(`🔑 Creating fresh Discord client (minimalIntents: ${useMinimalIntents}) & attempting login (Token length: ${token.length}, prevStatus: ${currentStatus})...`);
 
-  // Re-create a fresh Client instance only if not connecting/ready
-  const activeClient = resetBotClient();
+  // Re-create a fresh Client instance
+  const activeClient = resetBotClient(useMinimalIntents);
   attachClientListeners(activeClient);
 
-  // Safety fallback: reset isLoggingIn flag after 30 seconds if not ready
+  // Safety fallback: reset isLoggingIn flag after 20 seconds if not ready
   setTimeout(() => {
     if (!activeClient.isReady()) {
       isLoggingIn = false;
     }
-  }, 30000);
+  }, 20000);
 
-  activeClient
-    .login(token)
-    .then(() => {
-      isLoggingIn = false;
-      lastLoginError = null;
-      console.log('✅ botClient.login() promise resolved successfully.');
-    })
-    .catch((err: any) => {
-      isLoggingIn = false;
-      lastLoginError = err.message || String(err);
-      console.error('❌ Failed to log in to Discord API:', lastLoginError);
-    });
+  try {
+    const loginPromise = activeClient.login(token);
+    loginPromise
+      .then(() => {
+        isLoggingIn = false;
+        lastLoginError = null;
+        console.log('✅ botClient.login() promise resolved successfully.');
+      })
+      .catch((err: any) => {
+        isLoggingIn = false;
+        const errStr = err.message || String(err);
+        lastLoginError = errStr;
+        console.error('❌ Failed to log in to Discord API:', errStr);
+
+        if (!useMinimalIntents && (errStr.includes('Disallowed') || errStr.includes('intent') || errStr.includes('4014'))) {
+          console.warn('⚠️ Privileged Intents rejected. Retrying login with minimal intents...');
+          useMinimalIntents = true;
+          setTimeout(doLogin, 2000);
+        }
+      });
+  } catch (syncErr: any) {
+    isLoggingIn = false;
+    lastLoginError = `Sync error: ${syncErr.message || String(syncErr)}`;
+    console.error('❌ Synchronous login error:', lastLoginError);
+  }
 }
 
 const server = http.createServer((req, res) => {
