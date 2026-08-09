@@ -114,7 +114,7 @@ function doLogin() {
   }
 }
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   const urlRaw = req.url || '/';
   const url = urlRaw.split('?')[0].replace(/\/$/, '') || '/';
   const method = req.method?.toUpperCase();
@@ -157,12 +157,26 @@ const server = http.createServer((req, res) => {
         }
       }
 
+      let gatewayApi: any = null;
+      if (token) {
+        try {
+          const res = await fetch('https://discord.com/api/v10/gateway/bot', {
+            headers: { Authorization: `Bot ${token}` },
+          });
+          const body = await res.json().catch(() => null);
+          gatewayApi = { httpStatus: res.status, body };
+        } catch (err: any) {
+          gatewayApi = { error: err.message || String(err) };
+        }
+      }
+
       res.end(
         JSON.stringify({
           status: 'ok',
           service: 'SMCore Bot',
           discord: isReady,
           discordReason,
+          gatewayApi,
           tokenConfigured: Boolean(token),
           tokenLength: token.length,
           tokenPrefix: token ? token.substring(0, 10) + '...' : 'NONE',
