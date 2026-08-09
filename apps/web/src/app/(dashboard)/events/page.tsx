@@ -42,6 +42,8 @@ interface EventSignup {
   channelId: string;
   messageId: string | null;
   scheduledAt: string | null;
+  closeAt: string | null;
+  autoCloseMinutes: number | null;
   isRecurring: boolean;
   embedColor: string;
   status: 'SCHEDULED' | 'OPEN' | 'CLOSED' | 'COMPLETED' | 'CANCELLED';
@@ -446,6 +448,24 @@ export default function EventSignupsPage() {
                     )}
                   </div>
 
+                  {/* Schedule & Timing Badges */}
+                  {(event.scheduledAt || event.closeAt) && (
+                    <div className="bg-purple-500/10 border border-purple-500/30 p-2 rounded-lg text-xs space-y-1 text-purple-300 font-medium">
+                      {event.scheduledAt && isScheduled && (
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Agli baar send hoga: <strong>{new Date(event.scheduledAt).toLocaleString()}</strong></span>
+                        </div>
+                      )}
+                      {event.closeAt && (
+                        <div className="flex items-center gap-1.5 text-gray-300">
+                          <Lock className="w-3.5 h-3.5 text-red-400" />
+                          <span>Auto-close time: <strong>{new Date(event.closeAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong></span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Footer Stats */}
                   <div className="text-[11px] text-gray-500 flex items-center justify-between border-t border-border/40 pt-2">
                     <span>Target Channel: #{channels.find((c) => c.id === event.channelId)?.name || event.channelId.slice(0, 8)}...</span>
@@ -636,6 +656,52 @@ export default function EventSignupsPage() {
                     className="flex-1 bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white font-mono"
                   />
                 </div>
+              </div>
+
+              {/* Posting Schedule Controls */}
+              <div className="bg-secondary/40 border border-border/50 p-3.5 rounded-xl space-y-3">
+                <label className="block text-xs font-bold uppercase tracking-wider text-purple-300">
+                  ⏰ Posting Schedule & Auto-Timing
+                </label>
+                
+                <div className="flex items-center gap-4 text-xs">
+                  <label className="flex items-center gap-1.5 cursor-pointer font-medium text-gray-200">
+                    <input
+                      type="radio"
+                      name="postMode"
+                      checked={formData.postNow}
+                      onChange={() => setFormData({ ...formData, postNow: true })}
+                      className="accent-primary"
+                    />
+                    <span>🚀 Post Immediately</span>
+                  </label>
+
+                  <label className="flex items-center gap-1.5 cursor-pointer font-medium text-gray-200">
+                    <input
+                      type="radio"
+                      name="postMode"
+                      checked={!formData.postNow}
+                      onChange={() => setFormData({ ...formData, postNow: false })}
+                      className="accent-primary"
+                    />
+                    <span>⏰ Schedule Date & Time</span>
+                  </label>
+                </div>
+
+                {!formData.postNow && (
+                  <div className="pt-1">
+                    <label className="block text-[11px] text-gray-400 mb-1 font-medium">
+                      Select Date & Time (Agli baar kab send hoga):
+                    </label>
+                    <input
+                      type="datetime-local"
+                      required={!formData.postNow}
+                      value={formData.scheduledAt}
+                      onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
+                      className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-border">
