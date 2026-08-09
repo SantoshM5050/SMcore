@@ -31,7 +31,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
   },
   "dependencies": {
-    "prisma": "^5.9.1"
+    "prisma": "^5.22.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

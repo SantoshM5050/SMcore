@@ -5,15 +5,15 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "npx prisma@5.9.1 generate && tsc",
-    "generate": "npx prisma@5.9.1 generate",
-    "db:push": "npx prisma@5.9.1 db push",
-    "seed": "npx tsx prisma/seed.ts"
+    "build": "prisma generate && tsc",
+    "generate": "prisma generate",
+    "db:push": "prisma db push",
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@prisma/client": "^5.9.1",
+    "@prisma/client": "^5.22.0",
     "dotenv": "^16.4.1",
-    "prisma": "^5.9.1"
+    "prisma": "^5.22.0"
   },
   "devDependencies": {
     "dotenv-cli": "^7.3.0",
