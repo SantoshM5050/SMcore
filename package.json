@@ -30,6 +30,9 @@
     "lint": "npm run lint --workspace=apps/web && npm run lint --workspace=apps/bot",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
   },
+  "dependencies": {
+    "prisma": "^5.9.1"
+  },
   "devDependencies": {
     "@types/node": "^20.11.0",
     "prettier": "^3.2.5",
