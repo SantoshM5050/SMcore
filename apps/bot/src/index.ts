@@ -161,7 +161,10 @@ const server = http.createServer(async (req, res) => {
       if (token) {
         try {
           const res = await fetch('https://discord.com/api/v10/gateway/bot', {
-            headers: { Authorization: `Bot ${token}` },
+            headers: {
+              Authorization: `Bot ${token}`,
+              'User-Agent': 'SMCoreBot/1.0.0 (https://smcore.onrender.com)',
+            },
           });
           const body = await res.json().catch(() => null);
           gatewayApi = { httpStatus: res.status, body };

@@ -18,6 +18,11 @@ export function createBotClient(minimal = false) {
   return new Client({
     intents,
     partials: [Partials.Message, Partials.Channel, Partials.Reaction, Partials.User],
+    rest: {
+      userAgentAppendix: 'SMCoreBot/1.0.0 (https://smcore.onrender.com)',
+      timeout: 30000,
+      retries: 5,
+    },
   });
 }
 
