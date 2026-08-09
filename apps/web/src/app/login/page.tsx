@@ -18,8 +18,8 @@ export default function LoginPage() {
 
       <div className="w-full max-w-md bg-card/90 border border-border/80 rounded-2xl p-8 shadow-2xl backdrop-blur-xl relative z-10">
         <div className="text-center space-y-3 mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary to-purple-600 border border-primary/40 flex items-center justify-center text-white font-black text-2xl mx-auto shadow-xl shadow-primary/30">
-            S
+          <div className="w-16 h-16 rounded-2xl border border-primary/50 shadow-2xl shadow-purple-500/40 overflow-hidden mx-auto bg-black/40">
+            <img src="/logo.png" alt="SMCORE Logo" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-2xl font-extrabold text-white tracking-tight">Welcome to SMCore Dashboard</h1>
           <p className="text-sm text-gray-400">SMCore Discord Bot - Enterprise Server Management Platform</p>

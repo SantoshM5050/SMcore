@@ -43,8 +43,8 @@ export function Sidebar() {
       <div>
         {/* SMCore Brand Header */}
         <div className="flex items-center gap-3 px-3 py-4 mb-6 border-b border-border/60">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-purple-600 border border-primary/40 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-primary/30">
-            S
+          <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-primary/50 shadow-lg shadow-purple-500/30 flex items-center justify-center bg-black/40">
+            <img src="/logo.png" alt="SMCORE Logo" className="w-full h-full object-cover" />
           </div>
           <div>
             <h1 className="font-extrabold text-white text-lg tracking-wider leading-none">SMCORE</h1>
