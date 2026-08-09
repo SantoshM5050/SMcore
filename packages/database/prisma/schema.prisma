@@ -272,6 +272,7 @@ model EventSignup {
   isRecurring            Boolean           @default(false)
   recurringIntervalHours Int?
   dailyTimeSlots         String?
+  pingRoleId             String?
   lastPostedAt           DateTime?
   embedColor             String            @default("#E74C3C")
   status                 EventSignupStatus @default(OPEN)

@@ -100,6 +100,13 @@ export async function sendOrUpdateEventDiscordEmbed(eventId: string) {
     httpMethod = 'PATCH';
   }
 
+  let pingText: string | undefined = undefined;
+  if (event.pingRoleId) {
+    if (event.pingRoleId === 'everyone' || event.pingRoleId === '@everyone') pingText = '@everyone';
+    else if (event.pingRoleId === 'here' || event.pingRoleId === '@here') pingText = '@here';
+    else pingText = `<@&${event.pingRoleId}>`;
+  }
+
   let res = await fetch(targetUrl, {
     method: httpMethod,
     headers: {
@@ -107,6 +114,7 @@ export async function sendOrUpdateEventDiscordEmbed(eventId: string) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
+      ...(httpMethod === 'POST' && pingText && { content: pingText }),
       embeds: [embedPayload],
       components: componentsPayload,
     }),

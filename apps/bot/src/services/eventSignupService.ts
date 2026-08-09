@@ -137,7 +137,14 @@ export class EventSignupService {
     }
 
     if (!message) {
-      message = await channel.send({ embeds: [embed], components: [actionRow] });
+      let pingContent: string | undefined = undefined;
+      if (signup.pingRoleId) {
+        if (signup.pingRoleId === 'everyone' || signup.pingRoleId === '@everyone') pingContent = '@everyone';
+        else if (signup.pingRoleId === 'here' || signup.pingRoleId === '@here') pingContent = '@here';
+        else pingContent = `<@&${signup.pingRoleId}>`;
+      }
+
+      message = await channel.send({ content: pingContent, embeds: [embed], components: [actionRow] });
       await prisma.eventSignup.update({
         where: { id: signup.id },
         data: { messageId: message.id },

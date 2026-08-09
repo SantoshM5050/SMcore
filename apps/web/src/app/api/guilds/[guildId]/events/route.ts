@@ -20,6 +20,7 @@ const createEventSchema = z.object({
   isRecurring: z.boolean().optional().default(false),
   recurringIntervalHours: z.number().int().nullable().optional(),
   dailyTimeSlots: z.string().nullable().optional(),
+  pingRoleId: z.string().nullable().optional(),
   postNow: z.boolean().optional().default(true),
 });
 
@@ -98,6 +99,7 @@ export async function POST(request: Request, { params }: { params: { guildId: st
             isRecurring: item.isRecurring ?? false,
             recurringIntervalHours: item.recurringIntervalHours || null,
             dailyTimeSlots: item.dailyTimeSlots || null,
+            pingRoleId: item.pingRoleId || null,
             lastPostedAt: initialStatus === EventSignupStatus.OPEN ? new Date() : null,
             status: initialStatus,
             createdBy: user.discordId,
@@ -150,6 +152,7 @@ export async function POST(request: Request, { params }: { params: { guildId: st
         isRecurring: data.isRecurring ?? false,
         recurringIntervalHours: data.recurringIntervalHours || null,
         dailyTimeSlots: data.dailyTimeSlots || null,
+        pingRoleId: data.pingRoleId || null,
         lastPostedAt: initialStatus === EventSignupStatus.OPEN ? new Date() : null,
         status: initialStatus,
         createdBy: user.discordId,

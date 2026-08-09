@@ -127,7 +127,20 @@ export class ApplicationService {
         const reviewEmbed = EmbedService.buildReviewEmbed(application);
         const components = EmbedService.buildReviewButtons(application.id, ApplicationStatus.PENDING);
 
-        const msg = await reviewChannel.send({ embeds: [reviewEmbed], components });
+        // Fetch staff roles to auto-ping them for review notification
+        const staffRoles = await prisma.staffPermission.findMany({
+          where: { guildId: data.guildId },
+        });
+
+        const staffPingContent = staffRoles.length > 0
+          ? staffRoles.map((s) => `<@&${s.roleId}>`).join(' ')
+          : undefined;
+
+        const msg = await reviewChannel.send({
+          content: staffPingContent,
+          embeds: [reviewEmbed],
+          components,
+        });
         
         // Save review message ID to DB
         await prisma.application.update({

@@ -65,6 +65,7 @@ export default function EventSignupsPage() {
 
   const [events, setEvents] = useState<EventSignup[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
+  const [roles, setRoles] = useState<{ roleId: string; roleName: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,6 +78,7 @@ export default function EventSignupsPage() {
     maxMainTeam: 10,
     maxSubstitutes: 5,
     channelId: '',
+    pingRoleId: '',
     embedColor: '#E74C3C',
     scheduledAt: '',
     autoCloseMinutes: 30,
@@ -110,6 +112,7 @@ export default function EventSignupsPage() {
       setBatchData((prev) => ({ ...prev, channelId: '' }));
       fetchEvents();
       fetchChannels();
+      fetchRoles();
     }
   }, [guildId]);
 
@@ -147,6 +150,19 @@ export default function EventSignupsPage() {
       }
     } catch (err) {
       console.warn('Could not load channels:', err);
+    }
+  };
+
+  const fetchRoles = async () => {
+    if (!guildId) return;
+    try {
+      const res = await fetch(`/api/guilds/${guildId}/roles`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) setRoles(data);
+      }
+    } catch (err) {
+      console.warn('Could not load roles:', err);
     }
   };
 
@@ -681,6 +697,26 @@ export default function EventSignupsPage() {
                     className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
                   />
                 )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-1">
+                  Auto Tag / Mention Role (Optional)
+                </label>
+                <select
+                  value={formData.pingRoleId}
+                  onChange={(e) => setFormData({ ...formData, pingRoleId: e.target.value })}
+                  className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                >
+                  <option value="">-- No Tag (Embed only) --</option>
+                  <option value="everyone">@everyone</option>
+                  <option value="here">@here</option>
+                  {roles.map((r) => (
+                    <option key={r.roleId} value={r.roleId}>
+                      @{r.roleName} ({r.roleId})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
