@@ -51,6 +51,7 @@ model Guild {
   staffPermissions StaffPermission[]
   embeds           EmbedConfig[]
   panelMessages    PanelMessage[]
+  eventSignups     EventSignup[]
 }
 
 model GuildSettings {
@@ -240,3 +241,57 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId])
 }
+
+enum EventSignupStatus {
+  SCHEDULED
+  OPEN
+  CLOSED
+  COMPLETED
+  CANCELLED
+}
+
+enum ParticipantRoleType {
+  MAIN_TEAM
+  SUBSTITUTE
+}
+
+model EventSignup {
+  id                     String            @id @default(cuid())
+  guildId                String
+  title                  String            @default("Informal Signup")
+  description            String?           @default("Register for Informal")
+  eventTime              String?           
+  maxMainTeam            Int               @default(10)
+  maxSubstitutes         Int               @default(5)
+  channelId              String
+  messageId              String?
+  scheduledAt            DateTime?
+  isRecurring            Boolean           @default(false)
+  recurringIntervalHours Int?
+  embedColor             String            @default("#E74C3C")
+  status                 EventSignupStatus @default(OPEN)
+  createdBy              String?
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+
+  guild        Guild              @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  participants EventParticipant[]
+
+  @@index([guildId, status])
+}
+
+model EventParticipant {
+  id            String              @id @default(cuid())
+  eventSignupId String
+  userId        String
+  userTag       String
+  userAvatar    String?
+  roleType      ParticipantRoleType @default(MAIN_TEAM)
+  joinedAt      DateTime            @default(now())
+
+  eventSignup EventSignup @relation(fields: [eventSignupId], references: [id], onDelete: Cascade)
+
+  @@unique([eventSignupId, userId])
+  @@index([eventSignupId, roleType])
+}
+

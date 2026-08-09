@@ -9,12 +9,29 @@ import {
 } from 'discord.js';
 import { ApplicationService } from '../services/applicationService';
 import { RoleService } from '../services/roleService';
+import { EventSignupService } from '../services/eventSignupService';
 
 export async function handleButtonInteraction(interaction: ButtonInteraction) {
   const { customId, guildId, user, member } = interaction;
 
   if (!guildId) {
-    return interaction.reply({ content: 'Role requests can only be submitted within a Discord server.', ephemeral: true });
+    return interaction.reply({ content: 'Role requests & event signups can only be used within a Discord server.', ephemeral: true });
+  }
+
+  // Event Signup Join Button
+  if (customId.startsWith('event_signup_join_')) {
+    const signupId = customId.replace('event_signup_join_', '');
+    await interaction.deferReply({ ephemeral: true });
+    const result = await EventSignupService.joinEvent(signupId, user);
+    return interaction.editReply({ content: result.message });
+  }
+
+  // Event Signup Leave Button
+  if (customId.startsWith('event_signup_leave_')) {
+    const signupId = customId.replace('event_signup_leave_', '');
+    await interaction.deferReply({ ephemeral: true });
+    const result = await EventSignupService.leaveEvent(signupId, user.id);
+    return interaction.editReply({ content: result.message });
   }
 
   // 1. Panel "Apply for Role" Clicked

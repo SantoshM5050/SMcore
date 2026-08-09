@@ -1,9 +1,17 @@
 import { Client, ActivityType } from 'discord.js';
 import { prisma } from '@repo/database';
 import { RoleService } from '../services/roleService';
+import { EventScheduler } from '../services/eventScheduler';
 
 export async function onReady(client: Client) {
   console.log(`⚡ SMCore Bot logged in as ${client.user?.tag} (ID: ${client.user?.id})`);
+
+  // Start Event Auto-Scheduler Ticker
+  try {
+    EventScheduler.start();
+  } catch (schedErr) {
+    console.error('Failed to start Event Auto-Scheduler:', schedErr);
+  }
 
   try {
     client.user?.setActivity('SMCore | Managing your server', { type: ActivityType.Watching });

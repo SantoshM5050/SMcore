@@ -1,0 +1,777 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import {
+  Trophy,
+  Plus,
+  Zap,
+  Calendar,
+  Users,
+  Lock,
+  Unlock,
+  Trash2,
+  Send,
+  RotateCcw,
+  Clock,
+  Sparkles,
+  Layers,
+  CheckCircle2,
+  AlertCircle,
+} from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+
+interface Participant {
+  id: string;
+  userId: string;
+  userTag: string;
+  roleType: 'MAIN_TEAM' | 'SUBSTITUTE';
+  joinedAt: string;
+}
+
+interface EventSignup {
+  id: string;
+  guildId: string;
+  title: string;
+  description: string | null;
+  eventTime: string | null;
+  maxMainTeam: number;
+  maxSubstitutes: number;
+  channelId: string;
+  messageId: string | null;
+  scheduledAt: string | null;
+  isRecurring: boolean;
+  embedColor: string;
+  status: 'SCHEDULED' | 'OPEN' | 'CLOSED' | 'COMPLETED' | 'CANCELLED';
+  createdAt: string;
+  participants: Participant[];
+}
+
+interface Channel {
+  id: string;
+  name: string;
+  type: number;
+}
+
+export default function EventSignupsPage() {
+  const searchParams = useSearchParams();
+  const guildId = searchParams.get('guildId') || '';
+
+  const [events, setEvents] = useState<EventSignup[]>([]);
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Single Modal state
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    title: 'Informal Signup',
+    description: 'Register for Informal 19:40',
+    maxMainTeam: 10,
+    maxSubstitutes: 5,
+    channelId: '',
+    embedColor: '#E74C3C',
+    scheduledAt: '',
+    postNow: true,
+  });
+
+  // Batch Modal state
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [batchData, setBatchData] = useState({
+    baseTitle: 'Informal Signup',
+    startHour: 18,
+    intervalMinutes: 30,
+    count: 8,
+    maxMainTeam: 10,
+    maxSubstitutes: 5,
+    channelId: '',
+    embedColor: '#E74C3C',
+  });
+
+  useEffect(() => {
+    if (guildId) {
+      setFormData((prev) => ({ ...prev, channelId: '' }));
+      setBatchData((prev) => ({ ...prev, channelId: '' }));
+      fetchEvents();
+      fetchChannels();
+    }
+  }, [guildId]);
+
+  useEffect(() => {
+    if (channels.length > 0) {
+      setFormData((prev) => (prev.channelId ? prev : { ...prev, channelId: channels[0].id }));
+      setBatchData((prev) => (prev.channelId ? prev : { ...prev, channelId: channels[0].id }));
+    }
+  }, [channels]);
+
+  const fetchEvents = async () => {
+    if (!guildId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/guilds/${guildId}/events`);
+      if (!res.ok) throw new Error('Failed to fetch event signups');
+      const data = await res.json();
+      setEvents(data);
+    } catch (err: any) {
+      setError(err.message || 'Error loading event signups');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchChannels = async () => {
+    if (!guildId) return;
+    try {
+      const res = await fetch(`/api/guilds/${guildId}/channels`);
+      if (res.ok) {
+        const data = await res.json();
+        const rawChannels = Array.isArray(data) ? data : data.discordChannels || [];
+        setChannels(rawChannels.filter((c: any) => c.type === 0 || c.type === undefined));
+      }
+    } catch (err) {
+      console.warn('Could not load channels:', err);
+    }
+  };
+
+  const handleCreateEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!guildId || !formData.channelId) {
+      alert('Please select a target Discord channel.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/guilds/${guildId}/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          maxMainTeam: Number(formData.maxMainTeam),
+          maxSubstitutes: Number(formData.maxSubstitutes),
+        }),
+      });
+      if (!res.ok) {
+        const errJson = await res.json();
+        throw new Error(errJson.error || 'Failed to create event');
+      }
+      setShowCreateModal(false);
+      fetchEvents();
+    } catch (err: any) {
+      alert(err.message || 'Failed to create event');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCreateBatch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!guildId || !batchData.channelId) {
+      alert('Please select a target Discord channel.');
+      return;
+    }
+    setIsSubmitting(true);
+
+    try {
+      const generatedEvents = [];
+      let currentHour = batchData.startHour;
+      let currentMin = 0;
+
+      for (let i = 0; i < batchData.count; i++) {
+        const hourStr = String(currentHour).padStart(2, '0');
+        const minStr = String(currentMin).padStart(2, '0');
+        const timeLabel = `${hourStr}:${minStr}`;
+
+        generatedEvents.push({
+          title: `${batchData.baseTitle}`,
+          description: `Register for ${batchData.baseTitle} ${timeLabel}`,
+          maxMainTeam: Number(batchData.maxMainTeam),
+          maxSubstitutes: Number(batchData.maxSubstitutes),
+          channelId: batchData.channelId,
+          embedColor: batchData.embedColor,
+          postNow: true,
+        });
+
+        currentMin += batchData.intervalMinutes;
+        if (currentMin >= 60) {
+          currentHour += Math.floor(currentMin / 60);
+          currentMin = currentMin % 60;
+        }
+      }
+
+      const res = await fetch(`/api/guilds/${guildId}/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ events: generatedEvents }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json();
+        throw new Error(errJson.error || 'Failed to create batch events');
+      }
+
+      setShowBatchModal(false);
+      fetchEvents();
+    } catch (err: any) {
+      alert(err.message || 'Failed to create batch events');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleToggleStatus = async (eventId: string) => {
+    try {
+      const res = await fetch(`/api/guilds/${guildId}/events/${eventId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'toggle_status' }),
+      });
+      if (res.ok) fetchEvents();
+    } catch (err) {
+      console.error('Toggle error:', err);
+    }
+  };
+
+  const handleClearParticipants = async (eventId: string) => {
+    if (!confirm('Are you sure you want to clear all registered Main Team and Substitutes?')) return;
+    try {
+      const res = await fetch(`/api/guilds/${guildId}/events/${eventId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'clear' }),
+      });
+      if (res.ok) fetchEvents();
+    } catch (err) {
+      console.error('Clear error:', err);
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    if (!confirm('Are you sure you want to delete this event signup?')) return;
+    try {
+      const res = await fetch(`/api/guilds/${guildId}/events/${eventId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) fetchEvents();
+    } catch (err) {
+      console.error('Delete error:', err);
+    }
+  };
+
+  if (!guildId) {
+    return (
+      <div className="p-8 text-center text-gray-400">
+        Please select a Discord server from the top bar to manage event signups.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Top Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card border border-border/80 p-6 rounded-2xl shadow-xl">
+        <div>
+          <div className="flex items-center gap-2 text-primary font-bold text-sm tracking-wide uppercase mb-1">
+            <Trophy className="w-4 h-4" />
+            <span>Event Registration System</span>
+          </div>
+          <h1 className="text-2xl font-black text-white">Discord Event & Scrim Signups</h1>
+          <p className="text-sm text-gray-400 mt-1">
+            Create custom event signups, set main roster & substitute limits, and post embeds matching your server theme.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setShowBatchModal(true)}
+            className="border-purple-500/40 text-purple-300 hover:bg-purple-500/10 flex items-center gap-2 font-semibold"
+          >
+            <Layers className="w-4 h-4 text-purple-400" />
+            <span>Batch 8-10 Signups</span>
+          </Button>
+
+          <Button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-primary hover:bg-primary/90 text-white flex items-center gap-2 font-semibold shadow-lg shadow-primary/20"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Create Event Signup</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Loading & Error States */}
+      {loading && (
+        <div className="p-12 text-center text-gray-400 font-medium">Loading event signups...</div>
+      )}
+
+      {error && (
+        <div className="p-4 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl text-sm flex items-center gap-2">
+          <AlertCircle className="w-4 h-4" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* Events Grid */}
+      {!loading && !error && events.length === 0 && (
+        <div className="bg-card border border-dashed border-border/70 p-12 text-center rounded-2xl space-y-4">
+          <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
+            <Trophy className="w-6 h-6" />
+          </div>
+          <h3 className="text-lg font-bold text-white">No Event Signups Found</h3>
+          <p className="text-sm text-gray-400 max-w-md mx-auto">
+            Create your first event signup or generate 8-10 signups at once to let players register from Discord!
+          </p>
+          <div className="flex justify-center gap-3 pt-2">
+            <Button onClick={() => setShowBatchModal(true)} variant="outline">
+              Generate 8-10 Signups
+            </Button>
+            <Button onClick={() => setShowCreateModal(true)}>Create Single Event</Button>
+          </div>
+        </div>
+      )}
+
+      {!loading && events.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {events.map((event) => {
+            const mainParticipants = event.participants.filter((p) => p.roleType === 'MAIN_TEAM');
+            const subParticipants = event.participants.filter((p) => p.roleType === 'SUBSTITUTE');
+
+            const isOpen = event.status === 'OPEN';
+            const isClosed = event.status === 'CLOSED';
+            const isScheduled = event.status === 'SCHEDULED';
+
+            return (
+              <div
+                key={event.id}
+                className="bg-card border border-border/80 rounded-2xl overflow-hidden shadow-lg flex flex-col justify-between hover:border-border transition-all"
+              >
+                {/* Red Border Bar matching Discord Embed design */}
+                <div
+                  className="h-2 w-full"
+                  style={{ backgroundColor: event.embedColor || '#E74C3C' }}
+                />
+
+                <div className="p-5 space-y-4 flex-1">
+                  {/* Title & Status */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <span>📢</span>
+                        <span>{event.title}</span>
+                      </h3>
+                      {event.description && (
+                        <p className="text-xs text-gray-400 mt-0.5">{event.description}</p>
+                      )}
+                    </div>
+
+                    <Badge
+                      variant={isOpen ? 'success' : isScheduled ? 'warning' : 'secondary'}
+                      className="font-bold tracking-wide"
+                    >
+                      {isOpen ? '🟢 OPEN' : isScheduled ? '⏰ SCHEDULED' : '🔒 CLOSED'}
+                    </Badge>
+                  </div>
+
+                  {/* Main Team Section */}
+                  <div className="bg-secondary/40 border border-border/40 p-3.5 rounded-xl space-y-2">
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <span className="text-amber-400 flex items-center gap-1">
+                        🔥 Main Team ({mainParticipants.length}/{event.maxMainTeam})
+                      </span>
+                      <span className="text-gray-500 font-normal">
+                        {Math.round((mainParticipants.length / event.maxMainTeam) * 100)}%
+                      </span>
+                    </div>
+
+                    {mainParticipants.length === 0 ? (
+                      <div className="text-xs text-gray-500 italic">None</div>
+                    ) : (
+                      <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
+                        {mainParticipants.map((p, idx) => (
+                          <div
+                            key={p.id}
+                            className="text-xs text-gray-300 bg-background/60 px-2.5 py-1 rounded flex items-center justify-between"
+                          >
+                            <span className="font-mono text-purple-300">
+                              #{idx + 1} @{p.userTag}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Substitutes Section */}
+                  <div className="bg-secondary/20 border border-border/30 p-3 rounded-xl space-y-2">
+                    <div className="flex items-center justify-between text-xs font-semibold text-gray-300">
+                      <span>🪑 Substitutes ({subParticipants.length}/{event.maxSubstitutes})</span>
+                    </div>
+
+                    {subParticipants.length === 0 ? (
+                      <div className="text-xs text-gray-500 italic">None</div>
+                    ) : (
+                      <div className="space-y-1 max-h-24 overflow-y-auto pr-1">
+                        {subParticipants.map((p, idx) => (
+                          <div
+                            key={p.id}
+                            className="text-xs text-gray-400 bg-background/40 px-2 py-0.5 rounded flex items-center justify-between"
+                          >
+                            <span className="font-mono">Sub #{idx + 1} @{p.userTag}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer Stats */}
+                  <div className="text-[11px] text-gray-500 flex items-center justify-between border-t border-border/40 pt-2">
+                    <span>Target Channel: #{channels.find((c) => c.id === event.channelId)?.name || event.channelId.slice(0, 8)}...</span>
+                    <span>Footer: Hood Rich • Signup</span>
+                  </div>
+                </div>
+
+                {/* Card Action Buttons */}
+                <div className="p-3 bg-secondary/30 border-t border-border/40 flex items-center justify-between gap-2">
+                  <Button
+                    size="sm"
+                    variant={isOpen ? 'danger' : 'outline'}
+                    onClick={() => handleToggleStatus(event.id)}
+                    className="flex-1 text-xs font-semibold"
+                  >
+                    {isOpen ? (
+                      <>
+                        <Lock className="w-3.5 h-3.5 mr-1" /> Close
+                      </>
+                    ) : (
+                      <>
+                        <Unlock className="w-3.5 h-3.5 mr-1" /> Open
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleClearParticipants(event.id)}
+                    title="Clear registered participants"
+                    className="text-xs text-gray-400 hover:text-amber-400"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleDeleteEvent(event.id)}
+                    title="Delete event signup"
+                    className="text-xs text-gray-400 hover:text-red-400"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* CREATE EVENT MODAL */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Plus className="w-5 h-5 text-primary" />
+                <span>Create Event Signup</span>
+              </h3>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-400 hover:text-white text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateEvent} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-1">
+                  Event Name / Title
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="e.g. Informal Signup, T1 Scrims"
+                  className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-1">
+                  Sub-header / Description
+                </label>
+                <input
+                  type="text"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="e.g. Register for Informal 19:40"
+                  className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1">
+                    Main Team Slots (Limit)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={formData.maxMainTeam}
+                    onChange={(e) => setFormData({ ...formData, maxMainTeam: Number(e.target.value) })}
+                    className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1">
+                    Substitutes Limit
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={50}
+                    value={formData.maxSubstitutes}
+                    onChange={(e) => setFormData({ ...formData, maxSubstitutes: Number(e.target.value) })}
+                    className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-1">
+                  Target Discord Channel
+                </label>
+                {channels.length > 0 ? (
+                  <select
+                    required
+                    value={formData.channelId}
+                    onChange={(e) => setFormData({ ...formData, channelId: e.target.value })}
+                    className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                  >
+                    <option value="">-- Select Channel --</option>
+                    {channels.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        #{c.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    required
+                    value={formData.channelId}
+                    onChange={(e) => setFormData({ ...formData, channelId: e.target.value })}
+                    placeholder="Enter Discord Channel ID"
+                    className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                  />
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-1">
+                  Embed Color (Hex)
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={formData.embedColor}
+                    onChange={(e) => setFormData({ ...formData, embedColor: e.target.value })}
+                    className="w-10 h-10 rounded border-0 bg-transparent cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={formData.embedColor}
+                    onChange={(e) => setFormData({ ...formData, embedColor: e.target.value })}
+                    className="flex-1 bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-border">
+                <Button variant="outline" type="button" onClick={() => setShowCreateModal(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Creating...' : 'Create & Send Embed'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* BATCH 8-10 EVENTS MODAL */}
+      {showBatchModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Layers className="w-5 h-5 text-purple-400" />
+                <span>Batch Generate 8-10 Event Signups</span>
+              </h3>
+              <button
+                onClick={() => setShowBatchModal(false)}
+                className="text-gray-400 hover:text-white text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateBatch} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-1">
+                  Base Event Title
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={batchData.baseTitle}
+                  onChange={(e) => setBatchData({ ...batchData, baseTitle: e.target.value })}
+                  placeholder="Informal Signup"
+                  className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1">
+                    Start Hour (24h)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={23}
+                    value={batchData.startHour}
+                    onChange={(e) => setBatchData({ ...batchData, startHour: Number(e.target.value) })}
+                    className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1">
+                    Gap (Minutes)
+                  </label>
+                  <input
+                    type="number"
+                    min={10}
+                    max={120}
+                    value={batchData.intervalMinutes}
+                    onChange={(e) => setBatchData({ ...batchData, intervalMinutes: Number(e.target.value) })}
+                    className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1">
+                    Number of Events
+                  </label>
+                  <input
+                    type="number"
+                    min={2}
+                    max={15}
+                    value={batchData.count}
+                    onChange={(e) => setBatchData({ ...batchData, count: Number(e.target.value) })}
+                    className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1">
+                    Main Slots per Event
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={batchData.maxMainTeam}
+                    onChange={(e) => setBatchData({ ...batchData, maxMainTeam: Number(e.target.value) })}
+                    className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1">
+                    Subs per Event
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={20}
+                    value={batchData.maxSubstitutes}
+                    onChange={(e) => setBatchData({ ...batchData, maxSubstitutes: Number(e.target.value) })}
+                    className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-1">
+                  Target Discord Channel
+                </label>
+                {channels.length > 0 ? (
+                  <select
+                    required
+                    value={batchData.channelId}
+                    onChange={(e) => setBatchData({ ...batchData, channelId: e.target.value })}
+                    className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                  >
+                    <option value="">-- Select Channel --</option>
+                    {channels.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        #{c.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    required
+                    value={batchData.channelId}
+                    onChange={(e) => setBatchData({ ...batchData, channelId: e.target.value })}
+                    placeholder="Enter Discord Channel ID"
+                    className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                  />
+                )}
+              </div>
+
+              <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-xl text-xs text-purple-300">
+                ⚡ Will generate <strong>{batchData.count}</strong> events starting from{' '}
+                <strong>{String(batchData.startHour).padStart(2, '0')}:00</strong> with a{' '}
+                <strong>{batchData.intervalMinutes}m</strong> gap (e.g., Informal 18:00, Informal 18:30...).
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-border">
+                <Button variant="outline" type="button" onClick={() => setShowBatchModal(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting} className="bg-purple-600 hover:bg-purple-700">
+                  {isSubmitting ? 'Generating...' : `Generate ${batchData.count} Signups`}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -15,11 +15,13 @@ import {
   ScrollText,
   User,
   Zap,
+  Trophy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Event Signups', href: '/events', icon: Trophy },
   { name: 'Applications', href: '/applications', icon: ClipboardList },
   { name: 'Roles', href: '/roles', icon: ShieldCheck },
   { name: 'Channels', href: '/channels', icon: Hash },
