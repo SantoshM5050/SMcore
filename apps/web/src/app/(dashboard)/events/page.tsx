@@ -155,8 +155,15 @@ export default function EventSignupsPage() {
         }),
       });
       if (!res.ok) {
-        const errJson = await res.json();
-        throw new Error(errJson.error || 'Failed to create event');
+        const text = await res.text();
+        let errMsg = 'Failed to create event';
+        try {
+          const errJson = JSON.parse(text);
+          errMsg = errJson.error || errMsg;
+        } catch {
+          errMsg = text || errMsg;
+        }
+        throw new Error(errMsg);
       }
       setShowCreateModal(false);
       fetchEvents();
@@ -209,8 +216,15 @@ export default function EventSignupsPage() {
       });
 
       if (!res.ok) {
-        const errJson = await res.json();
-        throw new Error(errJson.error || 'Failed to create batch events');
+        const text = await res.text();
+        let errMsg = 'Failed to create batch events';
+        try {
+          const errJson = JSON.parse(text);
+          errMsg = errJson.error || errMsg;
+        } catch {
+          errMsg = text || errMsg;
+        }
+        throw new Error(errMsg);
       }
 
       setShowBatchModal(false);
