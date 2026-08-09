@@ -6,9 +6,40 @@ import { onReady } from './events/ready';
 import { onInteractionCreate } from './events/interactionCreate';
 import { onGuildCreate } from './events/guildCreate';
 
+let lastLoginError: string | null = null;
+let isLoggingIn = false;
 const PORT = Number(process.env.PORT || process.env.BOT_PORT) || 3001;
 
-let lastLoginError: string | null = null;
+function doLogin() {
+  const token = (process.env.DISCORD_BOT_TOKEN || config.token || '').trim();
+  if (!token) {
+    lastLoginError = 'DISCORD_BOT_TOKEN is missing or empty in process.env';
+    console.warn('⚠️ Bot started without token. Skipping login until DISCORD_BOT_TOKEN is set.');
+    return;
+  }
+
+  if (botClient.isReady() || isLoggingIn) {
+    return;
+  }
+
+  isLoggingIn = true;
+  console.log(`🔑 Attempting to log in to Discord API (Token length: ${token.length})...`);
+
+  botClient
+    .login(token)
+    .then(() => {
+      isLoggingIn = false;
+      lastLoginError = null;
+      console.log('✅ botClient.login() promise resolved.');
+    })
+    .catch((err: any) => {
+      isLoggingIn = false;
+      lastLoginError = err.message || String(err);
+      console.error('❌ Failed to log in to Discord API:', lastLoginError);
+      console.log('🔄 Will retry logging in to Discord in 15 seconds...');
+      setTimeout(doLogin, 15000);
+    });
+}
 
 const server = http.createServer((req, res) => {
   const urlRaw = req.url || '/';
@@ -33,15 +64,23 @@ const server = http.createServer((req, res) => {
         return;
       }
 
+      const token = (process.env.DISCORD_BOT_TOKEN || config.token || '').trim();
       const isReady = botClient.isReady();
+      const wsStatus = botClient.ws ? botClient.ws.status : -1;
+
+      // If disconnected and not currently logging in, attempt login
+      if (!isReady && !isLoggingIn && token) {
+        doLogin();
+      }
+
       let discordReason = isReady ? 'Connected' : 'Not Connected';
       if (!isReady) {
-        if (!config.token) {
+        if (!token) {
           discordReason = 'DISCORD_BOT_TOKEN environment variable is missing in Render settings';
         } else if (lastLoginError) {
           discordReason = `Login failed: ${lastLoginError}`;
         } else {
-          discordReason = 'Login in progress or connection dropped';
+          discordReason = `Gateway status: ${wsStatus} (0=Ready, 1=Connecting, 5=Disconnected)`;
         }
       }
 
@@ -51,6 +90,11 @@ const server = http.createServer((req, res) => {
           service: 'SMCore Bot',
           discord: isReady,
           discordReason,
+          tokenConfigured: Boolean(token),
+          tokenLength: token.length,
+          tokenPrefix: token ? token.substring(0, 10) + '...' : 'NONE',
+          wsStatus,
+          lastError: lastLoginError,
           uptime: Math.floor(process.uptime()),
           timestamp: new Date().toISOString(),
         })
@@ -88,17 +132,20 @@ botClient.once(Events.ClientReady, onReady);
 botClient.on(Events.InteractionCreate, onInteractionCreate);
 botClient.on(Events.GuildCreate, onGuildCreate);
 
-botClient.on(Events.Error, (error) => {
+botClient.on(Events.Error, (error: any) => {
   console.error('🔴 Discord Client Error:', error);
-  lastLoginError = error.message;
+  lastLoginError = error.message || String(error);
 });
 
-botClient.on(Events.ShardDisconnect, (event, id) => {
-  console.warn(`⚠️ Discord Shard ${id} disconnected (code: ${event.code}):`, event.reason);
-  lastLoginError = `Shard ${id} disconnected (code ${event.code}: ${event.reason || 'Unknown'})`;
+botClient.on(Events.ShardDisconnect, (event: any, id: number) => {
+  const reason = event ? event.reason || `code ${event.code}` : 'Unknown';
+  console.warn(`⚠️ Discord Shard ${id} disconnected: ${reason}`);
+  lastLoginError = `Shard ${id} disconnected (${reason})`;
+  isLoggingIn = false;
+  setTimeout(doLogin, 5000);
 });
 
-botClient.on(Events.ShardReconnecting, (id) => {
+botClient.on(Events.ShardReconnecting, (id: number) => {
   console.log(`🔄 Discord Shard ${id} reconnecting...`);
 });
 
@@ -121,20 +168,6 @@ const gracefulShutdown = (signal: string) => {
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-function doLogin() {
-  if (!config.token) {
-    console.warn('⚠️ Bot started without token. Skipping login until DISCORD_BOT_TOKEN is set.');
-    return;
-  }
-  console.log('🔑 Attempting to log in to Discord API...');
-  botClient.login(config.token).catch((err) => {
-    lastLoginError = err.message;
-    console.error('❌ Failed to log in to Discord API:', err.message);
-    console.log('🔄 Will retry logging in to Discord in 30 seconds...');
-    setTimeout(doLogin, 30000);
-  });
-}
 
 doLogin();
 
