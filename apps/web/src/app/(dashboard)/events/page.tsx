@@ -86,6 +86,7 @@ export default function EventSignupsPage() {
     dailyTime1: '18:00',
     dailyTime2: '20:00',
     dailyTime3: '22:00',
+    customDailyTimeSlots: '18:00, 20:00, 22:00',
     postNow: true,
   });
 
@@ -165,8 +166,8 @@ export default function EventSignupsPage() {
         if (formData.recurringType === 'interval') {
           recurringIntervalHours = Number(formData.recurringIntervalHours) || 1;
         } else {
-          const times = [formData.dailyTime1, formData.dailyTime2, formData.dailyTime3].filter(Boolean);
-          dailyTimeSlots = times.join(',');
+          dailyTimeSlots = formData.customDailyTimeSlots.trim()
+            || [formData.dailyTime1, formData.dailyTime2, formData.dailyTime3].filter(Boolean).join(',');
         }
       }
 
@@ -225,13 +226,15 @@ export default function EventSignupsPage() {
         const timeLabel = `${hourStr}:${minStr}`;
 
         generatedEvents.push({
-          title: `${batchData.baseTitle}`,
+          title: `${batchData.baseTitle} ${timeLabel}`,
           description: `Register for ${batchData.baseTitle} ${timeLabel}`,
           maxMainTeam: Number(batchData.maxMainTeam),
           maxSubstitutes: Number(batchData.maxSubstitutes),
           channelId: batchData.channelId,
           embedColor: batchData.embedColor,
           autoCloseMinutes: Number(batchData.autoCloseMinutes),
+          isRecurring: true,
+          dailyTimeSlots: timeLabel,
           postNow: true,
         });
 
@@ -804,29 +807,19 @@ export default function EventSignupsPage() {
                         </select>
                       </div>
                     ) : (
-                      <div className="space-y-1.5">
-                        <label className="block text-[11px] text-gray-400">
-                          Daily Times (Har roz in exact samay par send hoga):
+                      <div className="space-y-2">
+                        <label className="block text-[11px] text-gray-300 font-medium">
+                          Custom Daily Times (Aap jitne chahe utne time daal sakte hain, comma-separated):
                         </label>
-                        <div className="grid grid-cols-3 gap-2">
-                          <input
-                            type="time"
-                            value={formData.dailyTime1}
-                            onChange={(e) => setFormData({ ...formData, dailyTime1: e.target.value })}
-                            className="bg-secondary border border-border rounded px-2 py-1 text-xs text-white text-center font-mono"
-                          />
-                          <input
-                            type="time"
-                            value={formData.dailyTime2}
-                            onChange={(e) => setFormData({ ...formData, dailyTime2: e.target.value })}
-                            className="bg-secondary border border-border rounded px-2 py-1 text-xs text-white text-center font-mono"
-                          />
-                          <input
-                            type="time"
-                            value={formData.dailyTime3}
-                            onChange={(e) => setFormData({ ...formData, dailyTime3: e.target.value })}
-                            className="bg-secondary border border-border rounded px-2 py-1 text-xs text-white text-center font-mono"
-                          />
+                        <input
+                          type="text"
+                          value={formData.customDailyTimeSlots}
+                          onChange={(e) => setFormData({ ...formData, customDailyTimeSlots: e.target.value })}
+                          placeholder="e.g. 18:00, 18:30, 19:00, 19:30, 20:00, 21:00"
+                          className="w-full bg-secondary border border-border rounded px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-purple-500"
+                        />
+                        <div className="text-[10px] text-gray-400">
+                          Format: HH:MM (24-hour time e.g., 18:00, 20:00, 22:30). Bot daily exact in samay par auto-post karega.
                         </div>
                       </div>
                     )}
