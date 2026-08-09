@@ -12,13 +12,15 @@ export async function onInteractionCreate(interaction: Interaction) {
     } else if (interaction.isModalSubmit()) {
       await handleModalInteraction(interaction);
     }
-  } catch (error) {
-    console.error('Unhandled interaction error:', error);
-    if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
-      await interaction.reply({
-        content: 'An unexpected internal error occurred while processing your request.',
-        ephemeral: true,
-      });
+  } catch (error: any) {
+    console.error('[Interaction] Unhandled interaction error:', error);
+    if (interaction.isRepliable()) {
+      const message = `❌ An error occurred: ${error?.message || 'Internal server error'}`;
+      if (interaction.deferred || interaction.replied) {
+        await interaction.followUp({ content: message, ephemeral: true }).catch(() => null);
+      } else {
+        await interaction.reply({ content: message, ephemeral: true }).catch(() => null);
+      }
     }
   }
 }
