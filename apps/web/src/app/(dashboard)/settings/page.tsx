@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Switch } from '@/components/ui/Switch';
-import { Settings as SettingsIcon, Save, Check } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Check, Database } from 'lucide-react';
 
 export default function SettingsPage() {
   const searchParams = useSearchParams();
@@ -86,12 +86,53 @@ export default function SettingsPage() {
     setTimeout(() => setSaved(false), 3000);
   };
 
+  const [syncingDb, setSyncingDb] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
+  const handleSyncDb = async () => {
+    setSyncingDb(true);
+    setSyncMessage(null);
+    try {
+      const res = await fetch('/api/admin/db-push');
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSyncMessage('✅ Production Database Schema synced successfully!');
+      } else {
+        setSyncMessage(`❌ ${data.error || 'Failed to sync database.'}`);
+      }
+    } catch (err: any) {
+      setSyncMessage(`❌ Error: ${err.message}`);
+    } finally {
+      setSyncingDb(false);
+      setTimeout(() => setSyncMessage(null), 6000);
+    }
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">Guild Platform Settings</h1>
-        <p className="text-sm text-gray-400 mt-1">Configure global application behaviors, screenshots, and automated notifications.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/40 pb-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">Guild Platform Settings</h1>
+          <p className="text-sm text-gray-400 mt-1">Configure global application behaviors, screenshots, and automated notifications.</p>
+        </div>
+        <div className="flex flex-col items-start sm:items-end">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleSyncDb}
+            disabled={syncingDb}
+            className="text-xs gap-2 border border-purple-500/30 hover:border-purple-500/60"
+          >
+            <Database className="w-4 h-4 text-purple-400" />
+            {syncingDb ? 'Syncing Schema...' : 'Sync Production Database'}
+          </Button>
+          {syncMessage && (
+            <div className={`text-xs font-semibold mt-1.5 ${syncMessage.startsWith('✅') ? 'text-emerald-400' : 'text-rose-400'}`}>
+              {syncMessage}
+            </div>
+          )}
+        </div>
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">
