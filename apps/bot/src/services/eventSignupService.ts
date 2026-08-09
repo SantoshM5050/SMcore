@@ -138,10 +138,11 @@ export class EventSignupService {
 
     if (!message) {
       let pingContent: string | undefined = undefined;
-      if (signup.pingRoleId) {
-        if (signup.pingRoleId === 'everyone' || signup.pingRoleId === '@everyone') pingContent = '@everyone';
-        else if (signup.pingRoleId === 'here' || signup.pingRoleId === '@here') pingContent = '@here';
-        else pingContent = `<@&${signup.pingRoleId}>`;
+      const pingRoleId = (signup as any)?.pingRoleId;
+      if (pingRoleId) {
+        if (pingRoleId === 'everyone' || pingRoleId === '@everyone') pingContent = '@everyone';
+        else if (pingRoleId === 'here' || pingRoleId === '@here') pingContent = '@here';
+        else pingContent = `<@&${pingRoleId}>`;
       }
 
       message = await channel.send({ content: pingContent, embeds: [embed], components: [actionRow] });

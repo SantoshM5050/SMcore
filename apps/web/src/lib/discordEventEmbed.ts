@@ -101,10 +101,11 @@ export async function sendOrUpdateEventDiscordEmbed(eventId: string) {
   }
 
   let pingText: string | undefined = undefined;
-  if (event.pingRoleId) {
-    if (event.pingRoleId === 'everyone' || event.pingRoleId === '@everyone') pingText = '@everyone';
-    else if (event.pingRoleId === 'here' || event.pingRoleId === '@here') pingText = '@here';
-    else pingText = `<@&${event.pingRoleId}>`;
+  const pingRoleId = (event as any)?.pingRoleId;
+  if (pingRoleId) {
+    if (pingRoleId === 'everyone' || pingRoleId === '@everyone') pingText = '@everyone';
+    else if (pingRoleId === 'here' || pingRoleId === '@here') pingText = '@here';
+    else pingText = `<@&${pingRoleId}>`;
   }
 
   let res = await fetch(targetUrl, {

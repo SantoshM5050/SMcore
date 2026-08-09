@@ -133,11 +133,11 @@ export class ApplicationService {
         });
 
         let staffPingContent: string | undefined = undefined;
-
-        if (settings?.reviewPingRoleId) {
-          if (settings.reviewPingRoleId === 'everyone' || settings.reviewPingRoleId === '@everyone') staffPingContent = '@everyone';
-          else if (settings.reviewPingRoleId === 'here' || settings.reviewPingRoleId === '@here') staffPingContent = '@here';
-          else staffPingContent = `<@&${settings.reviewPingRoleId}>`;
+        const reviewPingRoleId = (settings as any)?.reviewPingRoleId;
+        if (reviewPingRoleId) {
+          if (reviewPingRoleId === 'everyone' || reviewPingRoleId === '@everyone') staffPingContent = '@everyone';
+          else if (reviewPingRoleId === 'here' || reviewPingRoleId === '@here') staffPingContent = '@here';
+          else staffPingContent = `<@&${reviewPingRoleId}>`;
         } else {
           // Fallback to pinging all configured staff permission roles
           const staffRoles = await prisma.staffPermission.findMany({
