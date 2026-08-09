@@ -581,8 +581,8 @@ export default function EventSignupsPage() {
 
       {/* CREATE EVENT MODAL */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Plus className="w-5 h-5 text-primary" />
@@ -878,8 +878,8 @@ export default function EventSignupsPage() {
 
       {/* BATCH 8-10 EVENTS MODAL */}
       {showBatchModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Layers className="w-5 h-5 text-purple-400" />
