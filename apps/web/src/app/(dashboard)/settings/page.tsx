@@ -28,15 +28,18 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (!guildId) return;
+    if (!guildId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     
     Promise.all([
-      fetch(`/api/guilds/${guildId}/settings`).then((res) => res.json()),
+      fetch(`/api/guilds/${guildId}/settings`).then((res) => res.json()).catch(() => null),
       fetch(`/api/guilds/${guildId}/roles`).then((res) => res.json()).catch(() => []),
     ])
       .then(([settingsData, rolesData]) => {
-        if (settingsData) {
+        if (settingsData && !settingsData.error) {
           setCooldownMinutes(settingsData.cooldownMinutes ?? 5);
           setAutoDmEnabled(settingsData.autoDmEnabled ?? true);
           setLoggingEnabled(settingsData.loggingEnabled ?? true);
