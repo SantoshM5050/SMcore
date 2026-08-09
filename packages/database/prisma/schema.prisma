@@ -67,6 +67,7 @@ model GuildSettings {
   timezone           String   @default("UTC")
   language           String   @default("en")
   commonRoleId       String?
+  reviewPingRoleId   String?
   updatedAt          DateTime @updatedAt
 
   guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)

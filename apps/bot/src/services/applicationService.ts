@@ -127,14 +127,27 @@ export class ApplicationService {
         const reviewEmbed = EmbedService.buildReviewEmbed(application);
         const components = EmbedService.buildReviewButtons(application.id, ApplicationStatus.PENDING);
 
-        // Fetch staff roles to auto-ping them for review notification
-        const staffRoles = await prisma.staffPermission.findMany({
+        // Check if explicit reviewPingRoleId is configured in GuildSettings
+        const settings = await prisma.guildSettings.findUnique({
           where: { guildId: data.guildId },
         });
 
-        const staffPingContent = staffRoles.length > 0
-          ? staffRoles.map((s) => `<@&${s.roleId}>`).join(' ')
-          : undefined;
+        let staffPingContent: string | undefined = undefined;
+
+        if (settings?.reviewPingRoleId) {
+          if (settings.reviewPingRoleId === 'everyone' || settings.reviewPingRoleId === '@everyone') staffPingContent = '@everyone';
+          else if (settings.reviewPingRoleId === 'here' || settings.reviewPingRoleId === '@here') staffPingContent = '@here';
+          else staffPingContent = `<@&${settings.reviewPingRoleId}>`;
+        } else {
+          // Fallback to pinging all configured staff permission roles
+          const staffRoles = await prisma.staffPermission.findMany({
+            where: { guildId: data.guildId },
+          });
+
+          if (staffRoles.length > 0) {
+            staffPingContent = staffRoles.map((s) => `<@&${s.roleId}>`).join(' ');
+          }
+        }
 
         const msg = await reviewChannel.send({
           content: staffPingContent,

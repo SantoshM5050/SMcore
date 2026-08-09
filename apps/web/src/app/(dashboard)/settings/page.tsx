@@ -22,6 +22,7 @@ export default function SettingsPage() {
   const [timezone, setTimezone] = useState('UTC');
   const [language, setLanguage] = useState('en');
   const [commonRoleId, setCommonRoleId] = useState<string>('');
+  const [reviewPingRoleId, setReviewPingRoleId] = useState('');
   const [roles, setRoles] = useState<{ roleId: string; roleName: string }[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -50,6 +51,7 @@ export default function SettingsPage() {
           setTimezone(settingsData.timezone || 'UTC');
           setLanguage(settingsData.language || 'en');
           setCommonRoleId(settingsData.commonRoleId || '');
+          setReviewPingRoleId(settingsData.reviewPingRoleId || '');
         }
         if (Array.isArray(rolesData)) {
           setRoles(rolesData);
@@ -76,6 +78,7 @@ export default function SettingsPage() {
         timezone,
         language,
         commonRoleId: commonRoleId || null,
+        reviewPingRoleId: reviewPingRoleId || null,
       }),
     });
 
@@ -164,6 +167,29 @@ export default function SettingsPage() {
                   {roles.map((r) => (
                     <option key={r.roleId} value={r.roleId}>
                       {r.roleName} ({r.roleId})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="pt-4 space-y-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
+                  Role Application Review Ping (Optional)
+                </label>
+                <p className="text-xs text-gray-500 mb-2">
+                  Select a role (or @everyone / @here) to automatically ping in the review channel whenever a user submits a role application.
+                </p>
+                <select
+                  value={reviewPingRoleId}
+                  onChange={(e) => setReviewPingRoleId(e.target.value)}
+                  className="w-full bg-input border border-border rounded-lg px-3.5 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">-- Auto-ping all configured Staff Roles --</option>
+                  <option value="everyone">@everyone</option>
+                  <option value="here">@here</option>
+                  {roles.map((r) => (
+                    <option key={r.roleId} value={r.roleId}>
+                      @{r.roleName} ({r.roleId})
                     </option>
                   ))}
                 </select>

@@ -16,6 +16,7 @@ const settingsSchema = z.object({
   timezone: z.string(),
   language: z.string(),
   commonRoleId: z.string().nullable().optional(),
+  reviewPingRoleId: z.string().nullable().optional(),
 });
 
 export async function GET(request: Request, { params }: { params: { guildId: string } }) {
