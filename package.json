@@ -18,6 +18,7 @@
     "build:db": "npm run build --workspace=packages/database",
     "build:web": "npm run build --workspace=apps/web",
     "build:bot": "npm run build --workspace=apps/bot",
+    "build:render:bot": "npm run build:db && npm run build:bot",
     "start:web": "npm run start --workspace=apps/web",
     "start:bot": "npm run start --workspace=apps/bot",
     "start": "node scripts/start-all.js",
