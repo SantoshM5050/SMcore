@@ -18,26 +18,36 @@ function doLogin() {
     return;
   }
 
-  if (botClient.isReady() || isLoggingIn) {
+  if (botClient.isReady()) {
+    return;
+  }
+
+  if (isLoggingIn) {
+    console.log('⏳ Login attempt already in progress...');
     return;
   }
 
   isLoggingIn = true;
   console.log(`🔑 Attempting to log in to Discord API (Token length: ${token.length})...`);
 
+  // Safety fallback: reset isLoggingIn flag after 10 seconds if ready event didn't fire
+  setTimeout(() => {
+    if (!botClient.isReady()) {
+      isLoggingIn = false;
+    }
+  }, 10000);
+
   botClient
     .login(token)
     .then(() => {
       isLoggingIn = false;
       lastLoginError = null;
-      console.log('✅ botClient.login() promise resolved.');
+      console.log('✅ botClient.login() promise resolved successfully.');
     })
     .catch((err: any) => {
       isLoggingIn = false;
       lastLoginError = err.message || String(err);
       console.error('❌ Failed to log in to Discord API:', lastLoginError);
-      console.log('🔄 Will retry logging in to Discord in 15 seconds...');
-      setTimeout(doLogin, 15000);
     });
 }
 
