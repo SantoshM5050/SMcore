@@ -5,10 +5,10 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "npx prisma generate && tsc",
-    "generate": "npx prisma generate",
-    "db:push": "npx prisma db push",
-    "seed": "npx tsx prisma/seed.ts"
+    "build": "prisma generate && tsc",
+    "generate": "prisma generate",
+    "db:push": "prisma db push",
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.9.1",
