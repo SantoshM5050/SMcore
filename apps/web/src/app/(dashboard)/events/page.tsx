@@ -45,6 +45,8 @@ interface EventSignup {
   closeAt: string | null;
   autoCloseMinutes: number | null;
   isRecurring: boolean;
+  recurringIntervalHours: number | null;
+  dailyTimeSlots: string | null;
   embedColor: string;
   status: 'SCHEDULED' | 'OPEN' | 'CLOSED' | 'COMPLETED' | 'CANCELLED';
   createdAt: string;
@@ -78,6 +80,12 @@ export default function EventSignupsPage() {
     embedColor: '#E74C3C',
     scheduledAt: '',
     autoCloseMinutes: 30,
+    scheduleType: 'now' as 'now' | 'scheduled' | 'recurring',
+    recurringType: 'interval' as 'interval' | 'daily_slots',
+    recurringIntervalHours: 1,
+    dailyTime1: '18:00',
+    dailyTime2: '20:00',
+    dailyTime3: '22:00',
     postNow: true,
   });
 
@@ -149,6 +157,21 @@ export default function EventSignupsPage() {
     }
     setIsSubmitting(true);
     try {
+      const isRecurring = formData.scheduleType === 'recurring';
+      let recurringIntervalHours: number | null = null;
+      let dailyTimeSlots: string | null = null;
+
+      if (isRecurring) {
+        if (formData.recurringType === 'interval') {
+          recurringIntervalHours = Number(formData.recurringIntervalHours) || 1;
+        } else {
+          const times = [formData.dailyTime1, formData.dailyTime2, formData.dailyTime3].filter(Boolean);
+          dailyTimeSlots = times.join(',');
+        }
+      }
+
+      const postNow = formData.scheduleType === 'now';
+
       const res = await fetch(`/api/guilds/${guildId}/events`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -157,6 +180,10 @@ export default function EventSignupsPage() {
           maxMainTeam: Number(formData.maxMainTeam),
           maxSubstitutes: Number(formData.maxSubstitutes),
           autoCloseMinutes: Number(formData.autoCloseMinutes),
+          isRecurring,
+          recurringIntervalHours,
+          dailyTimeSlots,
+          postNow,
         }),
       });
       if (!res.ok) {
@@ -449,7 +476,7 @@ export default function EventSignupsPage() {
                   </div>
 
                   {/* Schedule & Timing Badges */}
-                  {(event.scheduledAt || event.closeAt) && (
+                  {(event.scheduledAt || event.closeAt || event.isRecurring) && (
                     <div className="bg-purple-500/10 border border-purple-500/30 p-2 rounded-lg text-xs space-y-1 text-purple-300 font-medium">
                       {event.scheduledAt && isScheduled && (
                         <div className="flex items-center gap-1.5">
@@ -457,6 +484,21 @@ export default function EventSignupsPage() {
                           <span>Agli baar send hoga: <strong>{new Date(event.scheduledAt).toLocaleString()}</strong></span>
                         </div>
                       )}
+
+                      {event.isRecurring && event.recurringIntervalHours && (
+                        <div className="flex items-center gap-1.5 text-purple-300">
+                          <Clock className="w-3.5 h-3.5 text-purple-400" />
+                          <span>Auto-Repeat: <strong>Har {event.recurringIntervalHours} ghnte me send hoga</strong></span>
+                        </div>
+                      )}
+
+                      {event.isRecurring && event.dailyTimeSlots && (
+                        <div className="flex items-center gap-1.5 text-purple-300">
+                          <Clock className="w-3.5 h-3.5 text-purple-400" />
+                          <span>Daily Times: <strong>{event.dailyTimeSlots.split(',').join(' | ')} (Har roz)</strong></span>
+                        </div>
+                      )}
+
                       {event.closeAt && (
                         <div className="flex items-center gap-1.5 text-gray-300">
                           <Lock className="w-3.5 h-3.5 text-red-400" />
@@ -663,43 +705,131 @@ export default function EventSignupsPage() {
                 <label className="block text-xs font-bold uppercase tracking-wider text-purple-300">
                   ⏰ Posting Schedule & Auto-Timing
                 </label>
-                
-                <div className="flex items-center gap-4 text-xs">
-                  <label className="flex items-center gap-1.5 cursor-pointer font-medium text-gray-200">
-                    <input
-                      type="radio"
-                      name="postMode"
-                      checked={formData.postNow}
-                      onChange={() => setFormData({ ...formData, postNow: true })}
-                      className="accent-primary"
-                    />
-                    <span>🚀 Post Immediately</span>
-                  </label>
 
-                  <label className="flex items-center gap-1.5 cursor-pointer font-medium text-gray-200">
-                    <input
-                      type="radio"
-                      name="postMode"
-                      checked={!formData.postNow}
-                      onChange={() => setFormData({ ...formData, postNow: false })}
-                      className="accent-primary"
-                    />
-                    <span>⏰ Schedule Date & Time</span>
-                  </label>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, scheduleType: 'now', postNow: true })}
+                    className={`px-2.5 py-2 rounded-lg font-medium border text-center transition-all ${
+                      formData.scheduleType === 'now'
+                        ? 'bg-primary text-white border-primary shadow-md shadow-primary/20'
+                        : 'bg-secondary/60 text-gray-300 border-border hover:bg-secondary'
+                    }`}
+                  >
+                    🚀 Post Now
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, scheduleType: 'scheduled', postNow: false })}
+                    className={`px-2.5 py-2 rounded-lg font-medium border text-center transition-all ${
+                      formData.scheduleType === 'scheduled'
+                        ? 'bg-primary text-white border-primary shadow-md shadow-primary/20'
+                        : 'bg-secondary/60 text-gray-300 border-border hover:bg-secondary'
+                    }`}
+                  >
+                    ⏰ One-Time Time
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, scheduleType: 'recurring', postNow: true })}
+                    className={`px-2.5 py-2 rounded-lg font-medium border text-center transition-all ${
+                      formData.scheduleType === 'recurring'
+                        ? 'bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-600/20'
+                        : 'bg-secondary/60 text-gray-300 border-border hover:bg-secondary'
+                    }`}
+                  >
+                    🔄 Auto Repeat
+                  </button>
                 </div>
 
-                {!formData.postNow && (
-                  <div className="pt-1">
-                    <label className="block text-[11px] text-gray-400 mb-1 font-medium">
+                {formData.scheduleType === 'scheduled' && (
+                  <div className="pt-1 space-y-1">
+                    <label className="block text-[11px] text-gray-300 font-medium">
                       Select Date & Time (Agli baar kab send hoga):
                     </label>
                     <input
                       type="datetime-local"
-                      required={!formData.postNow}
+                      required
                       value={formData.scheduledAt}
                       onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
                       className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-primary"
                     />
+                  </div>
+                )}
+
+                {formData.scheduleType === 'recurring' && (
+                  <div className="pt-1 space-y-3">
+                    <div className="flex items-center gap-4 text-xs">
+                      <label className="flex items-center gap-1.5 cursor-pointer text-gray-200">
+                        <input
+                          type="radio"
+                          name="recurringType"
+                          checked={formData.recurringType === 'interval'}
+                          onChange={() => setFormData({ ...formData, recurringType: 'interval' })}
+                          className="accent-purple-500"
+                        />
+                        <span>Repeat Every N Hours</span>
+                      </label>
+
+                      <label className="flex items-center gap-1.5 cursor-pointer text-gray-200">
+                        <input
+                          type="radio"
+                          name="recurringType"
+                          checked={formData.recurringType === 'daily_slots'}
+                          onChange={() => setFormData({ ...formData, recurringType: 'daily_slots' })}
+                          className="accent-purple-500"
+                        />
+                        <span>Daily Fixed Time Slots</span>
+                      </label>
+                    </div>
+
+                    {formData.recurringType === 'interval' ? (
+                      <div>
+                        <label className="block text-[11px] text-gray-400 mb-1">
+                          Select Interval:
+                        </label>
+                        <select
+                          value={formData.recurringIntervalHours}
+                          onChange={(e) => setFormData({ ...formData, recurringIntervalHours: Number(e.target.value) })}
+                          className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500"
+                        >
+                          <option value={1}>Every 1 Hour (Hourly)</option>
+                          <option value={2}>Every 2 Hours</option>
+                          <option value={4}>Every 4 Hours</option>
+                          <option value={6}>Every 6 Hours</option>
+                          <option value={12}>Every 12 Hours</option>
+                          <option value={24}>Every 24 Hours (Daily)</option>
+                        </select>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <label className="block text-[11px] text-gray-400">
+                          Daily Times (Har roz in exact samay par send hoga):
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                          <input
+                            type="time"
+                            value={formData.dailyTime1}
+                            onChange={(e) => setFormData({ ...formData, dailyTime1: e.target.value })}
+                            className="bg-secondary border border-border rounded px-2 py-1 text-xs text-white text-center font-mono"
+                          />
+                          <input
+                            type="time"
+                            value={formData.dailyTime2}
+                            onChange={(e) => setFormData({ ...formData, dailyTime2: e.target.value })}
+                            className="bg-secondary border border-border rounded px-2 py-1 text-xs text-white text-center font-mono"
+                          />
+                          <input
+                            type="time"
+                            value={formData.dailyTime3}
+                            onChange={(e) => setFormData({ ...formData, dailyTime3: e.target.value })}
+                            className="bg-secondary border border-border rounded px-2 py-1 text-xs text-white text-center font-mono"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

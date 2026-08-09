@@ -19,6 +19,7 @@ const createEventSchema = z.object({
   autoCloseMinutes: z.number().int().nullable().optional(),
   isRecurring: z.boolean().optional().default(false),
   recurringIntervalHours: z.number().int().nullable().optional(),
+  dailyTimeSlots: z.string().nullable().optional(),
   postNow: z.boolean().optional().default(true),
 });
 
@@ -96,6 +97,8 @@ export async function POST(request: Request, { params }: { params: { guildId: st
             autoCloseMinutes: item.autoCloseMinutes || null,
             isRecurring: item.isRecurring ?? false,
             recurringIntervalHours: item.recurringIntervalHours || null,
+            dailyTimeSlots: item.dailyTimeSlots || null,
+            lastPostedAt: initialStatus === EventSignupStatus.OPEN ? new Date() : null,
             status: initialStatus,
             createdBy: user.discordId,
           },
@@ -146,6 +149,8 @@ export async function POST(request: Request, { params }: { params: { guildId: st
         autoCloseMinutes: data.autoCloseMinutes || null,
         isRecurring: data.isRecurring ?? false,
         recurringIntervalHours: data.recurringIntervalHours || null,
+        dailyTimeSlots: data.dailyTimeSlots || null,
+        lastPostedAt: initialStatus === EventSignupStatus.OPEN ? new Date() : null,
         status: initialStatus,
         createdBy: user.discordId,
       },

@@ -270,6 +270,8 @@ model EventSignup {
   autoCloseMinutes       Int?
   isRecurring            Boolean           @default(false)
   recurringIntervalHours Int?
+  dailyTimeSlots         String?
+  lastPostedAt           DateTime?
   embedColor             String            @default("#E74C3C")
   status                 EventSignupStatus @default(OPEN)
   createdBy              String?
