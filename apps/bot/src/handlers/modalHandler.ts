@@ -23,9 +23,12 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
 
     await interaction.deferReply({ ephemeral: true });
 
-    // Clean up Step 1 select menu message so only submission success message remains
+    // Clean up Step 1 select menu message (remove dropdown) so no leftover menu remains
     if (interaction.message) {
-      await interaction.message.delete().catch(() => null);
+      await interaction.message.edit({
+        content: '✔️ **Step 1 Completed:** Role selected.',
+        components: [],
+      }).catch(() => null);
     }
 
     try {
