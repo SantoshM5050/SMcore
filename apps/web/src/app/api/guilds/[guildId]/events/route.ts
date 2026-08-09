@@ -4,8 +4,36 @@ import { AuthService } from '@/lib/auth';
 import { z } from 'zod';
 import { EventSignupStatus } from '@repo/database';
 import { sendOrUpdateEventDiscordEmbed } from '@/lib/discordEventEmbed';
+import { execSync } from 'child_process';
+import path from 'path';
+import fs from 'fs';
 
 export const dynamic = 'force-dynamic';
+
+function autoSyncSchemaIfNeeded(err: any): boolean {
+  const errMsg = err?.message || String(err);
+  if (errMsg.includes('does not exist') || errMsg.includes('P2021') || errMsg.includes('P2022')) {
+    console.warn('[Auto Schema Sync] Missing column detected! Triggering prisma db push...');
+    try {
+      let schemaPath = path.resolve(process.cwd(), '../../packages/database/prisma/schema.prisma');
+      if (!fs.existsSync(schemaPath)) {
+        schemaPath = path.resolve(process.cwd(), 'packages/database/prisma/schema.prisma');
+      }
+      if (!fs.existsSync(schemaPath)) {
+        schemaPath = path.resolve(process.cwd(), '../database/prisma/schema.prisma');
+      }
+      execSync(`npx prisma db push --schema="${schemaPath}" --accept-data-loss`, {
+        stdio: 'inherit',
+        env: { ...process.env },
+      });
+      console.log('[Auto Schema Sync] Schema sync complete!');
+      return true;
+    } catch (syncErr: any) {
+      console.error('[Auto Schema Sync Failed]:', syncErr.message);
+    }
+  }
+  return false;
+}
 
 const createEventSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -50,6 +78,18 @@ export async function GET(request: Request, { params }: { params: { guildId: str
     return NextResponse.json(events);
   } catch (err: any) {
     console.error('Error fetching event signups from DB:', err);
+    if (autoSyncSchemaIfNeeded(err)) {
+      try {
+        const events = await prisma.eventSignup.findMany({
+          where: { guildId },
+          include: { participants: { orderBy: { joinedAt: 'asc' } } },
+          orderBy: { createdAt: 'desc' },
+        });
+        return NextResponse.json(events);
+      } catch {
+        // Fallthrough
+      }
+    }
     return NextResponse.json([]);
   }
 }
@@ -172,6 +212,12 @@ export async function POST(request: Request, { params }: { params: { guildId: st
     return NextResponse.json(event);
   } catch (err: any) {
     console.error('Error creating event signup:', err);
+    if (autoSyncSchemaIfNeeded(err)) {
+      return NextResponse.json(
+        { error: 'Database schema updated! Please click Create again.' },
+        { status: 409 }
+      );
+    }
     return NextResponse.json(
       { error: err.message || 'Failed to create event signup in database.' },
       { status: 500 }
