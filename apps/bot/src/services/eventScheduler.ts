@@ -55,5 +55,30 @@ export class EventScheduler {
         console.error(`❌ Failed to auto-post scheduled event ${event.id}:`, err.message || err);
       }
     }
+
+    // 2. Process open events that reached their closeAt expiration time
+    const expiredEvents = await prisma.eventSignup.findMany({
+      where: {
+        status: EventSignupStatus.OPEN,
+        closeAt: {
+          lte: now,
+        },
+      },
+    });
+
+    for (const event of expiredEvents) {
+      try {
+        console.log(`🔒 Auto-Closing Expired Event Signup "${event.title}" (ID: ${event.id})...`);
+        await prisma.eventSignup.update({
+          where: { id: event.id },
+          data: { status: EventSignupStatus.CLOSED },
+        });
+
+        await EventSignupService.sendOrUpdateEventEmbed(event.id);
+        console.log(`✅ Successfully auto-closed Event "${event.title}" in Discord channel ${event.channelId}.`);
+      } catch (err: any) {
+        console.error(`❌ Failed to auto-close expired event ${event.id}:`, err.message || err);
+      }
+    }
   }
 }

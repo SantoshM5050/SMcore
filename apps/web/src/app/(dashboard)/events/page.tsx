@@ -75,6 +75,7 @@ export default function EventSignupsPage() {
     channelId: '',
     embedColor: '#E74C3C',
     scheduledAt: '',
+    autoCloseMinutes: 30,
     postNow: true,
   });
 
@@ -89,6 +90,7 @@ export default function EventSignupsPage() {
     maxSubstitutes: 5,
     channelId: '',
     embedColor: '#E74C3C',
+    autoCloseMinutes: 30,
   });
 
   useEffect(() => {
@@ -152,6 +154,7 @@ export default function EventSignupsPage() {
           ...formData,
           maxMainTeam: Number(formData.maxMainTeam),
           maxSubstitutes: Number(formData.maxSubstitutes),
+          autoCloseMinutes: Number(formData.autoCloseMinutes),
         }),
       });
       if (!res.ok) {
@@ -199,6 +202,7 @@ export default function EventSignupsPage() {
           maxSubstitutes: Number(batchData.maxSubstitutes),
           channelId: batchData.channelId,
           embedColor: batchData.embedColor,
+          autoCloseMinutes: Number(batchData.autoCloseMinutes),
           postNow: true,
         });
 
@@ -539,10 +543,10 @@ export default function EventSignupsPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-300 mb-1">
-                    Main Team Slots (Limit)
+                    Main Team Slots
                   </label>
                   <input
                     type="number"
@@ -564,6 +568,21 @@ export default function EventSignupsPage() {
                     max={50}
                     value={formData.maxSubstitutes}
                     onChange={(e) => setFormData({ ...formData, maxSubstitutes: Number(e.target.value) })}
+                    className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1">
+                    Auto-Close (Mins)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={1440}
+                    value={formData.autoCloseMinutes}
+                    onChange={(e) => setFormData({ ...formData, autoCloseMinutes: Number(e.target.value) })}
+                    placeholder="30"
                     className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
                   />
                 </div>

@@ -34,7 +34,9 @@ export async function sendOrUpdateEventDiscordEmbed(eventId: string) {
     ? substitutes.map((p) => `<@${p.userId}>`).join('\n')
     : 'None';
 
-  const isClosed = event.status !== 'OPEN';
+  const now = new Date();
+  const isExpired = event.closeAt ? now >= new Date(event.closeAt) : false;
+  const isClosed = event.status !== 'OPEN' || isExpired;
   const registrationStatusText = !isClosed ? '🟢 Open' : '🔒 Closed';
 
   const hexColor = (event.embedColor || '#E74C3C').replace('#', '');

@@ -266,6 +266,8 @@ model EventSignup {
   channelId              String
   messageId              String?
   scheduledAt            DateTime?
+  closeAt                DateTime?
+  autoCloseMinutes       Int?
   isRecurring            Boolean           @default(false)
   recurringIntervalHours Int?
   embedColor             String            @default("#E74C3C")

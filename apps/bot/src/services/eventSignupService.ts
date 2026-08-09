@@ -23,6 +23,7 @@ export class EventSignupService {
       maxSubstitutes: number;
       embedColor: string;
       status: EventSignupStatus;
+      closeAt?: Date | null;
     },
     participants: Array<{
       userId: string;
@@ -43,7 +44,10 @@ export class EventSignupService {
       ? substitutes.map((p) => `<@${p.userId}>`).join('\n')
       : 'None';
 
-    const registrationStatusText = signup.status === EventSignupStatus.OPEN
+    const isExpired = signup.closeAt ? new Date() >= new Date(signup.closeAt) : false;
+    const isClosed = signup.status !== EventSignupStatus.OPEN || isExpired;
+
+    const registrationStatusText = !isClosed
       ? '🟢 Open'
       : '🔒 Closed';
 

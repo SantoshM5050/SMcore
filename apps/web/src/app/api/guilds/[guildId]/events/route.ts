@@ -15,6 +15,8 @@ const createEventSchema = z.object({
   channelId: z.string().min(1, 'Channel is required'),
   embedColor: z.string().optional().default('#E74C3C'),
   scheduledAt: z.string().nullable().optional(),
+  closeAt: z.string().nullable().optional(),
+  autoCloseMinutes: z.number().int().nullable().optional(),
   isRecurring: z.boolean().optional().default(false),
   recurringIntervalHours: z.number().int().nullable().optional(),
   postNow: z.boolean().optional().default(true),
@@ -70,6 +72,12 @@ export async function POST(request: Request, { params }: { params: { guildId: st
       const createdEvents = [];
       for (const item of validation.data.events) {
         const scheduledDate = item.scheduledAt ? new Date(item.scheduledAt) : null;
+        let closeDate = item.closeAt ? new Date(item.closeAt) : null;
+
+        if (!closeDate && item.autoCloseMinutes && item.autoCloseMinutes > 0) {
+          closeDate = new Date(Date.now() + item.autoCloseMinutes * 60 * 1000);
+        }
+
         const initialStatus = item.postNow || !scheduledDate
           ? EventSignupStatus.OPEN
           : EventSignupStatus.SCHEDULED;
@@ -84,6 +92,8 @@ export async function POST(request: Request, { params }: { params: { guildId: st
             channelId: item.channelId,
             embedColor: item.embedColor || '#E74C3C',
             scheduledAt: scheduledDate,
+            closeAt: closeDate,
+            autoCloseMinutes: item.autoCloseMinutes || null,
             isRecurring: item.isRecurring ?? false,
             recurringIntervalHours: item.recurringIntervalHours || null,
             status: initialStatus,
@@ -112,6 +122,12 @@ export async function POST(request: Request, { params }: { params: { guildId: st
 
     const data = validation.data;
     const scheduledDate = data.scheduledAt ? new Date(data.scheduledAt) : null;
+    let closeDate = data.closeAt ? new Date(data.closeAt) : null;
+
+    if (!closeDate && data.autoCloseMinutes && data.autoCloseMinutes > 0) {
+      closeDate = new Date(Date.now() + data.autoCloseMinutes * 60 * 1000);
+    }
+
     const initialStatus = data.postNow || !scheduledDate
       ? EventSignupStatus.OPEN
       : EventSignupStatus.SCHEDULED;
@@ -126,6 +142,8 @@ export async function POST(request: Request, { params }: { params: { guildId: st
         channelId: data.channelId,
         embedColor: data.embedColor || '#E74C3C',
         scheduledAt: scheduledDate,
+        closeAt: closeDate,
+        autoCloseMinutes: data.autoCloseMinutes || null,
         isRecurring: data.isRecurring ?? false,
         recurringIntervalHours: data.recurringIntervalHours || null,
         status: initialStatus,
