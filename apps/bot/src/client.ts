@@ -21,19 +21,42 @@ export function createBotClient(minimal = false) {
   });
 }
 
-export let botClient = createBotClient();
+export const botSession = {
+  client: createBotClient(),
+};
+
+export function getBotClient() {
+  return botSession.client;
+}
 
 export function resetBotClient(minimal = false) {
-  if (botClient && botClient.isReady()) {
-    return botClient;
+  if (botSession.client && botSession.client.isReady()) {
+    return botSession.client;
   }
   try {
-    botClient.destroy();
+    botSession.client.destroy();
   } catch (e) {
     // Ignore destroy errors
   }
-  botClient = createBotClient(minimal);
-  return botClient;
+  botSession.client = createBotClient(minimal);
+  return botSession.client;
 }
+
+// Proxy wrapper so any module importing `botClient` automatically references active botSession.client
+export const botClient: Client = new Proxy({} as Client, {
+  get(_target, prop) {
+    const active = botSession.client;
+    const value = Reflect.get(active, prop, active);
+    if (typeof value === 'function') {
+      return value.bind(active);
+    }
+    return value;
+  },
+  set(_target, prop, value) {
+    const active = botSession.client;
+    return Reflect.set(active, prop, value, active);
+  },
+});
+
 
 
