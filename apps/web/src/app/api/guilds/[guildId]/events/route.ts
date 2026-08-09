@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { AuthService } from '@/lib/auth';
 import { z } from 'zod';
 import { EventSignupStatus } from '@repo/database';
+import { sendOrUpdateEventDiscordEmbed } from '@/lib/discordEventEmbed';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,6 +90,14 @@ export async function POST(request: Request, { params }: { params: { guildId: st
             createdBy: user.discordId,
           },
         });
+
+        // Send Embed to Discord
+        if (initialStatus === EventSignupStatus.OPEN) {
+          await sendOrUpdateEventDiscordEmbed(event.id).catch((err) => {
+            console.error(`[Batch Event] Error posting embed for event ${event.id}:`, err);
+          });
+        }
+
         createdEvents.push(event);
       }
 
@@ -126,6 +135,13 @@ export async function POST(request: Request, { params }: { params: { guildId: st
         participants: true,
       },
     });
+
+    // Send Embed to Discord
+    if (initialStatus === EventSignupStatus.OPEN) {
+      await sendOrUpdateEventDiscordEmbed(event.id).catch((err) => {
+        console.error(`[Single Event] Error posting embed for event ${event.id}:`, err);
+      });
+    }
 
     return NextResponse.json(event);
   } catch (err: any) {

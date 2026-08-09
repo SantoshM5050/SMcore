@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { AuthService } from '@/lib/auth';
 import { EventSignupStatus } from '@repo/database';
+import { sendOrUpdateEventDiscordEmbed } from '@/lib/discordEventEmbed';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +36,10 @@ export async function PATCH(
     },
   });
 
+  await sendOrUpdateEventDiscordEmbed(updated.id).catch((err) => {
+    console.error(`[PATCH Event] Error updating Discord embed:`, err);
+  });
+
   return NextResponse.json(updated);
 }
 
@@ -62,6 +67,10 @@ export async function POST(
       include: { participants: true },
     });
 
+    await sendOrUpdateEventDiscordEmbed(eventId).catch((err) => {
+      console.error(`[Clear Event] Error updating Discord embed:`, err);
+    });
+
     return NextResponse.json({ success: true, message: 'Roster and Substitutes cleared.', event: updated });
   }
 
@@ -79,6 +88,10 @@ export async function POST(
       where: { id: eventId },
       data: { status: nextStatus },
       include: { participants: true },
+    });
+
+    await sendOrUpdateEventDiscordEmbed(eventId).catch((err) => {
+      console.error(`[Toggle Status] Error updating Discord embed:`, err);
     });
 
     return NextResponse.json({ success: true, status: nextStatus, event: updated });
