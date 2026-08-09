@@ -30,7 +30,18 @@ function doLogin() {
   isLoggingIn = true;
   console.log(`🔑 Attempting to log in to Discord API (Token length: ${token.length})...`);
 
-  // Safety fallback: reset isLoggingIn flag after 10 seconds if ready event didn't fire
+  // Reset any previous websocket state before logging in
+  try {
+    botClient.destroy();
+  } catch (e) {
+    // Ignore destroy errors on uninitialized client
+  }
+
+  // Re-attach event listeners on client
+  botClient.removeAllListeners(Events.ClientReady);
+  botClient.once(Events.ClientReady, onReady);
+
+  // Safety fallback: reset isLoggingIn flag after 10 seconds
   setTimeout(() => {
     if (!botClient.isReady()) {
       isLoggingIn = false;
@@ -180,5 +191,12 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 doLogin();
+
+// Heartbeat check: Automatically retry login every 15 seconds if client remains unready
+setInterval(() => {
+  if (!botClient.isReady()) {
+    doLogin();
+  }
+}, 15000);
 
 
