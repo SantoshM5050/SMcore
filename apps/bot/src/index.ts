@@ -1,10 +1,16 @@
 import http from 'node:http';
+import dns from 'node:dns';
 import { Events } from 'discord.js';
 import { botClient, resetBotClient } from './client';
 import { config } from './config';
 import { onReady } from './events/ready';
 import { onInteractionCreate } from './events/interactionCreate';
 import { onGuildCreate } from './events/guildCreate';
+
+// Force DNS resolution to prefer IPv4 first (bypasses IPv6 connect timeouts on Render/Linux)
+if (dns && dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 let lastLoginError: string | null = null;
 let isLoggingIn = false;
