@@ -21,16 +21,6 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
       screenshotUrl = null;
     }
 
-    await interaction.deferReply({ ephemeral: true });
-
-    // Clean up Step 1 select menu message (remove dropdown) so no leftover menu remains
-    if (interaction.message) {
-      await interaction.message.edit({
-        content: '✔️ **Step 1 Completed:** Role selected.',
-        components: [],
-      }).catch(() => null);
-    }
-
     try {
       const application = await ApplicationService.createApplication({
         guildId,
@@ -44,12 +34,30 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
         screenshotUrl,
       });
 
-      return interaction.editReply({
-        content: `✅ **Role Application Submitted Successfully!**\nYour application **#${application.id.slice(-6)}** has been received and sent to staff for review. You will be notified via DM when a decision is made.`,
+      const successText = `✅ **Role Application Submitted Successfully!**\nYour application **#${application.id.slice(-6).toUpperCase()}** for <@&${roleId}> has been received and sent to staff for review. You will be notified via DM when a decision is made.`;
+
+      if (interaction.isFromMessage()) {
+        return interaction.update({
+          content: successText,
+          components: [],
+        });
+      }
+
+      return interaction.reply({
+        content: successText,
+        ephemeral: true,
       });
     } catch (error: any) {
-      return interaction.editReply({
-        content: `❌ Failed to submit role application: ${error.message}`,
+      const errorText = `❌ **Submission Error:** ${error.message}`;
+      if (interaction.isFromMessage()) {
+        return interaction.update({
+          content: errorText,
+          components: [],
+        });
+      }
+      return interaction.reply({
+        content: errorText,
+        ephemeral: true,
       });
     }
   }

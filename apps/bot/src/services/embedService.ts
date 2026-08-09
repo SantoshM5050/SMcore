@@ -109,6 +109,7 @@ export class EmbedService {
     userId: string;
     userTag: string;
     userAvatar?: string | null;
+    roleId?: string | null;
     roleName: string;
     inGameName: string;
     inGameId: string;
@@ -120,30 +121,47 @@ export class EmbedService {
     createdAt: Date;
   }) {
     const statusColors: Record<ApplicationStatus, ColorResolvable> = {
-      PENDING: '#FEE75C',
-      APPROVED: '#57F287',
-      REJECTED: '#ED4245',
+      PENDING: '#F1C40F',
+      APPROVED: '#2ECC71',
+      REJECTED: '#E74C3C',
     };
 
-    const statusBadge: Record<ApplicationStatus, string> = {
-      PENDING: '⏳ PENDING REVIEW',
-      APPROVED: '✅ APPROVED',
-      REJECTED: '❌ REJECTED',
+    const statusTitle: Record<ApplicationStatus, string> = {
+      PENDING: '⏳ Application Pending Review',
+      APPROVED: '✅ Application Approved',
+      REJECTED: '❌ Application Rejected',
     };
+
+    const roleMention = application.roleId ? `<@&${application.roleId}>` : `**${application.roleName}**`;
+    const timestampSec = Math.floor(new Date(application.createdAt).getTime() / 1000);
 
     const embed = new EmbedBuilder()
-      .setTitle(`📋 Application #${application.id.slice(-6)} - ${statusBadge[application.status]}`)
+      .setTitle(`📋 Application Verification • #${application.id.slice(-6).toUpperCase()}`)
+      .setDescription(`### ${statusTitle[application.status]}\nApplying for Role: ${roleMention}`)
       .setColor(statusColors[application.status])
       .addFields(
-        { name: 'Discord User', value: `<@${application.userId}> (\`${application.userTag}\`)`, inline: true },
-        { name: 'User ID', value: `\`${application.userId}\``, inline: true },
-        { name: 'Requested Role', value: `**${application.roleName}**`, inline: true },
-        { name: 'In-Game Name', value: `\`${application.inGameName}\``, inline: true },
-        { name: 'In-Game ID / Tag', value: `\`${application.inGameId}\``, inline: true },
-        { name: 'In-Game Level', value: `\`${application.currentRank}\``, inline: true },
-        { name: 'Submitted At', value: `<t:${Math.floor(new Date(application.createdAt).getTime() / 1000)}:F>`, inline: false }
+        {
+          name: '👤 Discord Applicant',
+          value: `<@${application.userId}>\n\`${application.userTag}\` (ID: \`${application.userId}\`)`,
+          inline: true,
+        },
+        {
+          name: '👑 Target Role',
+          value: roleMention,
+          inline: true,
+        },
+        {
+          name: '🎮 In-Game Roster Credentials',
+          value: `• **IGN:** \`${application.inGameName}\`\n• **ID / Tag:** \`${application.inGameId}\`\n• **Level / Rank:** \`${application.currentRank}\``,
+          inline: false,
+        },
+        {
+          name: '⏰ Submitted At',
+          value: `<t:${timestampSec}:F> (<t:${timestampSec}:R>)`,
+          inline: false,
+        }
       )
-      .setFooter({ text: `Powered by SMCore • Application ID: ${application.id}` })
+      .setFooter({ text: `SMCore Verification • Application ID: ${application.id}` })
       .setTimestamp();
 
     if (application.userAvatar) {
@@ -152,18 +170,24 @@ export class EmbedService {
 
     if (application.screenshotUrl) {
       embed.setImage(application.screenshotUrl);
-      embed.addFields({ name: 'Screenshot Proof', value: `[View Image](${application.screenshotUrl})`, inline: false });
+      embed.addFields({
+        name: '🖼️ Screenshot Proof',
+        value: `[Click to view full image proof](${application.screenshotUrl})`,
+        inline: false,
+      });
     }
 
     if (application.status === ApplicationStatus.APPROVED) {
       embed.addFields({
-        name: 'Review Verdict',
+        name: '🟢 Review Verdict',
         value: `Approved by **${application.reviewerTag || 'Staff'}**`,
+        inline: false,
       });
     } else if (application.status === ApplicationStatus.REJECTED) {
       embed.addFields({
-        name: 'Review Verdict',
+        name: '🔴 Review Verdict',
         value: `Rejected by **${application.reviewerTag || 'Staff'}**\n**Reason:** ${application.rejectionReason || 'No reason provided'}`,
+        inline: false,
       });
     }
 
