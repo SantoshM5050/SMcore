@@ -51,24 +51,31 @@ function doLogin() {
     return;
   }
 
+  const currentStatus = botClient && botClient.ws ? botClient.ws.status : 5;
+  // 0 = READY, 1 = CONNECTING, 4 = NEARLY
+  if (currentStatus === 0 || currentStatus === 1 || currentStatus === 4) {
+    console.log(`⏳ Client status is ${currentStatus}, waiting for connection...`);
+    return;
+  }
+
   if (isLoggingIn) {
     console.log('⏳ Login attempt already in progress...');
     return;
   }
 
   isLoggingIn = true;
-  console.log(`🔑 Creating fresh Discord client & attempting login (Token length: ${token.length})...`);
+  console.log(`🔑 Creating fresh Discord client & attempting login (Token length: ${token.length}, prevStatus: ${currentStatus})...`);
 
-  // Re-create a fresh Client instance only if not ready
+  // Re-create a fresh Client instance only if not connecting/ready
   const activeClient = resetBotClient();
   attachClientListeners(activeClient);
 
-  // Safety fallback: reset isLoggingIn flag after 15 seconds if not ready
+  // Safety fallback: reset isLoggingIn flag after 30 seconds if not ready
   setTimeout(() => {
     if (!activeClient.isReady()) {
       isLoggingIn = false;
     }
-  }, 15000);
+  }, 30000);
 
   activeClient
     .login(token)
@@ -193,11 +200,11 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 doLogin();
 
-// Heartbeat check: Automatically retry login every 15 seconds if client remains unready
+// Heartbeat check: Automatically retry login every 30 seconds if client remains unready
 setInterval(() => {
-  if (!botClient.isReady()) {
+  if (botClient && !botClient.isReady()) {
     doLogin();
   }
-}, 15000);
+}, 30000);
 
 
