@@ -16,6 +16,9 @@ export function createBotClient() {
 export let botClient = createBotClient();
 
 export function resetBotClient() {
+  if (botClient && botClient.isReady()) {
+    return botClient;
+  }
   try {
     botClient.destroy();
   } catch (e) {

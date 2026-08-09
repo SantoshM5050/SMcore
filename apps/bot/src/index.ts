@@ -12,7 +12,11 @@ const PORT = Number(process.env.PORT || process.env.BOT_PORT) || 3001;
 
 function attachClientListeners(client: typeof botClient) {
   client.removeAllListeners();
-  client.once(Events.ClientReady, onReady);
+  client.once(Events.ClientReady, (c) => {
+    isLoggingIn = false;
+    lastLoginError = null;
+    onReady(c);
+  });
   client.on(Events.InteractionCreate, onInteractionCreate);
   client.on(Events.GuildCreate, onGuildCreate);
 
@@ -26,7 +30,6 @@ function attachClientListeners(client: typeof botClient) {
     console.warn(`⚠️ Discord Shard ${id} disconnected: ${reason}`);
     lastLoginError = `Shard ${id} disconnected (${reason})`;
     isLoggingIn = false;
-    setTimeout(doLogin, 5000);
   });
 
   client.on(Events.ShardReconnecting, (id: number) => {
@@ -42,7 +45,9 @@ function doLogin() {
     return;
   }
 
-  if (botClient.isReady()) {
+  if (botClient && botClient.isReady()) {
+    isLoggingIn = false;
+    lastLoginError = null;
     return;
   }
 
@@ -54,16 +59,16 @@ function doLogin() {
   isLoggingIn = true;
   console.log(`🔑 Creating fresh Discord client & attempting login (Token length: ${token.length})...`);
 
-  // Re-create a fresh Client instance to wipe any stale websocket state
+  // Re-create a fresh Client instance only if not ready
   const activeClient = resetBotClient();
   attachClientListeners(activeClient);
 
-  // Safety fallback: reset isLoggingIn flag after 10 seconds
+  // Safety fallback: reset isLoggingIn flag after 15 seconds if not ready
   setTimeout(() => {
     if (!activeClient.isReady()) {
       isLoggingIn = false;
     }
-  }, 10000);
+  }, 15000);
 
   activeClient
     .login(token)
