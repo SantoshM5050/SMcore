@@ -1,6 +1,6 @@
 import http from 'node:http';
 import { Events } from 'discord.js';
-import { botClient } from './client';
+import { botClient, resetBotClient } from './client';
 import { config } from './config';
 import { onReady } from './events/ready';
 import { onInteractionCreate } from './events/interactionCreate';
@@ -9,6 +9,30 @@ import { onGuildCreate } from './events/guildCreate';
 let lastLoginError: string | null = null;
 let isLoggingIn = false;
 const PORT = Number(process.env.PORT || process.env.BOT_PORT) || 3001;
+
+function attachClientListeners(client: typeof botClient) {
+  client.removeAllListeners();
+  client.once(Events.ClientReady, onReady);
+  client.on(Events.InteractionCreate, onInteractionCreate);
+  client.on(Events.GuildCreate, onGuildCreate);
+
+  client.on(Events.Error, (error: any) => {
+    console.error('🔴 Discord Client Error:', error);
+    lastLoginError = error.message || String(error);
+  });
+
+  client.on(Events.ShardDisconnect, (event: any, id: number) => {
+    const reason = event ? event.reason || `code ${event.code}` : 'Unknown';
+    console.warn(`⚠️ Discord Shard ${id} disconnected: ${reason}`);
+    lastLoginError = `Shard ${id} disconnected (${reason})`;
+    isLoggingIn = false;
+    setTimeout(doLogin, 5000);
+  });
+
+  client.on(Events.ShardReconnecting, (id: number) => {
+    console.log(`🔄 Discord Shard ${id} reconnecting...`);
+  });
+}
 
 function doLogin() {
   const token = (process.env.DISCORD_BOT_TOKEN || config.token || '').trim();
@@ -28,27 +52,20 @@ function doLogin() {
   }
 
   isLoggingIn = true;
-  console.log(`🔑 Attempting to log in to Discord API (Token length: ${token.length})...`);
+  console.log(`🔑 Creating fresh Discord client & attempting login (Token length: ${token.length})...`);
 
-  // Reset any previous websocket state before logging in
-  try {
-    botClient.destroy();
-  } catch (e) {
-    // Ignore destroy errors on uninitialized client
-  }
-
-  // Re-attach event listeners on client
-  botClient.removeAllListeners(Events.ClientReady);
-  botClient.once(Events.ClientReady, onReady);
+  // Re-create a fresh Client instance to wipe any stale websocket state
+  const activeClient = resetBotClient();
+  attachClientListeners(activeClient);
 
   // Safety fallback: reset isLoggingIn flag after 10 seconds
   setTimeout(() => {
-    if (!botClient.isReady()) {
+    if (!activeClient.isReady()) {
       isLoggingIn = false;
     }
   }, 10000);
 
-  botClient
+  activeClient
     .login(token)
     .then(() => {
       isLoggingIn = false;
@@ -147,27 +164,6 @@ server.on('error', (err: any) => {
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 HTTP Health Server running on 0.0.0.0:${PORT}`);
-});
-
-botClient.once(Events.ClientReady, onReady);
-botClient.on(Events.InteractionCreate, onInteractionCreate);
-botClient.on(Events.GuildCreate, onGuildCreate);
-
-botClient.on(Events.Error, (error: any) => {
-  console.error('🔴 Discord Client Error:', error);
-  lastLoginError = error.message || String(error);
-});
-
-botClient.on(Events.ShardDisconnect, (event: any, id: number) => {
-  const reason = event ? event.reason || `code ${event.code}` : 'Unknown';
-  console.warn(`⚠️ Discord Shard ${id} disconnected: ${reason}`);
-  lastLoginError = `Shard ${id} disconnected (${reason})`;
-  isLoggingIn = false;
-  setTimeout(doLogin, 5000);
-});
-
-botClient.on(Events.ShardReconnecting, (id: number) => {
-  console.log(`🔄 Discord Shard ${id} reconnecting...`);
 });
 
 process.on('unhandledRejection', (reason: any) => {
