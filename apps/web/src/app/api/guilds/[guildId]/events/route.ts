@@ -27,6 +27,14 @@ async function autoSyncSchemaIfNeeded(err: any): Promise<boolean> {
   return false;
 }
 
+function formatInitialTimePlaceholder(text?: string | null, refDate?: Date | null): string {
+  if (!text) return '';
+  if (!text.includes('{time}')) return text;
+  const d = refDate || new Date();
+  const hhmm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return text.replace(/\{time\}/g, hhmm);
+}
+
 const createEventSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
@@ -172,11 +180,18 @@ export async function POST(request: Request, { params }: { params: { guildId: st
       closeDate = new Date(Date.now() + data.autoCloseMinutes * 60 * 1000);
     }
 
+    const rawTitle = data.title;
+    const rawDesc = data.description || `Register for ${data.title}`;
+    const initialTime = scheduledDate || new Date();
+
+    const formattedTitle = formatInitialTimePlaceholder(rawTitle, initialTime);
+    const formattedDesc = formatInitialTimePlaceholder(rawDesc, initialTime);
+
     const event = await prisma.eventSignup.create({
       data: {
         guildId,
-        title: data.title,
-        description: data.description || `Register for ${data.title}`,
+        title: formattedTitle,
+        description: formattedDesc,
         maxMainTeam: data.maxMainTeam,
         maxSubstitutes: data.maxSubstitutes,
         channelId: data.channelId,
