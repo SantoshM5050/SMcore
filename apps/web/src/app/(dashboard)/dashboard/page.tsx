@@ -532,7 +532,7 @@ export default function DashboardPage() {
                     <p className="text-[11px] text-gray-400">Extensible module framework</p>
                   </div>
                 </div>
-                <Badge variant="outline" className="text-[10px] text-gray-400">READY TO ADD</Badge>
+                <Badge variant="secondary" className="text-[10px] text-gray-400">READY TO ADD</Badge>
               </div>
 
               <div className="p-3 bg-secondary/20 border border-border/30 rounded-xl space-y-1.5 text-xs text-gray-400">
