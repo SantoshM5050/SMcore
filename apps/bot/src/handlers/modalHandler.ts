@@ -96,7 +96,17 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
         let channel = interaction.channel as any;
 
         if (cleanChanId) {
-          const fetchedChan = await guild.channels.fetch(cleanChanId).catch(() => null);
+          // Try finding by ID
+          let fetchedChan = await guild.channels.fetch(cleanChanId).catch(() => null);
+
+          // Try finding by channel name (e.g. "general" or "#general")
+          if (!fetchedChan) {
+            const nameSearch = cleanChanId.toLowerCase().replace('#', '');
+            fetchedChan = guild.channels.cache.find(
+              (c: any) => c.name && c.name.toLowerCase() === nameSearch
+            ) || null;
+          }
+
           if (fetchedChan && fetchedChan.isTextBased()) {
             channel = fetchedChan;
           }
