@@ -233,205 +233,166 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between border-b border-border/60 pb-3">
           <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
             <Layers className="w-5 h-5 text-primary" />
-            <span>System Modules & In-Card Settings</span>
+            <span>Core Functional Modules & In-Card Settings</span>
           </h2>
-          <span className="text-xs text-gray-400">5 Active Modules Configured</span>
+          <span className="text-xs text-gray-400">2 Core Feature Modules + Embed Tool</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
           {/* MODULE 1: EVENT SIGNUP SYSTEM */}
-          <div className="bg-card border border-border/80 rounded-2xl p-5 space-y-4 shadow-lg hover:border-purple-500/50 transition-all flex flex-col justify-between">
-            <div className="space-y-3">
+          <div className="bg-card border border-border/80 rounded-2xl p-6 space-y-5 shadow-xl hover:border-purple-500/50 transition-all flex flex-col justify-between">
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold">
-                    <Trophy className="w-5 h-5" />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold shadow-lg shadow-purple-500/20">
+                    <Trophy className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-white">Event & Scrim Signup</h3>
-                    <p className="text-[11px] text-gray-400">Fixed time + Hourly auto-repeating signups</p>
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <span>Event & Scrim Signup Module</span>
+                    </h3>
+                    <p className="text-xs text-gray-400">Fixed time + Hourly auto-repeating signups</p>
                   </div>
                 </div>
-                <Badge variant="success" className="text-[10px]">ACTIVE</Badge>
+                <Badge variant="success" className="text-xs font-bold px-3 py-1">MODULE 1 • ACTIVE</Badge>
               </div>
 
-              <div className="bg-secondary/40 border border-border/50 p-3 rounded-xl space-y-2 text-xs">
-                <div className="flex items-center justify-between text-gray-300">
-                  <span>Total Event Signups:</span>
-                  <strong className="text-white font-mono">{eventsCount} Signups</strong>
+              <div className="grid grid-cols-2 gap-3 text-xs bg-secondary/40 border border-border/50 p-4 rounded-xl">
+                <div className="space-y-1">
+                  <span className="text-gray-400">Total Event Signups:</span>
+                  <p className="text-white font-bold font-mono text-sm">{eventsCount} Signups</p>
                 </div>
-                <div className="flex items-center justify-between text-gray-300">
-                  <span>Default Auto-Close:</span>
-                  <strong className="text-purple-300">30 Minutes</strong>
+                <div className="space-y-1">
+                  <span className="text-gray-400">Default Auto-Close:</span>
+                  <p className="text-purple-300 font-bold text-sm">30 Minutes</p>
                 </div>
-                <div className="flex items-center justify-between text-gray-300">
-                  <span>Auto-Repeat Mode:</span>
-                  <strong className="text-emerald-400">Hourly / Daily Slots</strong>
+                <div className="space-y-1">
+                  <span className="text-gray-400">Auto-Repeat Mode:</span>
+                  <p className="text-emerald-400 font-bold text-sm">Hourly / Fixed Slots</p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-gray-400">Discord Embed Sync:</span>
+                  <p className="text-blue-400 font-bold text-sm">Auto Clean & Post</p>
                 </div>
               </div>
             </div>
 
-            <div className="pt-2 border-t border-border/50 flex items-center justify-between gap-2">
+            <div className="pt-3 border-t border-border/50 flex items-center justify-between gap-3">
               <Link href={`/events?guildId=${guildId}`} className="w-full">
-                <Button variant="outline" size="sm" className="w-full text-xs gap-1.5 border-purple-500/30 text-purple-300 hover:bg-purple-500/10">
-                  <Trophy className="w-3.5 h-3.5" /> Manage & Create Events
+                <Button variant="primary" size="sm" className="w-full text-xs font-bold gap-2 bg-purple-600 hover:bg-purple-700">
+                  <Trophy className="w-4 h-4" /> Open Module & Create Event Signups →
                 </Button>
               </Link>
             </div>
           </div>
 
-          {/* MODULE 2: ROLE APPLICATION SYSTEM */}
-          <div className="bg-card border border-border/80 rounded-2xl p-5 space-y-4 shadow-lg hover:border-blue-500/50 transition-all flex flex-col justify-between">
-            <div className="space-y-3">
+          {/* MODULE 2: ROLE REQUEST & ASSIGNMENT SYSTEM */}
+          <div className="bg-card border border-border/80 rounded-2xl p-6 space-y-5 shadow-xl hover:border-blue-500/50 transition-all flex flex-col justify-between">
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
-                    <ShieldCheck className="w-5 h-5" />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold shadow-lg shadow-blue-500/20">
+                    <ShieldCheck className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-white">Role Request System</h3>
-                    <p className="text-[11px] text-gray-400">Applicant credentials & staff review</p>
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <span>Role Request & Credentials Module</span>
+                    </h3>
+                    <p className="text-xs text-gray-400">In-game credentials form & staff approval</p>
                   </div>
                 </div>
-                <Badge variant="success" className="text-[10px]">ACTIVE</Badge>
+                <Badge variant="success" className="text-xs font-bold px-3 py-1">MODULE 2 • ACTIVE</Badge>
               </div>
 
               {/* In-Module Settings Controls */}
-              <div className="bg-secondary/40 border border-border/50 p-3 rounded-xl space-y-2.5 text-xs">
-                <div>
-                  <label className="block text-[11px] text-gray-400 mb-1">
-                    Application Cooldown (Minutes):
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={appSettings.cooldownMinutes}
-                    onChange={(e) => setAppSettings({ ...appSettings, cooldownMinutes: Number(e.target.value) })}
-                    className="w-full bg-secondary border border-border rounded px-2.5 py-1 text-xs text-white"
-                  />
+              <div className="bg-secondary/40 border border-border/50 p-4 rounded-xl space-y-3 text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] text-gray-400 mb-1 font-medium">
+                      Cooldown (Minutes):
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={appSettings.cooldownMinutes}
+                      onChange={(e) => setAppSettings({ ...appSettings, cooldownMinutes: Number(e.target.value) })}
+                      className="w-full bg-secondary border border-border rounded-lg px-2.5 py-1.5 text-xs text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] text-gray-400 mb-1 font-medium">
+                      Staff Review Channel:
+                    </label>
+                    <select
+                      value={channelRoutes.reviewChannelId}
+                      onChange={(e) => setChannelRoutes({ ...channelRoutes, reviewChannelId: e.target.value })}
+                      className="w-full bg-secondary border border-border rounded-lg px-2.5 py-1.5 text-xs text-white"
+                    >
+                      <option value="">-- Select Channel --</option>
+                      {channels.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          #{c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-300">One Pending Only:</span>
-                  <input
-                    type="checkbox"
-                    checked={appSettings.onePendingOnly}
-                    onChange={(e) => setAppSettings({ ...appSettings, onePendingOnly: e.target.checked })}
-                    className="accent-blue-500 cursor-pointer w-4 h-4"
-                  />
-                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] text-gray-400 mb-1 font-medium">
+                      Staff Review Ping Role:
+                    </label>
+                    <select
+                      value={appSettings.reviewPingRoleId || ''}
+                      onChange={(e) => setAppSettings({ ...appSettings, reviewPingRoleId: e.target.value })}
+                      className="w-full bg-secondary border border-border rounded-lg px-2.5 py-1.5 text-xs text-white"
+                    >
+                      <option value="">-- No Ping --</option>
+                      <option value="everyone">@everyone</option>
+                      <option value="here">@here</option>
+                      {roles.map((r) => (
+                        <option key={r.roleId} value={r.roleId}>
+                          @{r.roleName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="block text-[11px] text-gray-400 mb-1">
-                    Staff Review Ping Role:
-                  </label>
-                  <select
-                    value={appSettings.reviewPingRoleId || ''}
-                    onChange={(e) => setAppSettings({ ...appSettings, reviewPingRoleId: e.target.value })}
-                    className="w-full bg-secondary border border-border rounded px-2.5 py-1 text-xs text-white"
-                  >
-                    <option value="">-- No Ping --</option>
-                    <option value="everyone">@everyone</option>
-                    <option value="here">@here</option>
-                    {roles.map((r) => (
-                      <option key={r.roleId} value={r.roleId}>
-                        @{r.roleName}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex items-center justify-between pt-4 px-2">
+                    <span className="text-gray-300 font-medium">One Pending Only:</span>
+                    <input
+                      type="checkbox"
+                      checked={appSettings.onePendingOnly}
+                      onChange={(e) => setAppSettings({ ...appSettings, onePendingOnly: e.target.checked })}
+                      className="accent-blue-500 cursor-pointer w-4 h-4"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="pt-2 border-t border-border/50 flex items-center justify-between gap-2">
+            <div className="pt-3 border-t border-border/50 flex items-center justify-between gap-3">
               <Button
                 variant="primary"
                 size="sm"
                 onClick={handleSaveAppSettings}
                 disabled={savingModule === 'app'}
-                className="text-xs gap-1 flex-1"
+                className="text-xs gap-1.5 flex-1 font-bold"
               >
-                {savingModule === 'app' ? 'Saving...' : saveSuccess === 'app' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Save className="w-3.5 h-3.5" />}
-                {saveSuccess === 'app' ? 'Saved!' : 'Save Module'}
+                {savingModule === 'app' ? 'Saving...' : saveSuccess === 'app' ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Save className="w-4 h-4" />}
+                {saveSuccess === 'app' ? 'Settings Saved!' : 'Save Module Settings'}
               </Button>
               <Link href={`/applications?guildId=${guildId}`}>
-                <Button variant="outline" size="sm" className="text-xs">
+                <Button variant="outline" size="sm" className="text-xs font-bold">
                   View Queue →
                 </Button>
               </Link>
             </div>
           </div>
 
-          {/* MODULE 3: CHANNEL ROUTING MODULE */}
-          <div className="bg-card border border-border/80 rounded-2xl p-5 space-y-4 shadow-lg hover:border-emerald-500/50 transition-all flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
-                    <Hash className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-white">Channel Routing</h3>
-                    <p className="text-[11px] text-gray-400">Target channels for reviews & logs</p>
-                  </div>
-                </div>
-                <Badge variant="secondary" className="text-[10px]">ROUTED</Badge>
-              </div>
-
-              <div className="bg-secondary/40 border border-border/50 p-3 rounded-xl space-y-2.5 text-xs">
-                <div>
-                  <label className="block text-[11px] text-gray-400 mb-1">
-                    Staff Review Channel:
-                  </label>
-                  <select
-                    value={channelRoutes.reviewChannelId}
-                    onChange={(e) => setChannelRoutes({ ...channelRoutes, reviewChannelId: e.target.value })}
-                    className="w-full bg-secondary border border-border rounded px-2.5 py-1 text-xs text-white"
-                  >
-                    <option value="">-- Select Review Channel --</option>
-                    {channels.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        #{c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] text-gray-400 mb-1">
-                    Audit Logs Channel:
-                  </label>
-                  <select
-                    value={channelRoutes.logsChannelId}
-                    onChange={(e) => setChannelRoutes({ ...channelRoutes, logsChannelId: e.target.value })}
-                    className="w-full bg-secondary border border-border rounded px-2.5 py-1 text-xs text-white"
-                  >
-                    <option value="">-- Select Logs Channel --</option>
-                    {channels.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        #{c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-border/50 flex items-center justify-between gap-2">
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleSaveChannelRoutes}
-                disabled={savingModule === 'channels'}
-                className="w-full text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700"
-              >
-                {savingModule === 'channels' ? 'Saving...' : saveSuccess === 'channels' ? <CheckCircle2 className="w-3.5 h-3.5 text-white" /> : <Save className="w-3.5 h-3.5" />}
-                {saveSuccess === 'channels' ? 'Channel Routes Saved!' : 'Save Channel Routes'}
-              </Button>
-            </div>
-          </div>
-
-          {/* MODULE 4: EMBED BUILDER & THEME MODULE */}
+          {/* MODULE 3: EMBED BUILDER TOOL */}
           <div className="bg-card border border-border/80 rounded-2xl p-5 space-y-4 shadow-lg hover:border-pink-500/50 transition-all flex flex-col justify-between">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -441,10 +402,10 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-white">Embed Theme & Branding</h3>
-                    <p className="text-[11px] text-gray-400">Embed colors & footer text</p>
+                    <p className="text-[11px] text-gray-400">Embed colors & custom embeds</p>
                   </div>
                 </div>
-                <Badge variant="secondary" className="text-[10px]">READY</Badge>
+                <Badge variant="secondary" className="text-[10px]">TOOL</Badge>
               </div>
 
               <div className="bg-secondary/40 border border-border/50 p-3 rounded-xl space-y-2.5 text-xs">
@@ -455,25 +416,15 @@ export default function DashboardPage() {
                       type="color"
                       value={appSettings.defaultEmbedColor}
                       onChange={(e) => setAppSettings({ ...appSettings, defaultEmbedColor: e.target.value })}
-                      className="w-8 h-8 rounded border-0 bg-transparent cursor-pointer"
+                      className="w-7 h-7 rounded border-0 bg-transparent cursor-pointer"
                     />
                     <span className="font-mono text-white text-xs">{appSettings.defaultEmbedColor}</span>
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-300">Auto DM Applicant:</span>
-                  <input
-                    type="checkbox"
-                    checked={appSettings.autoDmEnabled}
-                    onChange={(e) => setAppSettings({ ...appSettings, autoDmEnabled: e.target.checked })}
-                    className="accent-pink-500 cursor-pointer w-4 h-4"
-                  />
-                </div>
               </div>
             </div>
 
-            <div className="pt-2 border-t border-border/50 flex items-center justify-between gap-2">
+            <div className="pt-2 border-t border-border/50">
               <Link href={`/embed-builder?guildId=${guildId}`} className="w-full">
                 <Button variant="outline" size="sm" className="w-full text-xs gap-1.5 border-pink-500/30 text-pink-300 hover:bg-pink-500/10">
                   <Palette className="w-3.5 h-3.5" /> Open Embed Customizer
@@ -482,44 +433,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* MODULE 5: STAFF PERMISSIONS MODULE */}
-          <div className="bg-card border border-border/80 rounded-2xl p-5 space-y-4 shadow-lg hover:border-amber-500/50 transition-all flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
-                    <Users className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-white">Staff Roles & Permissions</h3>
-                    <p className="text-[11px] text-gray-400">Review authorization roles</p>
-                  </div>
-                </div>
-                <Badge variant="warning" className="text-[10px]">SECURED</Badge>
-              </div>
-
-              <div className="bg-secondary/40 border border-border/50 p-3 rounded-xl space-y-2 text-xs">
-                <div className="flex items-center justify-between text-gray-300">
-                  <span>Configured Staff Roles:</span>
-                  <strong className="text-amber-400 font-mono">{roles.length} Roles</strong>
-                </div>
-                <div className="flex items-center justify-between text-gray-300">
-                  <span>Administrator Override:</span>
-                  <strong className="text-emerald-400">Enabled</strong>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-border/50">
-              <Link href={`/staff?guildId=${guildId}`} className="w-full">
-                <Button variant="outline" size="sm" className="w-full text-xs gap-1.5 border-amber-500/30 text-amber-300 hover:bg-amber-500/10">
-                  <Users className="w-3.5 h-3.5" /> Manage Staff Roles
-                </Button>
-              </Link>
-            </div>
-          </div>
-
-          {/* MODULE 6: EXTENSIBLE FUTURE MODULES CARD */}
+          {/* MODULE 4: EXTENSIBLE FUTURE MODULES CARD */}
           <div className="bg-card/50 border border-dashed border-border/80 rounded-2xl p-5 space-y-4 shadow-lg flex flex-col justify-between hover:border-primary/50 transition-all">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -535,7 +449,7 @@ export default function DashboardPage() {
                 <Badge variant="secondary" className="text-[10px] text-gray-400">READY TO ADD</Badge>
               </div>
 
-              <div className="p-3 bg-secondary/20 border border-border/30 rounded-xl space-y-1.5 text-xs text-gray-400">
+              <div className="p-3 bg-secondary/20 border border-border/30 rounded-xl space-y-1 text-xs text-gray-400">
                 <p>⚡ Tournament Brackets & Matchmaking</p>
                 <p>🎟️ Support Ticket & Member Verification</p>
                 <p>🤖 Custom Bot Webhooks & Integrations</p>

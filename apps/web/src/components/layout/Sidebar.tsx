@@ -21,25 +21,25 @@ import { cn } from '@/lib/utils';
 
 const navGroups = [
   {
-    title: 'MODULES',
+    title: 'CORE MODULES',
     items: [
       { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-      { name: 'Event Signups', href: '/events', icon: Trophy, badge: 'Popular' },
-      { name: 'Applications', href: '/applications', icon: ClipboardList },
-      { name: 'Embed Builder', href: '/embed-builder', icon: Palette },
+      { name: 'Event Signups', href: '/events', icon: Trophy, badge: 'Module 1' },
+      { name: 'Role Requests', href: '/applications', icon: ClipboardList, badge: 'Module 2' },
     ],
   },
   {
-    title: 'CONFIGURATION',
+    title: 'MODULE TOOLS & CONFIG',
     items: [
-      { name: 'Roles', href: '/roles', icon: ShieldCheck },
-      { name: 'Channels', href: '/channels', icon: Hash },
-      { name: 'Staff', href: '/staff', icon: Users },
-      { name: 'Settings', href: '/settings', icon: Settings },
+      { name: 'Embed Builder', href: '/embed-builder', icon: Palette },
+      { name: 'Requestable Roles', href: '/roles', icon: ShieldCheck },
+      { name: 'Channel Routes', href: '/channels', icon: Hash },
+      { name: 'Staff Permissions', href: '/staff', icon: Users },
+      { name: 'Guild Settings', href: '/settings', icon: Settings },
     ],
   },
   {
-    title: 'SYSTEM & LOGS',
+    title: 'SYSTEM LOGS & PROFILE',
     items: [
       { name: 'Analytics', href: '/analytics', icon: BarChart3 },
       { name: 'Audit Logs', href: '/logs', icon: ScrollText },
