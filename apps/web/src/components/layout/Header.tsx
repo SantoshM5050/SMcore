@@ -59,6 +59,13 @@ export function Header() {
           )}
         </div>
 
+        {/* Invite Bot Button */}
+        <a href="/api/bot/invite" target="_blank" rel="noopener noreferrer">
+          <Button variant="outline" size="sm" className="text-xs font-bold gap-1.5 border-primary/40 text-primary hover:bg-primary/10">
+            <Bot className="w-3.5 h-3.5" /> Invite Bot to Server
+          </Button>
+        </a>
+
         {/* User Info & Logout */}
         {user && (
           <div className="flex items-center gap-3 pl-3 border-l border-border">
