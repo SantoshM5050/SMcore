@@ -7,6 +7,7 @@ export async function GET() {
   try {
     console.log('[DB Sync API] Running SQL schema migrations...');
 
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Session" ADD COLUMN IF NOT EXISTS "accessToken" TEXT;`);
     await prisma.$executeRawUnsafe(`ALTER TABLE "EventSignup" ADD COLUMN IF NOT EXISTS "pingRoleId" TEXT;`);
     await prisma.$executeRawUnsafe(`ALTER TABLE "GuildSettings" ADD COLUMN IF NOT EXISTS "reviewPingRoleId" TEXT;`);
     await prisma.$executeRawUnsafe(`ALTER TABLE "GuildSettings" ADD COLUMN IF NOT EXISTS "commonRoleId" TEXT;`);

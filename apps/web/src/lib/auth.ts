@@ -71,14 +71,29 @@ export class AuthService {
     const sessionToken = crypto.randomUUID();
     const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    await prisma.session.create({
-      data: {
-        sessionToken,
-        userId: user.id,
-        accessToken,
-        expires,
-      } as any,
-    });
+    try {
+      await prisma.session.create({
+        data: {
+          sessionToken,
+          userId: user.id,
+          accessToken,
+          expires,
+        } as any,
+      });
+    } catch (err: any) {
+      // Auto-sync column if missing in DB
+      await prisma.$executeRawUnsafe(`ALTER TABLE "Session" ADD COLUMN IF NOT EXISTS "accessToken" TEXT;`).catch(() => null);
+      await prisma.session.create({
+        data: {
+          sessionToken,
+          userId: user.id,
+          accessToken,
+          expires,
+        } as any,
+      }).catch((fallbackErr) => {
+        console.error('Failed to create session:', fallbackErr);
+      });
+    }
 
     return { user, sessionToken };
   }
@@ -99,10 +114,24 @@ export class AuthService {
     const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
     if (!token) return null;
 
-    const session = await prisma.session.findUnique({
-      where: { sessionToken: token },
-      include: { user: true },
-    });
+    let session: any = null;
+    try {
+      session = await prisma.session.findUnique({
+        where: { sessionToken: token },
+        include: { user: true },
+      });
+    } catch (err: any) {
+      // Auto-sync column if missing in DB and retry
+      await prisma.$executeRawUnsafe(`ALTER TABLE "Session" ADD COLUMN IF NOT EXISTS "accessToken" TEXT;`).catch(() => null);
+      try {
+        session = await prisma.session.findUnique({
+          where: { sessionToken: token },
+          include: { user: true },
+        });
+      } catch {
+        return null;
+      }
+    }
 
     if (!session || session.expires < new Date()) {
       return null;
@@ -110,7 +139,7 @@ export class AuthService {
 
     return {
       user: session.user,
-      accessToken: (session as any).accessToken || null,
+      accessToken: session.accessToken || null,
     };
   }
 
