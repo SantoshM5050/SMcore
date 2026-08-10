@@ -162,7 +162,17 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         .setPlaceholder('10')
         .setRequired(true);
 
-      modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(countInput));
+      const channelInput = new TextInputBuilder()
+        .setCustomId('target_channel_input')
+        .setLabel('Target Channel (Blank = Current Channel)')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('Leave blank for current channel or enter Channel ID')
+        .setRequired(false);
+
+      modal.addComponents(
+        new ActionRowBuilder<TextInputBuilder>().addComponents(countInput),
+        new ActionRowBuilder<TextInputBuilder>().addComponents(channelInput)
+      );
       return interaction.showModal(modal);
     }
 

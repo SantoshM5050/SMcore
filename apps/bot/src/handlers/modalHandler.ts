@@ -84,10 +84,26 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
       if (actionType === 'PURGE') {
         const countRaw = interaction.fields.getTextInputValue('count_input');
         const count = Math.min(Math.max(parseInt(countRaw, 10) || 10, 1), 100);
-        const channel = interaction.channel as any;
+
+        let targetChanInput = '';
+        try {
+          targetChanInput = interaction.fields.getTextInputValue('target_channel_input') || '';
+        } catch {
+          targetChanInput = '';
+        }
+
+        const cleanChanId = targetChanInput.replace(/[<#@!>]/g, '').trim();
+        let channel = interaction.channel as any;
+
+        if (cleanChanId) {
+          const fetchedChan = await guild.channels.fetch(cleanChanId).catch(() => null);
+          if (fetchedChan && fetchedChan.isTextBased()) {
+            channel = fetchedChan;
+          }
+        }
 
         if (!channel || !('bulkDelete' in channel)) {
-          return interaction.editReply({ content: '❌ Cannot purge messages in this channel type.' });
+          return interaction.editReply({ content: '❌ Cannot purge messages in this channel.' });
         }
 
         const deleted = await channel.bulkDelete(count, true);
@@ -96,7 +112,7 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
           data: {
             guildId,
             targetUserId: 'CHANNEL',
-            targetUserTag: `#${channel.name}`,
+            targetUserTag: `#${channel.name || 'channel'}`,
             moderatorId: user.id,
             moderatorTag: user.tag,
             action: 'PURGE',
@@ -105,7 +121,7 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
         });
 
         await sendModLogEmbedToChannel(guild, modLog);
-        return interaction.editReply({ content: `🧹 Successfully purged **${deleted.size}** messages from #${channel.name}.` });
+        return interaction.editReply({ content: `🧹 Successfully purged **${deleted.size}** messages from #${channel.name || 'channel'}.` });
       }
 
       const rawTarget = interaction.fields.getTextInputValue('target_user_input') || '';
