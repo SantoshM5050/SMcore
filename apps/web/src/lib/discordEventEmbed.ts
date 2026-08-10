@@ -44,9 +44,16 @@ export async function sendOrUpdateEventDiscordEmbed(eventId: string) {
 
   const guildName = event.guild?.name || 'Hood Rich';
 
+  const rawDesc = event.description || `Register for ${event.title}`;
+  const targetTimeStr = event.eventTime || `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const formattedDescription = rawDesc
+    .replace(/\{time\}/gi, targetTimeStr)
+    .replace(/\{time_slot\}/gi, targetTimeStr)
+    .replace(/\{eventTime\}/gi, targetTimeStr);
+
   const embedPayload = {
     title: `📢 ${event.title}`,
-    description: event.description || `Register for ${event.title}`,
+    description: formattedDescription,
     color: colorInt,
     fields: [
       {

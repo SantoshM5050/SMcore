@@ -18,6 +18,7 @@ import {
   Layers,
   CheckCircle2,
   AlertCircle,
+  Edit2,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -74,7 +75,8 @@ export default function EventSignupsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: 'Informal Signup',
-    description: 'Register for Informal 19:40',
+    description: 'Register for Informal {time}',
+    eventTime: '',
     maxMainTeam: 10,
     maxSubstitutes: 5,
     channelId: '',
@@ -82,6 +84,7 @@ export default function EventSignupsPage() {
     embedColor: '#E74C3C',
     scheduledAt: '',
     autoCloseMinutes: 30,
+    isRecurring: true,
     scheduleType: 'now' as 'now' | 'scheduled' | 'recurring',
     recurringType: 'interval' as 'interval' | 'daily_slots',
     recurringIntervalHours: 1,
@@ -179,6 +182,87 @@ export default function EventSignupsPage() {
     }
   };
 
+  const [editingEvent, setEditingEvent] = useState<any | null>(null);
+
+  const applyQuickTimePreset = (minutesToAdd: number | 'next_top_hour') => {
+    const now = new Date();
+    if (minutesToAdd === 'next_top_hour') {
+      now.setHours(now.getHours() + 1, 0, 0, 0);
+    } else {
+      now.setMinutes(now.getMinutes() + minutesToAdd);
+    }
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const timeStr = `${hours}:${minutes}`;
+
+    setEventTimePicker(timeStr);
+    const base = (formData.description || 'Register for Informal')
+      .replace(/\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/g, '')
+      .replace(/\{time\}/g, '')
+      .trim();
+
+    setFormData((prev) => ({
+      ...prev,
+      eventTime: timeStr,
+      description: `${base} ${timeStr}`.trim(),
+    }));
+  };
+
+  const openCreateModal = () => {
+    setEditingEvent(null);
+    setFormData({
+      title: 'Informal Signup',
+      description: 'Register for Informal {time}',
+      eventTime: '',
+      maxMainTeam: 10,
+      maxSubstitutes: 5,
+      channelId: channels.length > 0 ? channels[0].id : '',
+      embedColor: '#E74C3C',
+      pingRoleId: '',
+      scheduleType: 'now',
+      scheduledAt: '',
+      autoCloseMinutes: 35,
+      isRecurring: true,
+      recurringType: 'interval',
+      recurringIntervalHours: 1,
+      dailyTime1: '19:40',
+      dailyTime2: '20:10',
+      dailyTime3: '20:40',
+      customDailyTimeSlots: '',
+      postNow: true,
+    });
+    setEventTimePicker('');
+    setShowCreateModal(true);
+  };
+
+  const openEditModal = (event: any) => {
+    setEditingEvent(event);
+    const isRec = Boolean(event.isRecurring);
+    setFormData({
+      title: event.title || 'Informal Signup',
+      description: event.description || '',
+      eventTime: event.eventTime || '',
+      maxMainTeam: event.maxMainTeam || 10,
+      maxSubstitutes: event.maxSubstitutes || 5,
+      channelId: event.channelId || (channels.length > 0 ? channels[0].id : ''),
+      embedColor: event.embedColor || '#E74C3C',
+      pingRoleId: event.pingRoleId || '',
+      scheduleType: isRec ? 'recurring' : 'now',
+      scheduledAt: event.scheduledAt ? new Date(event.scheduledAt).toISOString().slice(0, 16) : '',
+      autoCloseMinutes: event.autoCloseMinutes || 35,
+      isRecurring: isRec,
+      recurringType: (event.recurringIntervalHours ? 'interval' : 'daily_slots') as 'interval' | 'daily_slots',
+      recurringIntervalHours: event.recurringIntervalHours || 1,
+      dailyTime1: '19:40',
+      dailyTime2: '20:10',
+      dailyTime3: '20:40',
+      customDailyTimeSlots: event.dailyTimeSlots || '',
+      postNow: true,
+    });
+    setEventTimePicker(event.eventTime || '');
+    setShowCreateModal(true);
+  };
+
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!guildId || !formData.channelId) {
@@ -207,8 +291,14 @@ export default function EventSignupsPage() {
       const hasFutureSchedule = Boolean(scheduledISO && new Date(scheduledISO) > new Date());
       const postNow = formData.scheduleType === 'now' || (formData.scheduleType === 'recurring' && !hasFutureSchedule);
 
-      const res = await fetch(`/api/guilds/${guildId}/events`, {
-        method: 'POST',
+      const isEdit = Boolean(editingEvent);
+      const url = isEdit
+        ? `/api/guilds/${guildId}/events/${editingEvent.id}`
+        : `/api/guilds/${guildId}/events`;
+      const method = isEdit ? 'PATCH' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
@@ -224,7 +314,7 @@ export default function EventSignupsPage() {
       });
       if (!res.ok) {
         const text = await res.text();
-        let errMsg = 'Failed to create event';
+        let errMsg = isEdit ? 'Failed to update event' : 'Failed to create event';
         try {
           const errJson = JSON.parse(text);
           errMsg = errJson.error || errMsg;
@@ -234,9 +324,10 @@ export default function EventSignupsPage() {
         throw new Error(errMsg);
       }
       setShowCreateModal(false);
+      setEditingEvent(null);
       fetchEvents();
     } catch (err: any) {
-      alert(err.message || 'Failed to create event');
+      alert(err.message || 'Failed to process event');
     } finally {
       setIsSubmitting(false);
     }
@@ -380,7 +471,7 @@ export default function EventSignupsPage() {
           </Button>
 
           <Button
-            onClick={() => setShowCreateModal(true)}
+            onClick={openCreateModal}
             className="bg-primary hover:bg-primary/90 text-white flex items-center gap-2 font-semibold shadow-lg shadow-primary/20"
           >
             <Plus className="w-4 h-4" />
@@ -391,12 +482,14 @@ export default function EventSignupsPage() {
 
       {/* Loading & Error States */}
       {loading && (
-        <div className="p-12 text-center text-gray-400 font-medium">Loading event signups...</div>
+        <div className="bg-card border border-border/80 p-12 text-center rounded-2xl text-gray-400">
+          Loading event signups...
+        </div>
       )}
 
       {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl text-sm flex items-center gap-2">
-          <AlertCircle className="w-4 h-4" />
+        <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-xl text-red-400 text-sm font-semibold flex items-center gap-2">
+          <AlertCircle className="w-5 h-5" />
           <span>{error}</span>
         </div>
       )}
@@ -415,7 +508,7 @@ export default function EventSignupsPage() {
             <Button onClick={() => setShowBatchModal(true)} variant="outline">
               Generate 8-10 Signups
             </Button>
-            <Button onClick={() => setShowCreateModal(true)}>Create Single Event</Button>
+            <Button onClick={openCreateModal}>Create Single Event</Button>
           </div>
         </div>
       )}
@@ -581,6 +674,16 @@ export default function EventSignupsPage() {
 
                   <Button
                     size="sm"
+                    variant="outline"
+                    onClick={() => openEditModal(event)}
+                    title="Edit Event Signup settings"
+                    className="text-xs font-semibold border-blue-500/40 text-blue-300 hover:bg-blue-500/10 flex items-center gap-1"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" /> Edit
+                  </Button>
+
+                  <Button
+                    size="sm"
                     variant="ghost"
                     onClick={() => handleClearParticipants(event.id)}
                     title="Clear registered participants"
@@ -611,8 +714,8 @@ export default function EventSignupsPage() {
           <div className="bg-card border border-border rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Plus className="w-5 h-5 text-primary" />
-                <span>Create Event Signup</span>
+                {editingEvent ? <Edit2 className="w-5 h-5 text-blue-400" /> : <Plus className="w-5 h-5 text-primary" />}
+                <span>{editingEvent ? 'Edit Event Signup' : 'Create Event Signup'}</span>
               </h3>
               <button
                 onClick={() => setShowCreateModal(false)}
@@ -671,12 +774,22 @@ export default function EventSignupsPage() {
                           const base = (formData.description || 'Register for Informal').replace(/\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/g, '').replace(/\{time\}/g, '').trim();
                           setFormData((prev) => ({
                             ...prev,
+                            eventTime: newTime,
                             description: `${base} ${newTime}`.trim(),
                           }));
                         }
                       }}
                       className="bg-secondary border border-primary/40 rounded-md px-2 py-1 text-xs text-white focus:outline-none font-bold"
                     />
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1 border-b border-border/30 pb-1.5">
+                    <span className="text-[10px] text-gray-400 font-semibold mr-1">Easy Preset:</span>
+                    <button type="button" onClick={() => applyQuickTimePreset(15)} className="px-2 py-0.5 bg-secondary hover:bg-secondary/80 text-gray-300 border border-border rounded text-[10px] font-bold cursor-pointer">+15m</button>
+                    <button type="button" onClick={() => applyQuickTimePreset(30)} className="px-2 py-0.5 bg-secondary hover:bg-secondary/80 text-gray-300 border border-border rounded text-[10px] font-bold cursor-pointer">+30m</button>
+                    <button type="button" onClick={() => applyQuickTimePreset(45)} className="px-2 py-0.5 bg-secondary hover:bg-secondary/80 text-gray-300 border border-border rounded text-[10px] font-bold cursor-pointer">+45m</button>
+                    <button type="button" onClick={() => applyQuickTimePreset(60)} className="px-2 py-0.5 bg-secondary hover:bg-secondary/80 text-gray-300 border border-border rounded text-[10px] font-bold cursor-pointer">+1h</button>
+                    <button type="button" onClick={() => applyQuickTimePreset('next_top_hour')} className="px-2 py-0.5 bg-secondary hover:bg-secondary/80 text-gray-300 border border-border rounded text-[10px] font-bold cursor-pointer">Top of Hour</button>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-1.5 pt-1">
@@ -689,7 +802,8 @@ export default function EventSignupsPage() {
                           const base = (formData.description || 'Register for Informal').replace(/\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/g, '').replace(/\{time\}/g, '').trim();
                           setFormData((prev) => ({
                             ...prev,
-                            description: `${base} ${slot}`.trim(),
+                            eventTime: slot === '{time}' ? '' : slot,
+                            description: slot === '{time}' ? `${base} {time}`.trim() : `${base} ${slot}`.trim(),
                           }));
                           if (slot !== '{time}') setEventTimePicker(slot);
                         }}
@@ -961,7 +1075,9 @@ export default function EventSignupsPage() {
                   Cancel
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Creating...' : 'Create & Send Embed'}
+                  {isSubmitting
+                    ? (editingEvent ? 'Saving...' : 'Creating...')
+                    : (editingEvent ? 'Save Changes & Update Discord' : 'Create & Send Embed')}
                 </Button>
               </div>
             </form>

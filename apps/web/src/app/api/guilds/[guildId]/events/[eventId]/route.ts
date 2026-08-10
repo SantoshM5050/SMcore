@@ -23,11 +23,16 @@ export async function PATCH(
     data: {
       ...(body.title !== undefined && { title: body.title }),
       ...(body.description !== undefined && { description: body.description }),
+      ...(body.eventTime !== undefined && { eventTime: body.eventTime }),
       ...(body.maxMainTeam !== undefined && { maxMainTeam: Number(body.maxMainTeam) }),
       ...(body.maxSubstitutes !== undefined && { maxSubstitutes: Number(body.maxSubstitutes) }),
       ...(body.channelId !== undefined && { channelId: body.channelId }),
+      ...(body.pingRoleId !== undefined && { pingRoleId: body.pingRoleId || null }),
       ...(body.embedColor !== undefined && { embedColor: body.embedColor }),
       ...(body.status !== undefined && { status: body.status as EventSignupStatus }),
+      ...(body.isRecurring !== undefined && { isRecurring: Boolean(body.isRecurring) }),
+      ...(body.recurringIntervalHours !== undefined && { recurringIntervalHours: body.recurringIntervalHours ? Number(body.recurringIntervalHours) : null }),
+      ...(body.autoCloseMinutes !== undefined && { autoCloseMinutes: body.autoCloseMinutes ? Number(body.autoCloseMinutes) : null }),
     },
     include: {
       participants: {
