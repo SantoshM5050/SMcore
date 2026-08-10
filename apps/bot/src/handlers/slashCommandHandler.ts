@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, PermissionFlagsBits } from 'discord.js';
 import { prisma, EventSignupStatus } from '@repo/database';
-import { sendOrUpdateEventEmbed } from '../services/eventSignupService';
+import { EventSignupService } from '../services/eventSignupService';
 
 export async function handleSlashCommandInteraction(interaction: ChatInputCommandInteraction) {
   const { commandName, guildId, memberPermissions } = interaction;
@@ -74,7 +74,7 @@ export async function handleSlashCommandInteraction(interaction: ChatInputComman
     const channel = (interaction.options.getChannel('channel') || interaction.channel) as any;
 
     // Create or update requestable role in DB
-    const requestable = await prisma.requestableRole.upsert({
+    const requestable = await prisma.roleConfiguration.upsert({
       where: {
         guildId_roleId: {
           guildId,
@@ -83,13 +83,15 @@ export async function handleSlashCommandInteraction(interaction: ChatInputComman
       },
       update: {
         roleName: role.name,
-        description,
+        isRequestable: true,
+        enabled: true,
       },
       create: {
         guildId,
         roleId: role.id,
         roleName: role.name,
-        description,
+        isRequestable: true,
+        enabled: true,
       },
     });
 
@@ -148,7 +150,7 @@ export async function handleSlashCommandInteraction(interaction: ChatInputComman
       },
     });
 
-    await sendOrUpdateEventEmbed(event.id, { forceNewMessage: true });
+    await EventSignupService.sendOrUpdateEventEmbed(event.id, { forceNewMessage: true });
 
     return interaction.editReply({
       content: `✅ Event Signup "${title}" created & posted in ${channel}! Slots: ${mainSlots} Main + ${subSlots} Subs.`,
