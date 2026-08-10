@@ -156,12 +156,16 @@ export default function ApplicationsPage() {
 
     fetch(`/api/guilds/${guildId}/channels`)
       .then((res) => res.json())
-      .then((data) => { if (data.guildId) setMod2Channels(data); })
+      .then((data) => {
+        if (data.config) setMod2Channels(data.config);
+        else if (data.guildId) setMod2Channels(data);
+        if (data.discordChannels && Array.isArray(data.discordChannels)) setAvailableChannels(data.discordChannels);
+      })
       .catch(console.error);
 
     fetch(`/api/guilds/${guildId}/channels/list`)
       .then((res) => res.json())
-      .then((data) => { if (Array.isArray(data)) setAvailableChannels(data); })
+      .then((data) => { if (Array.isArray(data) && data.length > 0) setAvailableChannels(data); })
       .catch(console.error);
 
     fetch(`/api/guilds/${guildId}/roles`)

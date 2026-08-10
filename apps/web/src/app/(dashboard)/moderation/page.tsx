@@ -49,7 +49,20 @@ export default function ModerationPage() {
 
     fetch(`/api/guilds/${guildId}/channels/list`)
       .then((res) => res.json())
-      .then((data) => { if (Array.isArray(data)) setChannels(data); })
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setChannels(data);
+        } else {
+          fetch(`/api/guilds/${guildId}/channels`)
+            .then((r) => r.json())
+            .then((d) => {
+              if (d.discordChannels && Array.isArray(d.discordChannels)) {
+                setChannels(d.discordChannels);
+              }
+            })
+            .catch(console.error);
+        }
+      })
       .catch(console.error);
   };
 

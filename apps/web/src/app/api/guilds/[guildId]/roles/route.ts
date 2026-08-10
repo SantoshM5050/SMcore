@@ -60,7 +60,13 @@ export async function GET(request: Request, { params }: { params: { guildId: str
     orderBy: { displayOrder: 'asc' },
   });
 
-  return NextResponse.json(roles);
+  const normalized = roles.map((r) => ({
+    ...r,
+    id: r.roleId,
+    name: r.roleName,
+  }));
+
+  return NextResponse.json(normalized);
 }
 
 export async function POST(request: Request, { params }: { params: { guildId: string } }) {
