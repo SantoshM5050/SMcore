@@ -51,11 +51,31 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       });
     }
 
+    // Extract member's current role IDs
+    const userRoleIds = new Set<string>();
+    if (member && 'roles' in member) {
+      if (Array.isArray(member.roles)) {
+        member.roles.forEach((r: any) => userRoleIds.add(String(r)));
+      } else if (member.roles && typeof (member.roles as any).cache !== 'undefined') {
+        (member.roles as any).cache.forEach((_: any, roleId: string) => userRoleIds.add(roleId));
+      }
+    }
+
+    // Filter out roles user already possesses
+    const availableRoles = roles.filter((role) => !userRoleIds.has(role.roleId));
+
+    if (availableRoles.length === 0) {
+      return interaction.reply({
+        content: '⚠️ You already possess all requestable roles available in this server!',
+        ephemeral: true,
+      });
+    }
+
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId('role_request_select_role')
       .setPlaceholder('Select the rank role you want to apply for...');
 
-    roles.forEach((role) => {
+    availableRoles.forEach((role) => {
       selectMenu.addOptions(
         new StringSelectMenuOptionBuilder()
           .setLabel(role.roleName)

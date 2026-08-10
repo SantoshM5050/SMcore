@@ -142,6 +142,19 @@ export async function onReady(client: Client) {
       await RoleService.syncGuildRoles(guildId);
     }
 
+    // Purge any orphaned guilds in DB where bot is no longer present
+    const currentGuildIds = Array.from(guilds.keys());
+    const deleteResult = await prisma.guild.deleteMany({
+      where: {
+        id: {
+          notIn: currentGuildIds,
+        },
+      },
+    });
+    if (deleteResult.count > 0) {
+      console.log(`🧹 Purged ${deleteResult.count} orphaned guild(s) from database where bot was kicked.`);
+    }
+
     console.log('✅ SMCore Guild sync complete.');
   } catch (error) {
     console.error('⚠️ Database sync during ready event failed:', error);

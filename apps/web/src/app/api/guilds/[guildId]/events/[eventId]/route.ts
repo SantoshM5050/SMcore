@@ -84,9 +84,23 @@ export async function POST(
       ? EventSignupStatus.CLOSED
       : EventSignupStatus.OPEN;
 
+    let newCloseAt = current.closeAt;
+    if (nextStatus === EventSignupStatus.OPEN) {
+      if (current.autoCloseMinutes && current.autoCloseMinutes > 0) {
+        newCloseAt = new Date(Date.now() + current.autoCloseMinutes * 60 * 1000);
+      } else {
+        newCloseAt = null;
+      }
+    } else {
+      newCloseAt = new Date();
+    }
+
     const updated = await prisma.eventSignup.update({
       where: { id: eventId },
-      data: { status: nextStatus },
+      data: {
+        status: nextStatus,
+        closeAt: newCloseAt,
+      },
       include: { participants: true },
     });
 

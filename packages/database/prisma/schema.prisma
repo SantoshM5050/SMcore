@@ -237,6 +237,7 @@ model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
   userId       String
+  accessToken  String?
   expires      DateTime
   createdAt    DateTime @default(now())
 

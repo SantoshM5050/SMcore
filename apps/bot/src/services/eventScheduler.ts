@@ -144,17 +144,48 @@ export class EventScheduler {
             newCloseAt = new Date(now.getTime() + event.autoCloseMinutes * 60 * 1000);
           }
 
-          await EventSignupService.sendOrUpdateEventEmbed(event.id, { forceNewMessage: true });
+          // Calculate target time for upcoming cycle (e.g. next hour or slot time)
+          const targetIntervalHours = event.recurringIntervalHours || 1;
+          const targetDate = new Date(now.getTime() + targetIntervalHours * 60 * 60 * 1000);
+          const targetHHMM = `${String(targetDate.getHours()).padStart(2, '0')}:${String(targetDate.getMinutes()).padStart(2, '0')}`;
 
+          // Dynamically update time in title & description if present (e.g. "19:40" -> "20:40")
+          const timeRegex = /\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/g;
+          let newDescription = event.description;
+          if (newDescription) {
+            if (newDescription.includes('{time}')) {
+              newDescription = newDescription.replace(/\{time\}/g, targetHHMM);
+            } else if (timeRegex.test(newDescription)) {
+              newDescription = newDescription.replace(timeRegex, targetHHMM);
+            }
+          }
+
+          let newTitle = event.title;
+          if (newTitle) {
+            if (newTitle.includes('{time}')) {
+              newTitle = newTitle.replace(/\{time\}/g, targetHHMM);
+            } else if (timeRegex.test(newTitle)) {
+              newTitle = newTitle.replace(timeRegex, targetHHMM);
+            }
+          }
+
+          // Update DB FIRST before building & sending Discord Embed
           await prisma.eventSignup.update({
             where: { id: event.id },
             data: {
+              title: newTitle,
+              description: newDescription,
+              eventTime: targetHHMM,
               status: EventSignupStatus.OPEN,
               lastPostedAt: now,
               closeAt: newCloseAt,
             },
           });
-          console.log(`✅ Successfully re-posted Recurring Event "${event.title}" to Discord channel ${event.channelId}.`);
+
+          // Send fresh embed with status OPEN
+          await EventSignupService.sendOrUpdateEventEmbed(event.id, { forceNewMessage: true });
+
+          console.log(`✅ Successfully re-posted Recurring Event "${newTitle}" to Discord channel ${event.channelId}.`);
         }
       } catch (err: any) {
         console.error(`❌ Failed to process recurring event ${event.id}:`, err.message || err);

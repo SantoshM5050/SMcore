@@ -75,8 +75,9 @@ export class AuthService {
       data: {
         sessionToken,
         userId: user.id,
+        accessToken,
         expires,
-      },
+      } as any,
     });
 
     return { user, sessionToken };
@@ -86,6 +87,14 @@ export class AuthService {
    * Retrieve session user from request cookie
    */
   static async getSessionUser(): Promise<SessionData['user'] | null> {
+    const data = await this.getSessionUserAndToken();
+    return data?.user || null;
+  }
+
+  /**
+   * Retrieve session user and OAuth access token from request cookie
+   */
+  static async getSessionUserAndToken(): Promise<{ user: SessionData['user']; accessToken: string | null } | null> {
     const cookieStore = cookies();
     const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
     if (!token) return null;
@@ -99,7 +108,10 @@ export class AuthService {
       return null;
     }
 
-    return session.user;
+    return {
+      user: session.user,
+      accessToken: (session as any).accessToken || null,
+    };
   }
 
   static getSessionCookieName() {
