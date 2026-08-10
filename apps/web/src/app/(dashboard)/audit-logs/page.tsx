@@ -1,7 +1,6 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import LogsPage from '../logs/page';
-
-export default function AuditLogsPage() {
-  return <LogsPage />;
+export default function AuditLogsPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
+  const guildId = searchParams?.guildId ? `?guildId=${searchParams.guildId}` : '';
+  redirect(`/logs${guildId}`);
 }
