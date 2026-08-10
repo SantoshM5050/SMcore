@@ -44,9 +44,18 @@ export class EventScheduler {
     for (const event of pendingEvents) {
       try {
         console.log(`🚀 Auto-Posting Scheduled Event Signup "${event.title}" (ID: ${event.id})...`);
+        let newCloseAt: Date | null = null;
+        if (event.autoCloseMinutes && event.autoCloseMinutes > 0) {
+          newCloseAt = new Date(now.getTime() + event.autoCloseMinutes * 60 * 1000);
+        }
+
         await prisma.eventSignup.update({
           where: { id: event.id },
-          data: { status: EventSignupStatus.OPEN },
+          data: {
+            status: EventSignupStatus.OPEN,
+            lastPostedAt: now,
+            closeAt: newCloseAt,
+          },
         });
 
         await EventSignupService.sendOrUpdateEventEmbed(event.id);
@@ -92,6 +101,11 @@ export class EventScheduler {
 
     for (const event of recurringEvents) {
       try {
+        // Skip if event has a future scheduled start time and hasn't started yet
+        if (event.status === EventSignupStatus.SCHEDULED && event.scheduledAt && new Date(event.scheduledAt) > now) {
+          continue;
+        }
+
         let shouldTrigger = false;
 
         // Check A: Interval in Hours (e.g., every 1, 2, 4, 6, 12, 24 hours)

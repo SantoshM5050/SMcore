@@ -187,13 +187,15 @@ export default function EventSignupsPage() {
         }
       }
 
-      const postNow = formData.scheduleType === 'now';
+      const hasFutureSchedule = Boolean(formData.scheduledAt && new Date(formData.scheduledAt) > new Date());
+      const postNow = formData.scheduleType === 'now' || (formData.scheduleType === 'recurring' && !hasFutureSchedule);
 
       const res = await fetch(`/api/guilds/${guildId}/events`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
+          scheduledAt: formData.scheduledAt || null,
           maxMainTeam: Number(formData.maxMainTeam),
           maxSubstitutes: Number(formData.maxSubstitutes),
           autoCloseMinutes: Number(formData.autoCloseMinutes),
@@ -800,6 +802,21 @@ export default function EventSignupsPage() {
 
                 {formData.scheduleType === 'recurring' && (
                   <div className="pt-1 space-y-3">
+                    <div className="bg-purple-500/10 border border-purple-500/30 p-2.5 rounded-lg space-y-1">
+                      <label className="block text-[11px] text-purple-200 font-bold">
+                        📅 Fixed First Start Time (Optional)
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={formData.scheduledAt}
+                        onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
+                        className="w-full bg-secondary border border-border rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-purple-500"
+                      />
+                      <p className="text-[10px] text-purple-300/80">
+                        Leave blank to post immediately and repeat every hour. Or set a fixed start time (e.g. 18:00 today) when the 1st embed should post.
+                      </p>
+                    </div>
+
                     <div className="flex items-center gap-4 text-xs">
                       <label className="flex items-center gap-1.5 cursor-pointer text-gray-200">
                         <input
