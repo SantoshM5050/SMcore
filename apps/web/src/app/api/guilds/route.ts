@@ -76,16 +76,15 @@ export async function GET() {
   const activeGuilds = botGuildIds ? allGuilds.filter((g) => botGuildIds!.has(g.id)) : allGuilds;
 
   const userGuilds = activeGuilds.filter((g) => {
-    // 1. User is the guild owner
+    // 1. User is the guild owner in DB
     if (g.ownerId === user.discordId) return true;
 
-    // 2. User has explicit staff permissions in this guild
-    const hasStaffPermission = g.staffPermissions.length > 0;
-    if (hasStaffPermission) return true;
+    // 2. If Discord user's guilds were fetched via OAuth token, check if user is admin/manager in that Discord server
+    if (allowedGuildIds) {
+      return allowedGuildIds.has(g.id);
+    }
 
-    // 3. User is an admin or manager of the guild in Discord
-    if (allowedGuildIds && allowedGuildIds.has(g.id)) return true;
-
+    // Fallback if OAuth token is missing: only return if user is guild owner
     return false;
   });
 
