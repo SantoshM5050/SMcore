@@ -144,13 +144,29 @@ export class EventScheduler {
             newCloseAt = new Date(now.getTime() + event.autoCloseMinutes * 60 * 1000);
           }
 
-          // Calculate target time for upcoming cycle (e.g. next hour or slot time)
+          // Calculate target time for upcoming cycle (preserve minute offset like :40)
           const targetIntervalHours = event.recurringIntervalHours || 1;
-          const targetDate = new Date(now.getTime() + targetIntervalHours * 60 * 60 * 1000);
-          const targetHHMM = `${String(targetDate.getHours()).padStart(2, '0')}:${String(targetDate.getMinutes()).padStart(2, '0')}`;
+          const timeRegex = /\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/;
+          let currentHH = now.getHours();
+          let currentMM = 40;
+
+          if (event.eventTime && timeRegex.test(event.eventTime)) {
+            const [h, m] = event.eventTime.split(':').map((v) => parseInt(v, 10));
+            currentHH = h;
+            currentMM = m;
+          } else if (event.description) {
+            const match = event.description.match(timeRegex);
+            if (match) {
+              const [h, m] = match[0].split(':').map((v) => parseInt(v, 10));
+              currentHH = h;
+              currentMM = m;
+            }
+          }
+
+          const nextHour = (currentHH + targetIntervalHours) % 24;
+          const targetHHMM = `${String(nextHour).padStart(2, '0')}:${String(currentMM).padStart(2, '0')}`;
 
           // Dynamically update time in title & description if present (e.g. "19:40" -> "20:40")
-          const timeRegex = /\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/g;
           let newDescription = event.description;
           if (newDescription) {
             if (newDescription.includes('{time}')) {
