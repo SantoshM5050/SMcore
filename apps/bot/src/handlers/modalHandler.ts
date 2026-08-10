@@ -10,6 +10,9 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
   if (customId.startsWith('role_request_modal_')) {
     const roleId = customId.replace('role_request_modal_', '');
 
+    // Defer reply immediately so Discord modal submit doesn't time out (>3s)
+    await interaction.deferReply({ ephemeral: true });
+
     const inGameName = interaction.fields.getTextInputValue('in_game_name_input');
     const inGameId = interaction.fields.getTextInputValue('in_game_id_input');
     const currentRank = interaction.fields.getTextInputValue('current_rank_input');
@@ -36,28 +39,13 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
 
       const successText = `✅ **Role Application Submitted Successfully!**\nYour application **#${application.id.slice(-6).toUpperCase()}** for <@&${roleId}> has been received and sent to staff for review. You will be notified via DM when a decision is made.`;
 
-      if (interaction.isFromMessage()) {
-        return interaction.update({
-          content: successText,
-          components: [],
-        });
-      }
-
-      return interaction.reply({
+      return interaction.editReply({
         content: successText,
-        ephemeral: true,
       });
     } catch (error: any) {
       const errorText = `❌ **Submission Error:** ${error.message}`;
-      if (interaction.isFromMessage()) {
-        return interaction.update({
-          content: errorText,
-          components: [],
-        });
-      }
-      return interaction.reply({
+      return interaction.editReply({
         content: errorText,
-        ephemeral: true,
       });
     }
   }

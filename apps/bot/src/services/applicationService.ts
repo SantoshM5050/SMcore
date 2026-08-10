@@ -149,17 +149,24 @@ export class ApplicationService {
           }
         }
 
-        const msg = await reviewChannel.send({
-          content: staffPingContent,
-          embeds: [reviewEmbed],
-          components,
-        });
-        
-        // Save review message ID to DB
-        await prisma.application.update({
-          where: { id: application.id },
-          data: { reviewChannelMsgId: msg.id },
-        });
+        const msg = await reviewChannel
+          .send({
+            content: staffPingContent,
+            embeds: [reviewEmbed],
+            components,
+          })
+          .catch((err) => {
+            console.error('⚠️ Failed to post application to review channel:', err);
+            return null;
+          });
+
+        if (msg) {
+          // Save review message ID to DB
+          await prisma.application.update({
+            where: { id: application.id },
+            data: { reviewChannelMsgId: msg.id },
+          });
+        }
       }
     }
 

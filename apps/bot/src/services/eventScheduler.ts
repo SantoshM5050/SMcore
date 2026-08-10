@@ -130,6 +130,8 @@ export class EventScheduler {
             newCloseAt = new Date(now.getTime() + event.autoCloseMinutes * 60 * 1000);
           }
 
+          await EventSignupService.sendOrUpdateEventEmbed(event.id, { forceNewMessage: true });
+
           await prisma.eventSignup.update({
             where: { id: event.id },
             data: {
@@ -138,8 +140,6 @@ export class EventScheduler {
               closeAt: newCloseAt,
             },
           });
-
-          await EventSignupService.sendOrUpdateEventEmbed(event.id);
           console.log(`✅ Successfully re-posted Recurring Event "${event.title}" to Discord channel ${event.channelId}.`);
         }
       } catch (err: any) {

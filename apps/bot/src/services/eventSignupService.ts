@@ -101,7 +101,7 @@ export class EventSignupService {
   /**
    * Post or Update Event Panel Embed in Discord
    */
-  static async sendOrUpdateEventEmbed(signupId: string) {
+  static async sendOrUpdateEventEmbed(signupId: string, options?: { forceNewMessage?: boolean }) {
     const signup = await prisma.eventSignup.findUnique({
       where: { id: signupId },
       include: {
@@ -125,11 +125,25 @@ export class EventSignupService {
       throw new Error(`Channel ${signup.channelId} is invalid or not text-based`);
     }
 
+    // If forceNewMessage is true and there is an existing message, close the old message first
+    if (options?.forceNewMessage && signup.messageId) {
+      const oldMsg = await channel.messages.fetch(signup.messageId).catch(() => null);
+      if (oldMsg) {
+        const closedEmbed = this.buildEventEmbed(
+          { ...signup, status: EventSignupStatus.CLOSED },
+          signup.participants,
+          guild.name
+        );
+        const disabledButtons = this.buildEventButtons(signup.id, EventSignupStatus.CLOSED);
+        await oldMsg.edit({ embeds: [closedEmbed], components: [disabledButtons] }).catch(() => null);
+      }
+    }
+
     const embed = this.buildEventEmbed(signup, signup.participants, guild.name);
     const actionRow = this.buildEventButtons(signup.id, signup.status);
 
     let message;
-    if (signup.messageId) {
+    if (signup.messageId && !options?.forceNewMessage) {
       const existingMsg = await channel.messages.fetch(signup.messageId).catch(() => null);
       if (existingMsg) {
         message = await existingMsg.edit({ embeds: [embed], components: [actionRow] });
