@@ -81,6 +81,8 @@ model ChannelConfiguration {
   requestChannelId String?
   reviewChannelId  String?
   logsChannelId    String?
+  modLogChannelId  String?
+  modPanelChannelId String?
   updatedAt        DateTime @updatedAt
 
   guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)

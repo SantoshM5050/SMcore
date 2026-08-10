@@ -27,12 +27,23 @@ export default function ModerationPage() {
   const [executing, setExecuting] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  const [modLogChannelId, setModLogChannelId] = useState('');
+  const [modPanelChannelId, setModPanelChannelId] = useState('');
+  const [savingChannels, setSavingChannels] = useState(false);
+  const [deployingPanel, setDeployingPanel] = useState(false);
+
   const fetchModLogs = () => {
     if (!guildId) return;
     setLoading(true);
     fetch(`/api/guilds/${guildId}/moderation`)
       .then((res) => res.json())
-      .then((data) => { if (Array.isArray(data)) setLogs(data); })
+      .then((data) => {
+        if (data.logs && Array.isArray(data.logs)) setLogs(data.logs);
+        if (data.channelsConfig) {
+          setModLogChannelId(data.channelsConfig.modLogChannelId || '');
+          setModPanelChannelId(data.channelsConfig.modPanelChannelId || '');
+        }
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
 
@@ -45,6 +56,54 @@ export default function ModerationPage() {
   useEffect(() => {
     fetchModLogs();
   }, [guildId]);
+
+  const handleSaveChannels = async () => {
+    setSavingChannels(true);
+    setStatusMsg(null);
+    try {
+      const res = await fetch(`/api/guilds/${guildId}/moderation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'SAVE_CHANNELS',
+          modLogChannelId,
+          modPanelChannelId,
+        }),
+      });
+      if (res.ok) {
+        setStatusMsg({ type: 'success', text: 'Moderation channels configuration saved!' });
+      }
+    } catch (err: any) {
+      setStatusMsg({ type: 'error', text: err.message });
+    } finally {
+      setSavingChannels(false);
+    }
+  };
+
+  const handleDeployPanel = async () => {
+    setDeployingPanel(true);
+    setStatusMsg(null);
+    try {
+      const res = await fetch(`/api/guilds/${guildId}/moderation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'DEPLOY_PANEL',
+          channelId: modPanelChannelId,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setStatusMsg({ type: 'success', text: '🚀 Interactive Moderation Control Panel embed successfully deployed into Discord chat!' });
+      } else {
+        setStatusMsg({ type: 'error', text: `Deploy Failed: ${data.error}` });
+      }
+    } catch (err: any) {
+      setStatusMsg({ type: 'error', text: err.message });
+    } finally {
+      setDeployingPanel(false);
+    }
+  };
 
   const handleExecuteAction = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,7 +151,7 @@ export default function ModerationPage() {
             <span>Module 4 • Discord Server Moderation Hub</span>
           </div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Server Moderation Tools</h1>
-          <p className="text-sm text-gray-400 mt-1">Execute moderation actions (Ban, Kick, Timeout, Warn, Purge) and inspect action logs.</p>
+          <p className="text-sm text-gray-400 mt-1">Execute moderation actions (Ban, Kick, Timeout, Warn, Purge), deploy chat panel embeds, and route action logs.</p>
         </div>
       </div>
 
@@ -108,6 +167,76 @@ export default function ModerationPage() {
           <span>{statusMsg.text}</span>
         </div>
       )}
+
+      {/* Moderation Channel Setup & Deploy Panel Card */}
+      <Card className="p-6 space-y-4">
+        <h3 className="text-base font-bold text-white flex items-center gap-2 border-b border-border/40 pb-3">
+          <span># Moderation Channel Routes & Chat Control Panel</span>
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-300 mb-1">
+              MODERATION LOG EMBED CHANNEL
+            </label>
+            <p className="text-[11px] text-gray-400 mb-1.5">Channel where readable action embeds post automatically.</p>
+            {channels.length > 0 ? (
+              <select
+                value={modLogChannelId}
+                onChange={(e) => setModLogChannelId(e.target.value)}
+                className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-xs text-white"
+              >
+                <option value="">-- Select Log Channel --</option>
+                {channels.map((c) => (
+                  <option key={c.id} value={c.id}>#{c.name}</option>
+                ))}
+              </select>
+            ) : (
+              <Input
+                value={modLogChannelId}
+                onChange={(e) => setModLogChannelId(e.target.value)}
+                placeholder="Enter Log Channel ID"
+                className="text-xs"
+              />
+            )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-300 mb-1">
+              DISCORD CHAT CONTROL PANEL CHANNEL
+            </label>
+            <p className="text-[11px] text-gray-400 mb-1.5">Channel where staff interactive button embed is deployed.</p>
+            {channels.length > 0 ? (
+              <select
+                value={modPanelChannelId}
+                onChange={(e) => setModPanelChannelId(e.target.value)}
+                className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-xs text-white"
+              >
+                <option value="">-- Select Staff Channel --</option>
+                {channels.map((c) => (
+                  <option key={c.id} value={c.id}>#{c.name}</option>
+                ))}
+              </select>
+            ) : (
+              <Input
+                value={modPanelChannelId}
+                onChange={(e) => setModPanelChannelId(e.target.value)}
+                placeholder="Enter Staff Channel ID"
+                className="text-xs"
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+          <Button onClick={handleSaveChannels} disabled={savingChannels} variant="secondary" size="sm" className="font-bold">
+            {savingChannels ? 'Saving...' : '💾 Save Channels'}
+          </Button>
+          <Button onClick={handleDeployPanel} disabled={deployingPanel || !modPanelChannelId} size="sm" className="font-bold">
+            {deployingPanel ? 'Deploying...' : '🚀 Deploy Moderation Panel Embed to Discord'}
+          </Button>
+        </div>
+      </Card>
 
       {/* Action Selection Tabs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">

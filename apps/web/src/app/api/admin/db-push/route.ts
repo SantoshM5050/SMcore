@@ -11,6 +11,8 @@ export async function GET() {
     await prisma.$executeRawUnsafe(`ALTER TABLE "EventSignup" ADD COLUMN IF NOT EXISTS "pingRoleId" TEXT;`);
     await prisma.$executeRawUnsafe(`ALTER TABLE "GuildSettings" ADD COLUMN IF NOT EXISTS "reviewPingRoleId" TEXT;`);
     await prisma.$executeRawUnsafe(`ALTER TABLE "GuildSettings" ADD COLUMN IF NOT EXISTS "commonRoleId" TEXT;`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ChannelConfiguration" ADD COLUMN IF NOT EXISTS "modLogChannelId" TEXT;`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ChannelConfiguration" ADD COLUMN IF NOT EXISTS "modPanelChannelId" TEXT;`);
 
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "WelcomeConfig" (
