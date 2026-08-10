@@ -29,13 +29,18 @@ const navGroups = [
     ],
   },
   {
-    title: 'MODULE TOOLS & CONFIG',
+    title: 'MODULE 2 CONFIG & TOOLS',
     items: [
-      { name: 'Embed Builder', href: '/embed-builder', icon: Palette },
       { name: 'Requestable Roles', href: '/roles', icon: ShieldCheck },
+      { name: 'Panel Embed Builder', href: '/embed-builder', icon: Palette },
+    ],
+  },
+  {
+    title: 'COMMON SERVER SETTINGS',
+    items: [
+      { name: 'Guild Settings', href: '/settings', icon: Settings },
       { name: 'Channel Routes', href: '/channels', icon: Hash },
       { name: 'Staff Permissions', href: '/staff', icon: Users },
-      { name: 'Guild Settings', href: '/settings', icon: Settings },
     ],
   },
   {

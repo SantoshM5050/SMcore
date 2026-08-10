@@ -92,6 +92,19 @@ export default function EventSignupsPage() {
     postNow: true,
   });
 
+  const [eventTimePicker, setEventTimePicker] = useState<string>('19:40');
+
+  const generateQuickTimeSlots = () => {
+    const slots: string[] = [];
+    const now = new Date();
+    for (let i = 0; i < 4; i++) {
+      const d = new Date(now.getTime() + i * 30 * 60 * 1000);
+      slots.push(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`);
+    }
+    slots.push('{time}');
+    return slots;
+  };
+
   // Batch Modal state
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [batchData, setBatchData] = useState({
@@ -625,9 +638,14 @@ export default function EventSignupsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1">
-                  Sub-header / Description
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-gray-300">
+                    Sub-header / Description
+                  </label>
+                  <span className="text-[11px] text-primary font-medium flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> Select Time Slot below
+                  </span>
+                </div>
                 <input
                   type="text"
                   value={formData.description}
@@ -635,6 +653,53 @@ export default function EventSignupsPage() {
                   placeholder="e.g. Register for Informal 19:40"
                   className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
                 />
+
+                {/* Time Picker & Quick Selection Chips */}
+                <div className="mt-2.5 p-2.5 bg-secondary/40 border border-border/60 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="text-[11px] font-bold text-gray-300 flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-primary" />
+                      <span>Event Target Time (Slot Picker):</span>
+                    </label>
+                    <input
+                      type="time"
+                      value={eventTimePicker}
+                      onChange={(e) => {
+                        const newTime = e.target.value;
+                        setEventTimePicker(newTime);
+                        if (newTime) {
+                          const base = (formData.description || 'Register for Informal').replace(/\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/g, '').replace(/\{time\}/g, '').trim();
+                          setFormData((prev) => ({
+                            ...prev,
+                            description: `${base} ${newTime}`.trim(),
+                          }));
+                        }
+                      }}
+                      className="bg-secondary border border-primary/40 rounded-md px-2 py-1 text-xs text-white focus:outline-none font-bold"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    <span className="text-[10px] text-gray-400 font-semibold mr-1">Quick Time Slots:</span>
+                    {generateQuickTimeSlots().map((slot) => (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => {
+                          const base = (formData.description || 'Register for Informal').replace(/\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/g, '').replace(/\{time\}/g, '').trim();
+                          setFormData((prev) => ({
+                            ...prev,
+                            description: `${base} ${slot}`.trim(),
+                          }));
+                          if (slot !== '{time}') setEventTimePicker(slot);
+                        }}
+                        className="px-2 py-0.5 bg-primary/20 hover:bg-primary/40 text-primary border border-primary/30 rounded text-[11px] font-bold transition-all cursor-pointer"
+                      >
+                        {slot === '{time}' ? '🔄 Dynamic {time}' : slot}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">

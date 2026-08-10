@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -58,7 +59,8 @@ export default function ApplicationsPage() {
         .then((res) => res.json())
         .then((data) => {
           if (Array.isArray(data)) setComments(data);
-        });
+        })
+        .catch((err) => console.error(err));
     }
   }, [selectedApp, guildId]);
 
@@ -73,58 +75,90 @@ export default function ApplicationsPage() {
       const res = await fetch(`/api/guilds/${guildId}/applications/${id}/approve`, {
         method: 'POST',
       });
-      if (!res.ok) {
-        const err = await res.json();
-        alert(`Error: ${err.error}`);
-        return;
+      if (res.ok) {
+        fetchApplications();
+        if (selectedApp?.id === id) setSelectedApp(null);
+      } else {
+        const data = await res.json();
+        alert(`Failed: ${data.error}`);
       }
-      setSelectedApp(null);
-      fetchApplications();
-    } catch (err: any) {
-      alert(`Failed to approve: ${err.message}`);
+    } catch (err) {
+      console.error(err);
     }
   };
 
   const handleRejectConfirm = async (reason: string) => {
     if (!rejectingAppId) return;
-    const res = await fetch(`/api/guilds/${guildId}/applications/${rejectingAppId}/reject`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reason }),
-    });
-
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error);
+    try {
+      const res = await fetch(`/api/guilds/${guildId}/applications/${rejectingAppId}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
+      });
+      if (res.ok) {
+        fetchApplications();
+        if (selectedApp?.id === rejectingAppId) setSelectedApp(null);
+        setRejectingAppId(null);
+      } else {
+        const data = await res.json();
+        alert(`Failed: ${data.error}`);
+      }
+    } catch (err) {
+      console.error(err);
     }
-    setSelectedApp(null);
-    fetchApplications();
   };
 
-  const handleAddComment = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddComment = async () => {
     if (!selectedApp || !newComment.trim()) return;
-
-    await fetch(`/api/guilds/${guildId}/applications/${selectedApp.id}/comments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ comment: newComment }),
-    });
-
-    setNewComment('');
-    fetch(`/api/guilds/${guildId}/applications/${selectedApp.id}/comments`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) setComments(data);
+    try {
+      await fetch(`/api/guilds/${guildId}/applications/${selectedApp.id}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comment: newComment }),
       });
+      setNewComment('');
+      fetch(`/api/guilds/${guildId}/applications/${selectedApp.id}/comments`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) setComments(data);
+        });
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">Applications Review</h1>
-        <p className="text-sm text-gray-400 mt-1">Review, approve, or reject gaming role request submissions.</p>
+      {/* Header & Sub-Navigation */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/60 pb-4">
+        <div>
+          <div className="flex items-center gap-2 text-primary font-bold text-xs tracking-wider uppercase mb-1">
+            <span>Module 2 • Gaming Role Requests</span>
+          </div>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">Applications Review</h1>
+          <p className="text-sm text-gray-400 mt-1">Review, approve, or reject gaming role request submissions.</p>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link
+            href={guildId ? `/applications?guildId=${guildId}` : '/applications'}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-white shadow-md shadow-primary/20 flex items-center gap-1.5"
+          >
+            📋 Submissions Review
+          </Link>
+          <Link
+            href={guildId ? `/roles?guildId=${guildId}` : '/roles'}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-secondary text-gray-300 hover:text-white hover:bg-secondary/80 flex items-center gap-1.5 transition-all"
+          >
+            🛡️ Requestable Roles
+          </Link>
+          <Link
+            href={guildId ? `/embed-builder?guildId=${guildId}` : '/embed-builder'}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-secondary text-gray-300 hover:text-white hover:bg-secondary/80 flex items-center gap-1.5 transition-all"
+          >
+            🎨 Panel Embed Builder
+          </Link>
+        </div>
       </div>
 
       {/* Controls */}
