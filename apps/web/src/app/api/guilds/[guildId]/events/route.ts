@@ -106,15 +106,16 @@ export async function POST(request: Request, { params }: { params: { guildId: st
       const createdEvents = [];
       for (const item of validation.data.events) {
         const scheduledDate = item.scheduledAt ? new Date(item.scheduledAt) : null;
-        let closeDate = item.closeAt ? new Date(item.closeAt) : null;
-
-        if (!closeDate && item.autoCloseMinutes && item.autoCloseMinutes > 0) {
-          closeDate = new Date(Date.now() + item.autoCloseMinutes * 60 * 1000);
-        }
 
         const initialStatus = item.postNow || !scheduledDate
           ? EventSignupStatus.OPEN
           : EventSignupStatus.SCHEDULED;
+
+        let closeDate = item.closeAt ? new Date(item.closeAt) : null;
+
+        if (!closeDate && initialStatus === EventSignupStatus.OPEN && item.autoCloseMinutes && item.autoCloseMinutes > 0) {
+          closeDate = new Date(Date.now() + item.autoCloseMinutes * 60 * 1000);
+        }
 
         const event = await prisma.eventSignup.create({
           data: {
@@ -159,15 +160,17 @@ export async function POST(request: Request, { params }: { params: { guildId: st
 
     const data = validation.data;
     const scheduledDate = data.scheduledAt ? new Date(data.scheduledAt) : null;
-    let closeDate = data.closeAt ? new Date(data.closeAt) : null;
-
-    if (!closeDate && data.autoCloseMinutes && data.autoCloseMinutes > 0) {
-      closeDate = new Date(Date.now() + data.autoCloseMinutes * 60 * 1000);
-    }
 
     const initialStatus = data.postNow || !scheduledDate
       ? EventSignupStatus.OPEN
       : EventSignupStatus.SCHEDULED;
+
+    let closeDate = data.closeAt ? new Date(data.closeAt) : null;
+
+    // Only set closeDate at creation time if the event is being posted NOW (OPEN)
+    if (!closeDate && initialStatus === EventSignupStatus.OPEN && data.autoCloseMinutes && data.autoCloseMinutes > 0) {
+      closeDate = new Date(Date.now() + data.autoCloseMinutes * 60 * 1000);
+    }
 
     const event = await prisma.eventSignup.create({
       data: {

@@ -187,7 +187,11 @@ export default function EventSignupsPage() {
         }
       }
 
-      const hasFutureSchedule = Boolean(formData.scheduledAt && new Date(formData.scheduledAt) > new Date());
+      const scheduledISO = formData.scheduledAt && !isNaN(new Date(formData.scheduledAt).getTime())
+        ? new Date(formData.scheduledAt).toISOString()
+        : null;
+
+      const hasFutureSchedule = Boolean(scheduledISO && new Date(scheduledISO) > new Date());
       const postNow = formData.scheduleType === 'now' || (formData.scheduleType === 'recurring' && !hasFutureSchedule);
 
       const res = await fetch(`/api/guilds/${guildId}/events`, {
@@ -195,7 +199,7 @@ export default function EventSignupsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          scheduledAt: formData.scheduledAt || null,
+          scheduledAt: scheduledISO,
           maxMainTeam: Number(formData.maxMainTeam),
           maxSubstitutes: Number(formData.maxSubstitutes),
           autoCloseMinutes: Number(formData.autoCloseMinutes),
@@ -520,11 +524,18 @@ export default function EventSignupsPage() {
                         </div>
                       )}
 
-                      {event.closeAt && (
+                      {event.closeAt ? (
                         <div className="flex items-center gap-1.5 text-gray-300">
                           <Lock className="w-3.5 h-3.5 text-red-400" />
                           <span>Auto-close time: <strong>{new Date(event.closeAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong></span>
                         </div>
+                      ) : (
+                        event.autoCloseMinutes && event.autoCloseMinutes > 0 && (
+                          <div className="flex items-center gap-1.5 text-gray-300">
+                            <Lock className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Auto-close duration: <strong>{event.autoCloseMinutes} Mins (after open)</strong></span>
+                          </div>
+                        )
                       )}
                     </div>
                   )}
