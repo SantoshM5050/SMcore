@@ -7,6 +7,8 @@ import { onReady } from './events/ready';
 import { onInteractionCreate } from './events/interactionCreate';
 import { onGuildCreate } from './events/guildCreate';
 import { onGuildDelete } from './events/guildDelete';
+import { onGuildMemberAdd } from './events/guildMemberAdd';
+import { onGuildMemberRemove } from './events/guildMemberRemove';
 
 // Force DNS resolution to prefer IPv4 first (bypasses IPv6 connect timeouts on Render/Linux)
 if (dns && dns.setDefaultResultOrder) {
@@ -27,6 +29,8 @@ function attachClientListeners(client: typeof botClient) {
   client.on(Events.InteractionCreate, onInteractionCreate);
   client.on(Events.GuildCreate, onGuildCreate);
   client.on(Events.GuildDelete, onGuildDelete);
+  client.on(Events.GuildMemberAdd, onGuildMemberAdd);
+  client.on(Events.GuildMemberRemove, onGuildMemberRemove);
 
   client.on(Events.Error, (error: any) => {
     console.error('🔴 Discord Client Error:', error);

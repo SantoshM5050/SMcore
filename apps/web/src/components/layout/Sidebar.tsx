@@ -16,6 +16,8 @@ import {
   User,
   Zap,
   Trophy,
+  UserPlus,
+  ShieldAlert,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -26,6 +28,8 @@ const navGroups = [
       { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
       { name: 'Event Signups', href: '/events', icon: Trophy, badge: 'Module 1' },
       { name: 'Role Requests', href: '/applications', icon: ClipboardList, badge: 'Module 2' },
+      { name: 'Welcome System', href: '/welcome', icon: UserPlus, badge: 'Module 3' },
+      { name: 'Moderation Hub', href: '/moderation', icon: ShieldAlert, badge: 'Module 4' },
     ],
   },
   {

@@ -127,6 +127,74 @@ export default function ApplicationsPage() {
     }
   };
 
+  const [activeTab, setActiveTab] = useState<'submissions' | 'settings'>('submissions');
+  const [mod2Settings, setMod2Settings] = useState<any>({
+    cooldownMinutes: 0,
+    commonRoleId: '',
+    reviewPingRoleId: '',
+    enforceSinglePending: true,
+    requireProof: false,
+    allowProof: true,
+    autoDmNotification: true,
+    enableAuditLog: true,
+  });
+  const [mod2Channels, setMod2Channels] = useState<any>({
+    roleRequestChannelId: '',
+    reviewChannelId: '',
+  });
+  const [availableChannels, setAvailableChannels] = useState<any[]>([]);
+  const [availableRoles, setAvailableRoles] = useState<any[]>([]);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsSuccess, setSettingsSuccess] = useState('');
+
+  const fetchMod2Settings = () => {
+    if (!guildId) return;
+    fetch(`/api/guilds/${guildId}/settings`)
+      .then((res) => res.json())
+      .then((data) => { if (data.guildId) setMod2Settings(data); })
+      .catch(console.error);
+
+    fetch(`/api/guilds/${guildId}/channels`)
+      .then((res) => res.json())
+      .then((data) => { if (data.guildId) setMod2Channels(data); })
+      .catch(console.error);
+
+    fetch(`/api/guilds/${guildId}/channels/list`)
+      .then((res) => res.json())
+      .then((data) => { if (Array.isArray(data)) setAvailableChannels(data); })
+      .catch(console.error);
+
+    fetch(`/api/guilds/${guildId}/roles`)
+      .then((res) => res.json())
+      .then((data) => { if (Array.isArray(data)) setAvailableRoles(data); })
+      .catch(console.error);
+  };
+
+  const handleSaveMod2Settings = async () => {
+    setSavingSettings(true);
+    setSettingsSuccess('');
+    try {
+      await fetch(`/api/guilds/${guildId}/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mod2Settings),
+      });
+
+      await fetch(`/api/guilds/${guildId}/channels`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mod2Channels),
+      });
+
+      setSettingsSuccess('Module 2 Settings saved successfully!');
+      setTimeout(() => setSettingsSuccess(''), 3000);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Header & Sub-Navigation */}
@@ -136,16 +204,35 @@ export default function ApplicationsPage() {
             <span>Module 2 • Gaming Role Requests</span>
           </div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Applications Review</h1>
-          <p className="text-sm text-gray-400 mt-1">Review, approve, or reject gaming role request submissions.</p>
+          <p className="text-sm text-gray-400 mt-1">Review submissions, manage requestable roles, embed panels, and rules.</p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <Link
-            href={guildId ? `/applications?guildId=${guildId}` : '/applications'}
-            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-white shadow-md shadow-primary/20 flex items-center gap-1.5"
+          <button
+            onClick={() => setActiveTab('submissions')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'submissions'
+                ? 'bg-primary text-white shadow-md shadow-primary/20'
+                : 'bg-secondary text-gray-300 hover:text-white'
+            }`}
           >
             📋 Submissions Review
-          </Link>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab('settings');
+              fetchMod2Settings();
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'settings'
+                ? 'bg-primary text-white shadow-md shadow-primary/20'
+                : 'bg-secondary text-gray-300 hover:text-white'
+            }`}
+          >
+            ⚙️ Module 2 Settings
+          </button>
+
           <Link
             href={guildId ? `/roles?guildId=${guildId}` : '/roles'}
             className="px-3 py-1.5 rounded-lg text-xs font-bold bg-secondary text-gray-300 hover:text-white hover:bg-secondary/80 flex items-center gap-1.5 transition-all"
@@ -161,39 +248,233 @@ export default function ApplicationsPage() {
         </div>
       </div>
 
-      {/* Controls */}
-      <Card className="p-4 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
-          {['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map((st) => (
-            <button
-              key={st}
-              onClick={() => {
-                setStatusFilter(st);
-                setPage(1);
-              }}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                statusFilter === st
-                  ? 'bg-primary text-white shadow-md shadow-primary/20'
-                  : 'bg-secondary text-gray-400 hover:text-white'
-              }`}
-            >
-              {st}
-            </button>
-          ))}
-        </div>
+      {activeTab === 'submissions' ? (
+        <>
+          {/* Controls */}
+          <Card className="p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
+              {['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map((st) => (
+                <button
+                  key={st}
+                  onClick={() => {
+                    setStatusFilter(st);
+                    setPage(1);
+                  }}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    statusFilter === st
+                      ? 'bg-primary text-white shadow-md shadow-primary/20'
+                      : 'bg-secondary text-gray-400 hover:text-white'
+                  }`}
+                >
+                  {st}
+                </button>
+              ))}
+            </div>
 
-        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 w-full md:w-80">
-          <Input
-            placeholder="Search IGN, Tag, ID..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="py-1.5 text-xs"
-          />
-          <Button type="submit" size="sm" variant="secondary">
-            <Search className="w-4 h-4" />
-          </Button>
-        </form>
-      </Card>
+            <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 w-full md:w-80">
+              <Input
+                placeholder="Search IGN, Tag, ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="py-1.5 text-xs"
+              />
+              <Button type="submit" size="sm" variant="secondary">
+                <Search className="w-4 h-4" />
+              </Button>
+            </form>
+          </Card>
+        </>
+      ) : (
+        /* MODULE 2 SETTINGS TAB */
+        <div className="space-y-6">
+          {settingsSuccess && (
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs font-bold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4" /> {settingsSuccess}
+            </div>
+          )}
+
+          {/* Module 2 Channels Config */}
+          <Card className="p-6 space-y-4">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <span># Channel Routes (Module 2)</span>
+            </h3>
+            <p className="text-xs text-gray-400">
+              Configure the channels where the role request panel embed is posted and where staff inspect applications.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1">
+                  ROLE REQUEST PANEL HOST CHANNEL
+                </label>
+                {availableChannels.length > 0 ? (
+                  <select
+                    value={mod2Channels.roleRequestChannelId || ''}
+                    onChange={(e) => setMod2Channels({ ...mod2Channels, roleRequestChannelId: e.target.value })}
+                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-xs text-white"
+                  >
+                    <option value="">-- Select Channel --</option>
+                    {availableChannels.map((c) => (
+                      <option key={c.id} value={c.id}>#{c.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={mod2Channels.roleRequestChannelId || ''}
+                    onChange={(e) => setMod2Channels({ ...mod2Channels, roleRequestChannelId: e.target.value })}
+                    placeholder="Enter Channel ID"
+                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-xs text-white"
+                  />
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1">
+                  STAFF REVIEW INSPECTION CHANNEL
+                </label>
+                {availableChannels.length > 0 ? (
+                  <select
+                    value={mod2Channels.reviewChannelId || ''}
+                    onChange={(e) => setMod2Channels({ ...mod2Channels, reviewChannelId: e.target.value })}
+                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-xs text-white"
+                  >
+                    <option value="">-- Select Channel --</option>
+                    {availableChannels.map((c) => (
+                      <option key={c.id} value={c.id}>#{c.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={mod2Channels.reviewChannelId || ''}
+                    onChange={(e) => setMod2Channels({ ...mod2Channels, reviewChannelId: e.target.value })}
+                    placeholder="Enter Channel ID"
+                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-xs text-white"
+                  />
+                )}
+              </div>
+            </div>
+          </Card>
+
+          {/* Application Restrictions & Rules */}
+          <Card className="p-6 space-y-4">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <span>⚙️ Application Restrictions & Rules</span>
+            </h3>
+
+            <div className="space-y-4 text-xs">
+              <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-xl border border-border/50">
+                <div>
+                  <h4 className="font-bold text-white">Enforce Single Pending Application</h4>
+                  <p className="text-gray-400">Prevent users from submitting duplicate applications while one is pending.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={mod2Settings.enforceSinglePending ?? true}
+                  onChange={(e) => setMod2Settings({ ...mod2Settings, enforceSinglePending: e.target.checked })}
+                  className="w-4 h-4 accent-primary cursor-pointer"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-xl border border-border/50">
+                <div>
+                  <h4 className="font-bold text-white">Allow Screenshot Proof Attachment</h4>
+                  <p className="text-gray-400">Enable screenshot proof URL input field on application modal.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={mod2Settings.allowProof ?? true}
+                  onChange={(e) => setMod2Settings({ ...mod2Settings, allowProof: e.target.checked })}
+                  className="w-4 h-4 accent-primary cursor-pointer"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-xl border border-border/50">
+                <div>
+                  <h4 className="font-bold text-white">Mandatory Screenshot Proof</h4>
+                  <p className="text-gray-400">Require applicants to provide a valid screenshot URL before submitting.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={mod2Settings.requireProof ?? false}
+                  onChange={(e) => setMod2Settings({ ...mod2Settings, requireProof: e.target.checked })}
+                  className="w-4 h-4 accent-primary cursor-pointer"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-xl border border-border/50">
+                <div>
+                  <h4 className="font-bold text-white">Enable Automatic Direct Messages (DM)</h4>
+                  <p className="text-gray-400">Send applicant an automated DM notification upon approval or rejection with reason.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={mod2Settings.autoDmNotification ?? true}
+                  onChange={(e) => setMod2Settings({ ...mod2Settings, autoDmNotification: e.target.checked })}
+                  className="w-4 h-4 accent-primary cursor-pointer"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-border/40">
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1">
+                  COMMON APPROVED ROLE (OPTIONAL)
+                </label>
+                <select
+                  value={mod2Settings.commonRoleId || ''}
+                  onChange={(e) => setMod2Settings({ ...mod2Settings, commonRoleId: e.target.value })}
+                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-xs text-white"
+                >
+                  <option value="">-- None (Requested Role Only) --</option>
+                  {availableRoles.map((r) => (
+                    <option key={r.id} value={r.id}>@{r.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1">
+                  REVIEW PING ROLE (OPTIONAL)
+                </label>
+                <select
+                  value={mod2Settings.reviewPingRoleId || ''}
+                  onChange={(e) => setMod2Settings({ ...mod2Settings, reviewPingRoleId: e.target.value })}
+                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-xs text-white"
+                >
+                  <option value="">-- No Ping --</option>
+                  <option value="everyone">@everyone</option>
+                  <option value="here">@here</option>
+                  {availableRoles.map((r) => (
+                    <option key={r.id} value={r.id}>@{r.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1">
+                  APPLICATION COOLDOWN (MINUTES)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={10080}
+                  value={mod2Settings.cooldownMinutes ?? 0}
+                  onChange={(e) => setMod2Settings({ ...mod2Settings, cooldownMinutes: Number(e.target.value) })}
+                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-xs text-white"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button onClick={handleSaveMod2Settings} disabled={savingSettings} size="sm">
+                {savingSettings ? 'Saving...' : '💾 Save Module 2 Settings'}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Applications Table */}
       <Card>

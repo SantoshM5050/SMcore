@@ -156,4 +156,137 @@ export async function handleSlashCommandInteraction(interaction: ChatInputComman
       content: `✅ Event Signup "${title}" created & posted in ${channel}! Slots: ${mainSlots} Main + ${subSlots} Subs.`,
     });
   }
+
+  // --- MODERATION COMMAND HANDLERS ---
+  if (['ban', 'kick', 'timeout', 'warn', 'purge'].includes(commandName)) {
+    if (!isAdmin) {
+      return interaction.reply({ content: '❌ You need Administrator or Moderation permissions to run this command.', ephemeral: true });
+    }
+
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+      if (commandName === 'ban') {
+        const user = interaction.options.getUser('user', true);
+        const reason = interaction.options.getString('reason') || `Banned by ${interaction.user.tag} via /ban command`;
+
+        await interaction.guild?.members.ban(user.id, { reason });
+
+        await prisma.moderationLog.create({
+          data: {
+            guildId,
+            targetUserId: user.id,
+            targetUserTag: user.tag,
+            moderatorId: interaction.user.id,
+            moderatorTag: interaction.user.tag,
+            action: 'BAN',
+            reason,
+          },
+        });
+
+        return interaction.editReply({ content: `✅ Successfully banned **${user.tag}** (${user.id}). Reason: ${reason}` });
+      }
+
+      if (commandName === 'kick') {
+        const user = interaction.options.getUser('user', true);
+        const reason = interaction.options.getString('reason') || `Kicked by ${interaction.user.tag} via /kick command`;
+        const memberToKick = await interaction.guild?.members.fetch(user.id).catch(() => null);
+
+        if (!memberToKick) {
+          return interaction.editReply({ content: `❌ Member ${user.tag} not found in this server.` });
+        }
+
+        await memberToKick.kick(reason);
+
+        await prisma.moderationLog.create({
+          data: {
+            guildId,
+            targetUserId: user.id,
+            targetUserTag: user.tag,
+            moderatorId: interaction.user.id,
+            moderatorTag: interaction.user.tag,
+            action: 'KICK',
+            reason,
+          },
+        });
+
+        return interaction.editReply({ content: `✅ Successfully kicked **${user.tag}** (${user.id}). Reason: ${reason}` });
+      }
+
+      if (commandName === 'timeout') {
+        const user = interaction.options.getUser('user', true);
+        const minutes = interaction.options.getInteger('minutes', true);
+        const reason = interaction.options.getString('reason') || `Timeout by ${interaction.user.tag} for ${minutes}m`;
+        const memberToTimeout = await interaction.guild?.members.fetch(user.id).catch(() => null);
+
+        if (!memberToTimeout) {
+          return interaction.editReply({ content: `❌ Member ${user.tag} not found in this server.` });
+        }
+
+        await memberToTimeout.timeout(minutes * 60 * 1000, reason);
+
+        await prisma.moderationLog.create({
+          data: {
+            guildId,
+            targetUserId: user.id,
+            targetUserTag: user.tag,
+            moderatorId: interaction.user.id,
+            moderatorTag: interaction.user.tag,
+            action: 'TIMEOUT',
+            reason,
+            durationMinutes: minutes,
+          },
+        });
+
+        return interaction.editReply({ content: `✅ Successfully timed out **${user.tag}** for **${minutes} minutes**. Reason: ${reason}` });
+      }
+
+      if (commandName === 'warn') {
+        const user = interaction.options.getUser('user', true);
+        const reason = interaction.options.getString('reason', true);
+
+        await prisma.moderationLog.create({
+          data: {
+            guildId,
+            targetUserId: user.id,
+            targetUserTag: user.tag,
+            moderatorId: interaction.user.id,
+            moderatorTag: interaction.user.tag,
+            action: 'WARN',
+            reason,
+          },
+        });
+
+        return interaction.editReply({ content: `⚠️ Issued formal warning to **${user.tag}**. Reason: ${reason}` });
+      }
+
+      if (commandName === 'purge') {
+        const count = Math.min(Math.max(interaction.options.getInteger('count', true), 1), 100);
+        const channel = interaction.channel as any;
+
+        if (!channel || !('bulkDelete' in channel)) {
+          return interaction.editReply({ content: '❌ Cannot purge messages in this channel type.' });
+        }
+
+        const deleted = await channel.bulkDelete(count, true);
+
+        await prisma.moderationLog.create({
+          data: {
+            guildId,
+            targetUserId: 'CHANNEL',
+            targetUserTag: `#${channel.name}`,
+            moderatorId: interaction.user.id,
+            moderatorTag: interaction.user.tag,
+            action: 'PURGE',
+            count: deleted.size,
+          },
+        });
+
+        return interaction.editReply({ content: `🧹 Successfully purged **${deleted.size}** messages from #${channel.name}.` });
+      }
+    } catch (err: any) {
+      console.error(`[SlashCommand ${commandName} Error]:`, err);
+      return interaction.editReply({ content: `❌ Failed to execute /${commandName}: ${err.message}` });
+    }
+  }
 }

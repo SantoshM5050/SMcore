@@ -12,6 +12,51 @@ export async function GET() {
     await prisma.$executeRawUnsafe(`ALTER TABLE "GuildSettings" ADD COLUMN IF NOT EXISTS "reviewPingRoleId" TEXT;`);
     await prisma.$executeRawUnsafe(`ALTER TABLE "GuildSettings" ADD COLUMN IF NOT EXISTS "commonRoleId" TEXT;`);
 
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "WelcomeConfig" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "guildId" TEXT NOT NULL UNIQUE,
+        "enabled" BOOLEAN NOT NULL DEFAULT true,
+        "channelId" TEXT,
+        "embedTitle" TEXT NOT NULL DEFAULT 'Welcome to the Server!',
+        "embedDescription" TEXT NOT NULL DEFAULT 'Hey {user}, welcome to {server}! Enjoy your stay and check out the rules channel.',
+        "embedColor" TEXT NOT NULL DEFAULT '#5865F2',
+        "bannerUrl" TEXT,
+        "autoRoleId" TEXT,
+        "goodbyeEnabled" BOOLEAN NOT NULL DEFAULT false,
+        "goodbyeChannelId" TEXT,
+        "goodbyeMessage" TEXT NOT NULL DEFAULT '{user} has left the server.',
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL,
+        CONSTRAINT "WelcomeConfig_guildId_fkey" FOREIGN KEY ("guildId") REFERENCES "Guild"("id") ON DELETE CASCADE ON UPDATE CASCADE
+      );
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      DO $$ BEGIN
+        CREATE TYPE "ModerationAction" AS ENUM ('BAN', 'KICK', 'TIMEOUT', 'WARN', 'PURGE');
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "ModerationLog" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "guildId" TEXT NOT NULL,
+        "targetUserId" TEXT NOT NULL,
+        "targetUserTag" TEXT NOT NULL,
+        "moderatorId" TEXT NOT NULL,
+        "moderatorTag" TEXT NOT NULL,
+        "action" "ModerationAction" NOT NULL,
+        "reason" TEXT,
+        "durationMinutes" INTEGER,
+        "count" INTEGER,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "ModerationLog_guildId_fkey" FOREIGN KEY ("guildId") REFERENCES "Guild"("id") ON DELETE CASCADE ON UPDATE CASCADE
+      );
+    `);
+
     console.log('[DB Sync API] SQL schema migration completed successfully!');
 
     return NextResponse.json({

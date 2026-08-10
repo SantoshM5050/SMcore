@@ -84,8 +84,48 @@ export async function onReady(client: Client) {
             },
           ],
         },
+        {
+          name: 'ban',
+          description: 'Ban a member from the server',
+          options: [
+            { name: 'user', description: 'The member to ban', type: 6, required: true },
+            { name: 'reason', description: 'Reason for ban', type: 3, required: false },
+          ],
+        },
+        {
+          name: 'kick',
+          description: 'Kick a member from the server',
+          options: [
+            { name: 'user', description: 'The member to kick', type: 6, required: true },
+            { name: 'reason', description: 'Reason for kick', type: 3, required: false },
+          ],
+        },
+        {
+          name: 'timeout',
+          description: 'Timeout / Mute a member for a duration',
+          options: [
+            { name: 'user', description: 'The member to timeout', type: 6, required: true },
+            { name: 'minutes', description: 'Duration in minutes (e.g. 60)', type: 4, required: true },
+            { name: 'reason', description: 'Reason for timeout', type: 3, required: false },
+          ],
+        },
+        {
+          name: 'warn',
+          description: 'Issue a formal warning to a member',
+          options: [
+            { name: 'user', description: 'The member to warn', type: 6, required: true },
+            { name: 'reason', description: 'Reason for warning', type: 3, required: true },
+          ],
+        },
+        {
+          name: 'purge',
+          description: 'Bulk delete messages from channel',
+          options: [
+            { name: 'count', description: 'Number of messages to delete (1-100)', type: 4, required: true },
+          ],
+        },
       ]);
-      console.log('✅ Registered Slash Commands (/setup-roles, /setup-event, /settings, /help) with Discord API.');
+      console.log('✅ Registered Slash Commands (/setup-roles, /setup-event, /settings, /help, /ban, /kick, /timeout, /warn, /purge) with Discord API.');
     }
   } catch (slashErr) {
     console.error('Failed to register Slash Commands with Discord API:', slashErr);

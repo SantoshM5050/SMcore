@@ -52,6 +52,8 @@ model Guild {
   embeds           EmbedConfig[]
   panelMessages    PanelMessage[]
   eventSignups     EventSignup[]
+  welcomeConfig    WelcomeConfig?
+  moderationLogs   ModerationLog[]
 }
 
 model GuildSettings {
@@ -302,4 +304,50 @@ model EventParticipant {
   @@unique([eventSignupId, userId])
   @@index([eventSignupId, roleType])
 }
+
+model WelcomeConfig {
+  id               String   @id @default(cuid())
+  guildId          String   @unique
+  enabled          Boolean  @default(true)
+  channelId        String?
+  embedTitle       String   @default("Welcome to the Server!")
+  embedDescription String   @default("Hey {user}, welcome to {server}! Enjoy your stay and check out the rules channel.")
+  embedColor       String   @default("#5865F2")
+  bannerUrl        String?
+  autoRoleId       String?
+  goodbyeEnabled   Boolean  @default(false)
+  goodbyeChannelId String?
+  goodbyeMessage   String   @default("{user} has left the server.")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+}
+
+enum ModerationAction {
+  BAN
+  KICK
+  TIMEOUT
+  WARN
+  PURGE
+}
+
+model ModerationLog {
+  id              String           @id @default(cuid())
+  guildId         String
+  targetUserId    String
+  targetUserTag   String
+  moderatorId     String
+  moderatorTag    String
+  action          ModerationAction
+  reason          String?
+  durationMinutes Int?
+  count           Int?
+  createdAt       DateTime         @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@index([guildId, createdAt])
+}
+
 
