@@ -1079,13 +1079,18 @@ export default function EventSignupsPage() {
                     className="w-full bg-secondary/60 border border-border/80 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-primary font-medium"
                   />
 
-                  {/* Clean 24-Hour Format Target Slot Selector */}
+                  {/* In-Game Target Time Slot Selector */}
                   <div className="mt-3 p-3 bg-secondary/40 border border-border/60 rounded-2xl space-y-2.5">
                     <div className="flex items-center justify-between gap-3">
-                      <label className="text-xs font-bold text-gray-300 flex items-center gap-1.5">
-                        <Clock className="w-4 h-4 text-primary" />
-                        <span>24-Hour Target Time Slot:</span>
-                      </label>
+                      <div>
+                        <label className="text-xs font-bold text-gray-200 flex items-center gap-1.5">
+                          <Clock className="w-4 h-4 text-primary" />
+                          <span>🎮 In-Game Target Time Slot (24h Format):</span>
+                        </label>
+                        <p className="text-[10px] text-gray-400">
+                          In-Game match slot time (e.g. 17:40 / 18:40) jo embed me {'{time}'} tag se replace hoga.
+                        </p>
+                      </div>
                       <input
                         type="time"
                         step="300"
@@ -1439,8 +1444,8 @@ export default function EventSignupsPage() {
                           </div>
 
                           <div className="space-y-1 pt-1 border-t border-purple-500/20">
-                            <label className="block text-[11px] font-bold text-gray-300">
-                              Start Schedule Date & Time (Start from when):
+                            <label className="block text-[11px] font-bold text-gray-200">
+                              ⏰ Real-World Post Start Time (Real System Time):
                             </label>
                             <input
                               type="datetime-local"
@@ -1449,7 +1454,7 @@ export default function EventSignupsPage() {
                               className="w-full bg-secondary/80 border border-purple-500/40 rounded-lg px-3 py-1.5 text-xs text-white font-semibold focus:outline-none"
                             />
                             <p className="text-[10px] text-gray-400">
-                              Pehli post is start time par hogi, phir har {formData.recurringIntervalHours || 1} hour(s) me automatic repeat hoti rahegi.
+                              Pehli post real-world system time par jayegi, phir har {formData.recurringIntervalHours || 1} hr(s) me repeat hogi.
                             </p>
                           </div>
                         </div>
