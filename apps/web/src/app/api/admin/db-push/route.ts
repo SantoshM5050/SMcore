@@ -14,6 +14,42 @@ export async function GET() {
     await prisma.$executeRawUnsafe(`ALTER TABLE "ChannelConfiguration" ADD COLUMN IF NOT EXISTS "modLogChannelId" TEXT;`);
     await prisma.$executeRawUnsafe(`ALTER TABLE "ChannelConfiguration" ADD COLUMN IF NOT EXISTS "modPanelChannelId" TEXT;`);
 
+    // Multi-channel log integration columns
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ChannelConfiguration" ADD COLUMN IF NOT EXISTS "voiceLogsChannelId" TEXT;`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ChannelConfiguration" ADD COLUMN IF NOT EXISTS "messageLogsChannelId" TEXT;`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ChannelConfiguration" ADD COLUMN IF NOT EXISTS "generalLogsChannelId" TEXT;`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ChannelConfiguration" ADD COLUMN IF NOT EXISTS "alertLogsChannelId" TEXT;`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ChannelConfiguration" ADD COLUMN IF NOT EXISTS "commandLogsChannelId" TEXT;`);
+
+    const auditEnumValues = [
+      'ROLE_CREATED',
+      'ROLE_DELETED',
+      'CHANNEL_CREATED',
+      'CHANNEL_DELETED',
+      'MESSAGE_DELETED',
+      'MESSAGE_EDITED',
+      'VOICE_JOINED',
+      'VOICE_LEFT',
+      'VOICE_MOVED',
+      'AUTOMOD_ALERT',
+      'MEMBER_KICKED',
+      'MEMBER_BANNED',
+      'MEMBER_UNBANNED',
+      'MEMBER_TIMED_OUT',
+      'COMMAND_EXECUTED',
+    ];
+
+    for (const val of auditEnumValues) {
+      await prisma.$executeRawUnsafe(`
+        DO $$ BEGIN
+          ALTER TYPE "AuditAction" ADD VALUE IF NOT EXISTS '${val}';
+        EXCEPTION
+          WHEN duplicate_object THEN null;
+          WHEN undefined_object THEN null;
+        END $$;
+      `);
+    }
+
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "WelcomeConfig" (
         "id" TEXT NOT NULL PRIMARY KEY,
