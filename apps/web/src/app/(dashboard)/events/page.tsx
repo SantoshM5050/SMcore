@@ -261,10 +261,11 @@ export default function EventSignupsPage() {
 
   const openCreateModal = () => {
     setEditingEvent(null);
+    const defaultTime = '19:40';
     setFormData({
       title: 'Informal Signup',
       description: 'Register for Informal {time}',
-      eventTime: '',
+      eventTime: defaultTime,
       maxMainTeam: 10,
       maxSubstitutes: 5,
       channelId: channels.length > 0 ? channels[0].id : '',
@@ -282,17 +283,20 @@ export default function EventSignupsPage() {
       customDailyTimeSlots: '',
       postNow: true,
     });
-    setEventTimePicker('');
+    setEventTimePicker(defaultTime);
     setShowCreateModal(true);
   };
 
   const openEditModal = (event: any) => {
     setEditingEvent(event);
     const isRec = Boolean(event.isRecurring);
+    const descTimeMatch = (event.description || '').match(/\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/);
+    const targetSlotTime = event.eventTime || (descTimeMatch ? descTimeMatch[0] : '19:40');
+
     setFormData({
       title: event.title || 'Informal Signup',
-      description: event.description || '',
-      eventTime: event.eventTime || '',
+      description: event.description || 'Register for Informal {time}',
+      eventTime: targetSlotTime,
       maxMainTeam: event.maxMainTeam || 10,
       maxSubstitutes: event.maxSubstitutes || 5,
       channelId: event.channelId || (channels.length > 0 ? channels[0].id : ''),
@@ -310,7 +314,7 @@ export default function EventSignupsPage() {
       customDailyTimeSlots: event.dailyTimeSlots || '',
       postNow: true,
     });
-    setEventTimePicker(event.eventTime || '');
+    setEventTimePicker(targetSlotTime);
     setShowCreateModal(true);
   };
 
@@ -526,9 +530,10 @@ export default function EventSignupsPage() {
 
   // Calculated Preview text for Live Discord Embed Modal
   const previewTime = formData.eventTime || eventTimePicker || '19:40';
-  const previewDescription = (formData.description || 'Register for Informal {time}')
-    .replace(/\{time\}/gi, previewTime)
-    .replace(/\{time_slot\}/gi, previewTime);
+  const rawDesc = formData.description || 'Register for Informal {time}';
+  const previewDescription = rawDesc.includes('{time}')
+    ? rawDesc.replace(/\{time\}/gi, previewTime)
+    : rawDesc;
 
   return (
     <div className="space-y-6 pb-12">
@@ -1088,17 +1093,10 @@ export default function EventSignupsPage() {
                         onChange={(e) => {
                           const newTime = e.target.value;
                           setEventTimePicker(newTime);
-                          if (newTime) {
-                            const base = (formData.description || 'Register for Informal')
-                              .replace(/\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/g, '')
-                              .replace(/\{time\}/g, '')
-                              .trim();
-                            setFormData((prev) => ({
-                              ...prev,
-                              eventTime: newTime,
-                              description: `${base} ${newTime}`.trim(),
-                            }));
-                          }
+                          setFormData((prev) => ({
+                            ...prev,
+                            eventTime: newTime,
+                          }));
                         }}
                         className="bg-secondary border border-primary/50 rounded-xl px-3 py-1.5 text-sm text-white focus:outline-none focus:border-primary font-bold font-mono shadow-inner"
                       />
@@ -1113,14 +1111,9 @@ export default function EventSignupsPage() {
                           type="button"
                           onClick={() => {
                             setEventTimePicker(slotTime);
-                            const base = (formData.description || 'Register for Informal')
-                              .replace(/\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/g, '')
-                              .replace(/\{time\}/g, '')
-                              .trim();
                             setFormData((prev) => ({
                               ...prev,
                               eventTime: slotTime,
-                              description: `${base} ${slotTime}`.trim(),
                             }));
                           }}
                           className={`px-2.5 py-1 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer border ${
