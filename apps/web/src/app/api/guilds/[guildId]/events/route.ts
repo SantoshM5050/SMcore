@@ -27,9 +27,12 @@ async function autoSyncSchemaIfNeeded(err: any): Promise<boolean> {
   return false;
 }
 
-function formatInitialTimePlaceholder(text?: string | null, refDate?: Date | null): string {
+function formatInitialTimePlaceholder(text?: string | null, targetTime?: string | null, refDate?: Date | null): string {
   if (!text) return '';
   if (!text.includes('{time}')) return text;
+  if (targetTime) {
+    return text.replace(/\{time\}/g, targetTime);
+  }
   const d = refDate || new Date();
   const hhmm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   return text.replace(/\{time\}/g, hhmm);
@@ -38,6 +41,7 @@ function formatInitialTimePlaceholder(text?: string | null, refDate?: Date | nul
 const createEventSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
+  eventTime: z.string().nullable().optional(),
   maxMainTeam: z.number().int().min(1).default(10),
   maxSubstitutes: z.number().int().min(0).default(5),
   channelId: z.string().min(1, 'Channel is required'),
@@ -130,6 +134,7 @@ export async function POST(request: Request, { params }: { params: { guildId: st
             guildId,
             title: item.title,
             description: item.description || `Register for ${item.title}`,
+            eventTime: item.eventTime || null,
             maxMainTeam: item.maxMainTeam,
             maxSubstitutes: item.maxSubstitutes,
             channelId: item.channelId,
@@ -182,16 +187,17 @@ export async function POST(request: Request, { params }: { params: { guildId: st
 
     const rawTitle = data.title;
     const rawDesc = data.description || `Register for ${data.title}`;
-    const initialTime = scheduledDate || new Date();
+    const targetSlotTime = data.eventTime || null;
 
-    const formattedTitle = formatInitialTimePlaceholder(rawTitle, initialTime);
-    const formattedDesc = formatInitialTimePlaceholder(rawDesc, initialTime);
+    const formattedTitle = formatInitialTimePlaceholder(rawTitle, targetSlotTime, scheduledDate);
+    const formattedDesc = formatInitialTimePlaceholder(rawDesc, targetSlotTime, scheduledDate);
 
     const event = await prisma.eventSignup.create({
       data: {
         guildId,
         title: formattedTitle,
         description: formattedDesc,
+        eventTime: targetSlotTime,
         maxMainTeam: data.maxMainTeam,
         maxSubstitutes: data.maxSubstitutes,
         channelId: data.channelId,
