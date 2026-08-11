@@ -36,24 +36,34 @@ export class EventSignupService {
     const mainTeam = participants.filter((p) => p.roleType === ParticipantRoleType.MAIN_TEAM);
     const substitutes = participants.filter((p) => p.roleType === ParticipantRoleType.SUBSTITUTE);
 
+    const numberEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
+
     const mainTeamList = mainTeam.length > 0
-      ? mainTeam.map((p) => `<@${p.userId}>`).join('\n')
-      : 'None';
+      ? mainTeam.map((p, idx) => `${numberEmojis[idx] || `${idx + 1}.`} <@${p.userId}>`).join('\n')
+      : '*No players registered yet*';
 
     const substitutesList = substitutes.length > 0
-      ? substitutes.map((p) => `<@${p.userId}>`).join('\n')
-      : 'None';
+      ? substitutes.map((p, idx) => `${numberEmojis[idx] || `${idx + 1}.`} <@${p.userId}>`).join('\n')
+      : '*None*';
 
     const isExpired = signup.closeAt ? new Date() >= new Date(signup.closeAt) : false;
     const isClosed = signup.status !== EventSignupStatus.OPEN || isExpired;
 
     const registrationStatusText = !isClosed
-      ? '🟢 Open'
+      ? '🟢 Open (Registration Active)'
       : '🔒 Closed';
 
+    const now = new Date();
+    const rawDesc = signup.description || `Register for ${signup.title}`;
+    const targetTimeStr = (signup as any).eventTime || `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const formattedDescription = rawDesc
+      .replace(/\{time\}/gi, targetTimeStr)
+      .replace(/\{time_slot\}/gi, targetTimeStr)
+      .replace(/\{eventTime\}/gi, targetTimeStr);
+
     const embed = new EmbedBuilder()
-      .setTitle(`📢 ${signup.title}`)
-      .setDescription(signup.description || `Register for ${signup.title}`)
+      .setTitle(`🏆 ${signup.title}`)
+      .setDescription(formattedDescription)
       .setColor((signup.embedColor || '#E74C3C') as ColorResolvable)
       .addFields(
         {
@@ -62,17 +72,17 @@ export class EventSignupService {
           inline: false,
         },
         {
-          name: '🪑 Substitutes',
+          name: `🪑 Substitutes (${substitutes.length}/${signup.maxSubstitutes})`,
           value: substitutesList,
           inline: false,
         },
         {
-          name: '📌 Registration',
+          name: '📌 Registration Status',
           value: registrationStatusText,
           inline: false,
         }
       )
-      .setFooter({ text: `${guildName} • Signup System` });
+      .setFooter({ text: `${guildName} • Event Signup` });
 
     return embed;
   }
@@ -85,13 +95,15 @@ export class EventSignupService {
 
     const joinBtn = new ButtonBuilder()
       .setCustomId(`event_signup_join_${signupId}`)
-      .setLabel('Join')
+      .setLabel('Join Signup')
+      .setEmoji('✅')
       .setStyle(ButtonStyle.Success)
       .setDisabled(isClosed);
 
     const leaveBtn = new ButtonBuilder()
       .setCustomId(`event_signup_leave_${signupId}`)
       .setLabel('Leave')
+      .setEmoji('❌')
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(isClosed);
 

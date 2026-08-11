@@ -26,18 +26,20 @@ export async function sendOrUpdateEventDiscordEmbed(eventId: string) {
   const mainTeam = event.participants.filter((p) => p.roleType === 'MAIN_TEAM');
   const substitutes = event.participants.filter((p) => p.roleType === 'SUBSTITUTE');
 
+  const numberEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
+
   const mainTeamList = mainTeam.length > 0
-    ? mainTeam.map((p) => `<@${p.userId}>`).join('\n')
-    : 'None';
+    ? mainTeam.map((p, idx) => `${numberEmojis[idx] || `${idx + 1}.`} <@${p.userId}>`).join('\n')
+    : '*No players registered yet*';
 
   const substitutesList = substitutes.length > 0
-    ? substitutes.map((p) => `<@${p.userId}>`).join('\n')
-    : 'None';
+    ? substitutes.map((p, idx) => `${numberEmojis[idx] || `${idx + 1}.`} <@${p.userId}>`).join('\n')
+    : '*None*';
 
   const now = new Date();
   const isExpired = event.closeAt ? now >= new Date(event.closeAt) : false;
   const isClosed = event.status !== 'OPEN' || isExpired;
-  const registrationStatusText = !isClosed ? '🟢 Open' : '🔒 Closed';
+  const registrationStatusText = !isClosed ? '🟢 Open (Registration Active)' : '🔒 Closed';
 
   const hexColor = (event.embedColor || '#E74C3C').replace('#', '');
   const colorInt = parseInt(hexColor, 16) || 0xe74c3c;
@@ -53,7 +55,7 @@ export async function sendOrUpdateEventDiscordEmbed(eventId: string) {
     .replace(/\{eventTime\}/gi, targetTimeStr);
 
   const embedPayload = {
-    title: `📢 ${event.title}`,
+    title: `🏆 ${event.title}`,
     description: formattedDescription,
     color: colorInt,
     fields: [
@@ -63,18 +65,18 @@ export async function sendOrUpdateEventDiscordEmbed(eventId: string) {
         inline: false,
       },
       {
-        name: '🪑 Substitutes',
+        name: `🪑 Substitutes (${substitutes.length}/${event.maxSubstitutes})`,
         value: substitutesList,
         inline: false,
       },
       {
-        name: '📌 Registration',
+        name: '📌 Registration Status',
         value: registrationStatusText,
         inline: false,
       },
     ],
     footer: {
-      text: `${guildName} • Signup System`,
+      text: `${guildName} • Event Signup`,
     },
   };
 
@@ -85,7 +87,8 @@ export async function sendOrUpdateEventDiscordEmbed(eventId: string) {
         {
           type: 2, // Button
           custom_id: `event_signup_join_${event.id}`,
-          label: 'Join',
+          label: 'Join Signup',
+          emoji: { name: '✅' },
           style: 3, // Success (Green)
           disabled: isClosed,
         },
@@ -93,6 +96,7 @@ export async function sendOrUpdateEventDiscordEmbed(eventId: string) {
           type: 2, // Button
           custom_id: `event_signup_leave_${event.id}`,
           label: 'Leave',
+          emoji: { name: '❌' },
           style: 2, // Secondary (Dark/Gray)
           disabled: isClosed,
         },
