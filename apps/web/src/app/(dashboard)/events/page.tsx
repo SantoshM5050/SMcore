@@ -1337,10 +1337,29 @@ export default function EventSignupsPage() {
                     </button>
                   </div>
 
+                  {/* One-Time Schedule Date & Time Input */}
+                  {formData.scheduleType === 'scheduled' && (
+                    <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl space-y-2">
+                      <label className="block text-xs font-bold text-blue-300">
+                        ⏰ Select Post Date & Start Time:
+                      </label>
+                      <input
+                        type="datetime-local"
+                        required
+                        value={formData.scheduledAt}
+                        onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
+                        className="w-full bg-secondary/80 border border-blue-500/40 rounded-lg px-3.5 py-2 text-xs text-white font-semibold focus:outline-none focus:border-blue-400"
+                      />
+                      <p className="text-[10px] text-gray-400">
+                        Event signup exact is date aur time par Discord channel me auto-publish ho jayega.
+                      </p>
+                    </div>
+                  )}
+
                   {/* Expanded Daily Auto-Post Settings */}
                   {formData.scheduleType === 'recurring' && (
                     <div className="mt-3 p-3 bg-purple-500/10 border border-purple-500/30 rounded-xl space-y-3">
-                      <div className="flex items-center gap-3 text-xs font-bold text-purple-300">
+                      <div className="flex items-center gap-4 text-xs font-bold text-purple-300">
                         <label className="flex items-center gap-1.5 cursor-pointer">
                           <input
                             type="radio"
@@ -1410,19 +1429,36 @@ export default function EventSignupsPage() {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-3">
-                          <label className="text-xs font-bold text-gray-300">
-                            Repeat Every:
-                          </label>
-                          <input
-                            type="number"
-                            min={1}
-                            max={24}
-                            value={formData.recurringIntervalHours}
-                            onChange={(e) => setFormData({ ...formData, recurringIntervalHours: Number(e.target.value) })}
-                            className="w-20 bg-secondary/80 border border-purple-500/40 rounded-lg px-3 py-1.5 text-xs text-white font-bold"
-                          />
-                          <span className="text-xs text-gray-300 font-medium">Hour(s)</span>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <label className="text-xs font-bold text-gray-300">
+                              Repeat Every:
+                            </label>
+                            <input
+                              type="number"
+                              min={1}
+                              max={24}
+                              value={formData.recurringIntervalHours}
+                              onChange={(e) => setFormData({ ...formData, recurringIntervalHours: Number(e.target.value) })}
+                              className="w-20 bg-secondary/80 border border-purple-500/40 rounded-lg px-3 py-1.5 text-xs text-white font-bold"
+                            />
+                            <span className="text-xs text-gray-300 font-medium">Hour(s)</span>
+                          </div>
+
+                          <div className="space-y-1 pt-1 border-t border-purple-500/20">
+                            <label className="block text-[11px] font-bold text-gray-300">
+                              Start Schedule Date & Time (Start from when):
+                            </label>
+                            <input
+                              type="datetime-local"
+                              value={formData.scheduledAt}
+                              onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
+                              className="w-full bg-secondary/80 border border-purple-500/40 rounded-lg px-3 py-1.5 text-xs text-white font-semibold focus:outline-none"
+                            />
+                            <p className="text-[10px] text-gray-400">
+                              Pehli post is start time par hogi, phir har {formData.recurringIntervalHours || 1} hour(s) me automatic repeat hoti rahegi.
+                            </p>
+                          </div>
                         </div>
                       )}
                     </div>
