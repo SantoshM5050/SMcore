@@ -852,18 +852,45 @@ export default function EventSignupsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-300 mb-1">
-                    Auto-Close (Mins)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={1440}
-                    value={formData.autoCloseMinutes}
-                    onChange={(e) => setFormData({ ...formData, autoCloseMinutes: Number(e.target.value) })}
-                    placeholder="30"
-                    className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
-                  />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-gray-300">
+                      Auto-Close Registration
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          autoCloseMinutes: prev.autoCloseMinutes > 0 ? 0 : 35,
+                        }))
+                      }
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded transition-all cursor-pointer ${
+                        formData.autoCloseMinutes > 0
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                          : 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
+                      }`}
+                    >
+                      {formData.autoCloseMinutes > 0 ? '🟢 ON' : '🔴 OFF'}
+                    </button>
+                  </div>
+                  {formData.autoCloseMinutes > 0 ? (
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min={1}
+                        max={1440}
+                        value={formData.autoCloseMinutes}
+                        onChange={(e) => setFormData({ ...formData, autoCloseMinutes: Number(e.target.value) })}
+                        placeholder="35"
+                        className="w-full bg-secondary/60 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary pr-12"
+                      />
+                      <span className="absolute right-3 top-2.5 text-xs text-gray-400 font-medium">mins</span>
+                    </div>
+                  ) : (
+                    <div className="bg-secondary/30 border border-border/40 rounded-lg px-3 py-2 text-xs text-gray-400 italic">
+                      Indefinite (No Auto-Close)
+                    </div>
+                  )}
                 </div>
               </div>
 
