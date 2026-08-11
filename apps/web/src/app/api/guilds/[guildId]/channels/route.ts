@@ -10,6 +10,12 @@ const channelConfigSchema = z.object({
   requestChannelId: z.string().nullable().optional(),
   reviewChannelId: z.string().nullable().optional(),
   logsChannelId: z.string().nullable().optional(),
+  modLogChannelId: z.string().nullable().optional(),
+  voiceLogsChannelId: z.string().nullable().optional(),
+  messageLogsChannelId: z.string().nullable().optional(),
+  generalLogsChannelId: z.string().nullable().optional(),
+  alertLogsChannelId: z.string().nullable().optional(),
+  commandLogsChannelId: z.string().nullable().optional(),
 });
 
 export async function GET(request: Request, { params }: { params: { guildId: string } }) {
@@ -32,7 +38,17 @@ export async function GET(request: Request, { params }: { params: { guildId: str
   });
 
   return NextResponse.json({
-    config: config || { requestChannelId: null, reviewChannelId: null, logsChannelId: null },
+    config: config || {
+      requestChannelId: null,
+      reviewChannelId: null,
+      logsChannelId: null,
+      modLogChannelId: null,
+      voiceLogsChannelId: null,
+      messageLogsChannelId: null,
+      generalLogsChannelId: null,
+      alertLogsChannelId: null,
+      commandLogsChannelId: null,
+    },
     discordChannels,
   });
 }
@@ -59,12 +75,24 @@ export async function POST(request: Request, { params }: { params: { guildId: st
       requestChannelId: data.requestChannelId,
       reviewChannelId: data.reviewChannelId,
       logsChannelId: data.logsChannelId,
+      modLogChannelId: data.modLogChannelId,
+      voiceLogsChannelId: data.voiceLogsChannelId,
+      messageLogsChannelId: data.messageLogsChannelId,
+      generalLogsChannelId: data.generalLogsChannelId,
+      alertLogsChannelId: data.alertLogsChannelId,
+      commandLogsChannelId: data.commandLogsChannelId,
     },
     create: {
       guildId,
       requestChannelId: data.requestChannelId,
       reviewChannelId: data.reviewChannelId,
       logsChannelId: data.logsChannelId,
+      modLogChannelId: data.modLogChannelId,
+      voiceLogsChannelId: data.voiceLogsChannelId,
+      messageLogsChannelId: data.messageLogsChannelId,
+      generalLogsChannelId: data.generalLogsChannelId,
+      alertLogsChannelId: data.alertLogsChannelId,
+      commandLogsChannelId: data.commandLogsChannelId,
     },
   });
 
@@ -77,6 +105,12 @@ export async function POST(request: Request, { params }: { params: { guildId: st
       requestChannelId: data.requestChannelId,
       reviewChannelId: data.reviewChannelId,
       logsChannelId: data.logsChannelId,
+      modLogChannelId: data.modLogChannelId,
+      voiceLogsChannelId: data.voiceLogsChannelId,
+      messageLogsChannelId: data.messageLogsChannelId,
+      generalLogsChannelId: data.generalLogsChannelId,
+      alertLogsChannelId: data.alertLogsChannelId,
+      commandLogsChannelId: data.commandLogsChannelId,
     }
   );
 

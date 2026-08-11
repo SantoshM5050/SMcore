@@ -9,6 +9,11 @@ import { onGuildCreate } from './events/guildCreate';
 import { onGuildDelete } from './events/guildDelete';
 import { onGuildMemberAdd } from './events/guildMemberAdd';
 import { onGuildMemberRemove } from './events/guildMemberRemove';
+import { onVoiceStateUpdate } from './events/voiceStateUpdate';
+import { onMessageDelete } from './events/messageDelete';
+import { onMessageUpdate } from './events/messageUpdate';
+import { onAutoModerationActionExecution } from './events/autoModerationActionExecution';
+import { onGuildBanAdd, onGuildBanRemove } from './events/guildBanEvents';
 
 // Force DNS resolution to prefer IPv4 first (bypasses IPv6 connect timeouts on Render/Linux)
 if (dns && dns.setDefaultResultOrder) {
@@ -31,6 +36,12 @@ function attachClientListeners(client: typeof botClient) {
   client.on(Events.GuildDelete, onGuildDelete);
   client.on(Events.GuildMemberAdd, onGuildMemberAdd);
   client.on(Events.GuildMemberRemove, onGuildMemberRemove);
+  client.on(Events.VoiceStateUpdate, onVoiceStateUpdate);
+  client.on(Events.MessageDelete, onMessageDelete);
+  client.on(Events.MessageUpdate, onMessageUpdate);
+  client.on(Events.AutoModerationActionExecution, onAutoModerationActionExecution);
+  client.on(Events.GuildBanAdd, onGuildBanAdd);
+  client.on(Events.GuildBanRemove, onGuildBanRemove);
 
   client.on(Events.Error, (error: any) => {
     console.error('🔴 Discord Client Error:', error);

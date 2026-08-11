@@ -30,8 +30,23 @@ enum AuditAction {
   ROLE_UPDATED
   ROLE_ADDED
   ROLE_REMOVED
+  ROLE_CREATED
+  ROLE_DELETED
   CHANNEL_UPDATED
+  CHANNEL_CREATED
+  CHANNEL_DELETED
   PERMISSION_CHANGED
+  MESSAGE_DELETED
+  MESSAGE_EDITED
+  VOICE_JOINED
+  VOICE_LEFT
+  VOICE_MOVED
+  AUTOMOD_ALERT
+  MEMBER_KICKED
+  MEMBER_BANNED
+  MEMBER_UNBANNED
+  MEMBER_TIMED_OUT
+  COMMAND_EXECUTED
 }
 
 model Guild {
@@ -76,14 +91,19 @@ model GuildSettings {
 }
 
 model ChannelConfiguration {
-  id               String   @id @default(cuid())
-  guildId          String   @unique
-  requestChannelId String?
-  reviewChannelId  String?
-  logsChannelId    String?
-  modLogChannelId  String?
-  modPanelChannelId String?
-  updatedAt        DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  guildId             String   @unique
+  requestChannelId    String?
+  reviewChannelId     String?
+  logsChannelId       String?
+  modLogChannelId     String?
+  modPanelChannelId   String?
+  voiceLogsChannelId  String?
+  messageLogsChannelId String?
+  generalLogsChannelId String?
+  alertLogsChannelId  String?
+  commandLogsChannelId String?
+  updatedAt           DateTime @updatedAt
 
   guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
 }

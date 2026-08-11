@@ -13,6 +13,8 @@ export function createBotClient(minimal = false) {
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.DirectMessages,
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildModeration,
       ];
 
   return new Client({
