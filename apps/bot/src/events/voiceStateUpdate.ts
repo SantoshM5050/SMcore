@@ -10,6 +10,7 @@ export async function onVoiceStateUpdate(oldState: VoiceState, newState: VoiceSt
     const guildId = newState.guild.id;
     const userId = member.user.id;
     const userTag = member.user.tag;
+    const avatarUrl = member.user.displayAvatarURL({ forceStatic: false });
 
     // 1. Joined Voice Channel
     if (!oldState.channelId && newState.channelId) {
@@ -19,10 +20,8 @@ export async function onVoiceStateUpdate(oldState: VoiceState, newState: VoiceSt
         userTag,
         AuditAction.VOICE_JOINED,
         {
-          channel: `#${newState.channel?.name}`,
           channelId: newState.channelId,
-          selfMute: newState.selfMute,
-          selfDeaf: newState.selfDeaf,
+          userAvatar: avatarUrl,
         }
       );
     }
@@ -34,8 +33,8 @@ export async function onVoiceStateUpdate(oldState: VoiceState, newState: VoiceSt
         userTag,
         AuditAction.VOICE_LEFT,
         {
-          channel: `#${oldState.channel?.name}`,
           channelId: oldState.channelId,
+          userAvatar: avatarUrl,
         }
       );
     }
@@ -47,10 +46,9 @@ export async function onVoiceStateUpdate(oldState: VoiceState, newState: VoiceSt
         userTag,
         AuditAction.VOICE_MOVED,
         {
-          fromChannel: `#${oldState.channel?.name}`,
-          toChannel: `#${newState.channel?.name}`,
           fromChannelId: oldState.channelId,
           toChannelId: newState.channelId,
+          userAvatar: avatarUrl,
         }
       );
     }

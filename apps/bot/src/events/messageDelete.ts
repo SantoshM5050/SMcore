@@ -9,9 +9,10 @@ export async function onMessageDelete(message: Message | PartialMessage) {
     const guildId = message.guild.id;
     const userId = message.author ? message.author.id : 'UNKNOWN';
     const userTag = message.author ? message.author.tag : 'Unknown User';
+    const avatarUrl = message.author?.displayAvatarURL({ forceStatic: false });
 
     const attachmentsCount = message.attachments?.size || 0;
-    const content = message.content ? message.content.slice(0, 800) : '[No Text Content / Embedded Content]';
+    const content = message.content ? message.content.slice(0, 1000) : '[No Text Content / Attachment Only]';
 
     await LogService.logEvent(
       guildId,
@@ -19,11 +20,10 @@ export async function onMessageDelete(message: Message | PartialMessage) {
       userTag,
       AuditAction.MESSAGE_DELETED,
       {
-        channel: `#${(message.channel as any)?.name || 'unknown'}`,
         channelId: message.channelId,
-        messageId: message.id,
         content: content,
-        attachments: attachmentsCount > 0 ? `${attachmentsCount} file(s)` : 'None',
+        attachments: attachmentsCount > 0 ? `${attachmentsCount} attachment(s)` : undefined,
+        userAvatar: avatarUrl,
       }
     );
   } catch (err) {

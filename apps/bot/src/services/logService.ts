@@ -55,32 +55,78 @@ export class LogService {
       const embed = new EmbedBuilder()
         .setTitle(`${actionIcon} ${actionTitle}`)
         .setColor(this.getActionColor(action))
-        .addFields(
-          {
-            name: '👤 User / Actor',
-            value: userId !== 'SYSTEM' ? `<@${userId}>\n\`${userTag}\` (ID: \`${userId}\`)` : `\`${userTag}\``,
-            inline: true,
-          },
-          {
-            name: '⚡ Event Action',
-            value: `\`${action}\``,
-            inline: true,
-          },
-          {
-            name: '⏰ Timestamp',
-            value: `<t:${timestampSec}:F> (<t:${timestampSec}:R>)`,
-            inline: false,
-          }
-        )
-        .setFooter({ text: 'SMCore System Audit & Event Security Trail' })
         .setTimestamp();
 
-      if (Object.keys(details).length > 0) {
-        const detailsString = Object.entries(details)
-          .map(([key, val]) => `• **${key}**: ${typeof val === 'object' ? `\`${JSON.stringify(val)}\`` : val}`)
-          .join('\n');
-        embed.addFields({ name: '📝 Event Summary & Details', value: detailsString.slice(0, 1024) || 'None' });
+      if (details.userAvatar) {
+        embed.setAuthor({ name: userTag, iconURL: details.userAvatar });
+      } else if (userTag !== 'SYSTEM') {
+        embed.setAuthor({ name: userTag });
       }
+
+      // Add User & Timestamp as primary fields
+      if (userId !== 'SYSTEM') {
+        embed.addFields({
+          name: '👤 User',
+          value: `<@${userId}>\n\`${userTag}\``,
+          inline: true,
+        });
+      }
+
+      // Add Channel if present
+      if (details.channelId) {
+        embed.addFields({
+          name: '💬 Channel',
+          value: `<#${details.channelId}>`,
+          inline: true,
+        });
+      } else if (details.fromChannelId && details.toChannelId) {
+        embed.addFields({
+          name: '🔄 Voice Transfer',
+          value: `<#${details.fromChannelId}> ➡️ <#${details.toChannelId}>`,
+          inline: false,
+        });
+      }
+
+      embed.addFields({
+        name: '⏰ Time',
+        value: `<t:${timestampSec}:R>`,
+        inline: true,
+      });
+
+      // Filter out internal/technical keys from details body
+      const hiddenKeys = ['channelId', 'fromChannelId', 'toChannelId', 'userAvatar', 'messageId'];
+      const visibleDetails = Object.entries(details).filter(
+        ([key, val]) => !hiddenKeys.includes(key) && val !== undefined && val !== null
+      );
+
+      if (visibleDetails.length > 0) {
+        visibleDetails.forEach(([key, val]) => {
+          const fieldName = this.formatKeyName(key);
+
+          if (key === 'before' || key === 'after' || key === 'content') {
+            const strVal = String(val);
+            embed.addFields({
+              name: fieldName,
+              value: strVal.length > 900 ? `\`\`\`${strVal.slice(0, 900)}...\`\`\`` : `\`\`\`${strVal}\`\`\``,
+              inline: false,
+            });
+          } else if (key === 'messageLink') {
+            embed.addFields({
+              name: fieldName,
+              value: `[Jump to Message](${val})`,
+              inline: false,
+            });
+          } else {
+            embed.addFields({
+              name: fieldName,
+              value: String(val),
+              inline: true,
+            });
+          }
+        });
+      }
+
+      embed.setFooter({ text: 'SMCore Audit Trail' });
 
       await logChannel.send({ embeds: [embed] }).catch(() => null);
     } catch (error) {
@@ -129,6 +175,30 @@ export class LogService {
     }
   }
 
+  private static formatKeyName(key: string): string {
+    const map: Record<string, string> = {
+      channel: 'Channel',
+      from: 'From Channel',
+      to: 'To Channel',
+      before: '📝 Before (Old Content)',
+      after: '✏️ After (New Content)',
+      content: '💬 Message Content',
+      rule: '🚨 Rule Triggered',
+      matchedKeyword: '🔤 Blocked Word / Link',
+      actionTaken: '🛡️ Action Applied',
+      messageLink: '🔗 Message Link',
+      reason: '📄 Reason',
+      attachments: '📎 Attachments',
+    };
+
+    if (map[key]) return map[key];
+
+    return key
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, (str) => str.toUpperCase())
+      .trim();
+  }
+
   private static getActionIcon(action: AuditAction): string {
     switch (action) {
       case AuditAction.VOICE_JOINED: return '🔊';
@@ -159,19 +229,32 @@ export class LogService {
   }
 
   private static formatActionTitle(action: AuditAction): string {
-    return action
-      .replace(/_/g, ' ')
-      .toLowerCase()
-      .replace(/\b\w/g, (l) => l.toUpperCase());
+    switch (action) {
+      case AuditAction.VOICE_JOINED: return 'Voice Joined';
+      case AuditAction.VOICE_LEFT: return 'Voice Disconnected';
+      case AuditAction.VOICE_MOVED: return 'Voice Channel Switched';
+      case AuditAction.MESSAGE_DELETED: return 'Message Deleted';
+      case AuditAction.MESSAGE_EDITED: return 'Message Edited';
+      case AuditAction.AUTOMOD_ALERT: return 'AutoMod Violation Alert';
+      case AuditAction.MEMBER_BANNED: return 'Member Banned';
+      case AuditAction.MEMBER_UNBANNED: return 'Member Unbanned';
+      case AuditAction.MEMBER_KICKED: return 'Member Kicked';
+      case AuditAction.MEMBER_TIMED_OUT: return 'Member Timed Out';
+      default:
+        return action
+          .replace(/_/g, ' ')
+          .toLowerCase()
+          .replace(/\b\w/g, (l) => l.toUpperCase());
+    }
   }
 
   private static getActionColor(action: AuditAction): number {
     switch (action) {
-      case AuditAction.VOICE_JOINED: return 0x57f287; // Green
-      case AuditAction.VOICE_LEFT: return 0xed4245; // Red
-      case AuditAction.VOICE_MOVED: return 0xfee75c; // Yellow
+      case AuditAction.VOICE_JOINED: return 0x57f287; // Emerald Green
+      case AuditAction.VOICE_LEFT: return 0xed4245; // Crimson Red
+      case AuditAction.VOICE_MOVED: return 0xfee75c; // Vivid Yellow
       case AuditAction.MESSAGE_DELETED: return 0xed4245; // Red
-      case AuditAction.MESSAGE_EDITED: return 0x3498db; // Blue
+      case AuditAction.MESSAGE_EDITED: return 0x3498db; // Sapphire Blue
       case AuditAction.AUTOMOD_ALERT: return 0xe74c3c; // Bright Red
       case AuditAction.MEMBER_BANNED:
       case AuditAction.MEMBER_KICKED: return 0x992d22; // Dark Red

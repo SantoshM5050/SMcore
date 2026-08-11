@@ -9,9 +9,10 @@ export async function onAutoModerationActionExecution(actionExecution: AutoModer
 
     const user = await actionExecution.guild.client.users.fetch(userId).catch(() => null);
     const userTag = user ? user.tag : `User ${userId}`;
+    const avatarUrl = user ? user.displayAvatarURL({ forceStatic: false }) : undefined;
 
     const actionTypeStr = actionExecution.action.type.toString();
-    const ruleTrigger = actionExecution.ruleTriggerType?.toString() || 'AutoMod Rule';
+    const ruleTrigger = actionExecution.ruleTriggerType?.toString() || 'AutoMod Security Rule';
 
     await LogService.logEvent(
       guildId,
@@ -19,12 +20,12 @@ export async function onAutoModerationActionExecution(actionExecution: AutoModer
       userTag,
       AuditAction.AUTOMOD_ALERT,
       {
+        channelId: actionExecution.channelId || undefined,
         rule: ruleTrigger,
-        matchedKeyword: actionExecution.matchedKeyword || 'N/A',
-        matchedContent: actionExecution.matchedContent ? actionExecution.matchedContent.slice(0, 300) : 'N/A',
+        matchedKeyword: actionExecution.matchedKeyword || undefined,
+        content: actionExecution.matchedContent ? actionExecution.matchedContent.slice(0, 400) : undefined,
         actionTaken: actionTypeStr,
-        channel: actionExecution.channel ? `#${actionExecution.channel.name}` : 'Unknown Channel',
-        channelId: actionExecution.channelId || 'N/A',
+        userAvatar: avatarUrl,
       }
     );
   } catch (err) {
