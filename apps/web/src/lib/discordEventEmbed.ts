@@ -42,7 +42,7 @@ export async function sendOrUpdateEventDiscordEmbed(eventId: string) {
   const hexColor = (event.embedColor || '#E74C3C').replace('#', '');
   const colorInt = parseInt(hexColor, 16) || 0xe74c3c;
 
-  const guildName = event.guild?.name || 'Hood Rich';
+  const guildName = event.guild?.name || 'SMCore';
 
   const rawDesc = event.description || `Register for ${event.title}`;
   const timeMatch = rawDesc.match(/\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/);

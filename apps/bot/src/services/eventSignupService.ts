@@ -31,7 +31,7 @@ export class EventSignupService {
       roleType: ParticipantRoleType;
       joinedAt: Date;
     }>,
-    guildName: string = 'Hood Rich'
+    guildName: string = 'SMCore'
   ): EmbedBuilder {
     const mainTeam = participants.filter((p) => p.roleType === ParticipantRoleType.MAIN_TEAM);
     const substitutes = participants.filter((p) => p.roleType === ParticipantRoleType.SUBSTITUTE);

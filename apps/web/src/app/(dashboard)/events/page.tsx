@@ -184,10 +184,15 @@ export default function EventSignupsPage() {
 
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
 
-  const applyQuickTimePreset = (minutesToAdd: number | 'next_top_hour') => {
+  const applyQuickTimePreset = (minutesToAdd: number | 'next_top_hour' | 'informal_40') => {
     const now = new Date();
     if (minutesToAdd === 'next_top_hour') {
       now.setHours(now.getHours() + 1, 0, 0, 0);
+    } else if (minutesToAdd === 'informal_40') {
+      if (now.getMinutes() >= 40) {
+        now.setHours(now.getHours() + 1);
+      }
+      now.setMinutes(40, 0, 0);
     } else {
       now.setMinutes(now.getMinutes() + minutesToAdd);
     }
@@ -790,6 +795,7 @@ export default function EventSignupsPage() {
                     <button type="button" onClick={() => applyQuickTimePreset(45)} className="px-2 py-0.5 bg-secondary hover:bg-secondary/80 text-gray-300 border border-border rounded text-[10px] font-bold cursor-pointer">+45m</button>
                     <button type="button" onClick={() => applyQuickTimePreset(60)} className="px-2 py-0.5 bg-secondary hover:bg-secondary/80 text-gray-300 border border-border rounded text-[10px] font-bold cursor-pointer">+1h</button>
                     <button type="button" onClick={() => applyQuickTimePreset('next_top_hour')} className="px-2 py-0.5 bg-secondary hover:bg-secondary/80 text-gray-300 border border-border rounded text-[10px] font-bold cursor-pointer">Top of Hour</button>
+                    <button type="button" onClick={() => applyQuickTimePreset('informal_40')} className="px-2 py-0.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 rounded text-[10px] font-bold cursor-pointer">🔥 Informal (XX:40)</button>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-1.5 pt-1">
