@@ -11,8 +11,12 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
   if (customId.startsWith('role_request_modal_')) {
     const roleId = customId.replace('role_request_modal_', '');
 
-    // Defer reply immediately so Discord modal submit doesn't time out (>3s)
-    await interaction.deferReply({ ephemeral: true });
+    // If modal came from a message component (Select Menu), defer update so we edit the original ephemeral message in-place
+    if (interaction.isFromMessage()) {
+      await interaction.deferUpdate();
+    } else {
+      await interaction.deferReply({ ephemeral: true });
+    }
 
     const inGameName = interaction.fields.getTextInputValue('in_game_name_input');
     const inGameId = interaction.fields.getTextInputValue('in_game_id_input');
@@ -42,11 +46,13 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
 
       return interaction.editReply({
         content: successText,
+        components: [],
       });
     } catch (error: any) {
       const errorText = `❌ **Submission Error:** ${error.message}`;
       return interaction.editReply({
         content: errorText,
+        components: [],
       });
     }
   }

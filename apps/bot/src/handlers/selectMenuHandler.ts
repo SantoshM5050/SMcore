@@ -72,12 +72,5 @@ export async function handleSelectMenuInteraction(interaction: StringSelectMenuI
     modal.addComponents(rows);
 
     await interaction.showModal(modal);
-
-    // Clean up the select menu ephemeral message so it does not linger after modal submission
-    if (interaction.message) {
-      await interaction.message.delete().catch(() => {
-        return interaction.message.edit({ components: [] }).catch(() => null);
-      });
-    }
   }
 }
