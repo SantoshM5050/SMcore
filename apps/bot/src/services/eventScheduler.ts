@@ -133,35 +133,36 @@ export class EventScheduler {
         if (shouldTrigger) {
           console.log(`🔄 Triggering Recurring Auto-Post for "${event.title}" (ID: ${event.id})...`);
 
-          // Clear previous participants for fresh signup
+          // 1. Fetch current event state with existing participants BEFORE touching the DB
+          const currentEvent = await prisma.eventSignup.findUnique({
+            where: { id: event.id },
+            include: {
+              participants: {
+                orderBy: { joinedAt: 'asc' },
+              },
+            },
+          });
+
+          // 2. Close the old Discord message embed first, keeping its original parameters & participants list intact
+          if (currentEvent && currentEvent.messageId) {
+            await EventSignupService.closeEventMessage(currentEvent).catch((err) => {
+              console.error(`Failed to close old event embed for ${event.id}:`, err);
+            });
+          }
+
+          // 3. Clear previous participants for fresh signup cycle
           await prisma.eventParticipant.deleteMany({
             where: { eventSignupId: event.id },
           });
 
-          // Calculate new closeAt if autoCloseMinutes set
+          // 4. Calculate new closeAt if autoCloseMinutes set
           let newCloseAt: Date | null = null;
           if (event.autoCloseMinutes && event.autoCloseMinutes > 0) {
             newCloseAt = new Date(now.getTime() + event.autoCloseMinutes * 60 * 1000);
           }
 
-          // Calculate target time for upcoming cycle (preserve exact slot or interval)
-          let targetHHMM = currentHHMM;
-
-          if (event.dailyTimeSlots) {
-            targetHHMM = currentHHMM;
-          } else if (event.recurringIntervalHours && event.recurringIntervalHours > 0) {
-            const timeRegex = /\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/;
-            let currentHH = now.getHours();
-            let currentMM = 0;
-            if (event.eventTime && timeRegex.test(event.eventTime)) {
-              const [h, m] = event.eventTime.split(':').map((v) => parseInt(v, 10));
-              currentHH = h;
-              currentMM = m;
-            }
-            const nextHour = (currentHH + event.recurringIntervalHours) % 24;
-            targetHHMM = `${String(nextHour).padStart(2, '0')}:${String(currentMM).padStart(2, '0')}`;
-          }
-
+          // 5. Target time for the new post cycle is the current time HH:MM
+          const targetHHMM = currentHHMM;
           const timeRegex = /\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/;
 
           // Dynamically update time in title & description if present (e.g. "19:40")
@@ -183,7 +184,7 @@ export class EventScheduler {
             }
           }
 
-          // Update DB FIRST before building & sending Discord Embed
+          // 6. Update DB for new cycle and reset messageId so sendOrUpdateEventEmbed posts a NEW message
           await prisma.eventSignup.update({
             where: { id: event.id },
             data: {
@@ -193,11 +194,12 @@ export class EventScheduler {
               status: EventSignupStatus.OPEN,
               lastPostedAt: now,
               closeAt: newCloseAt,
+              messageId: null,
             },
           });
 
-          // Send fresh embed with status OPEN
-          await EventSignupService.sendOrUpdateEventEmbed(event.id, { forceNewMessage: true });
+          // 7. Send fresh embed with status OPEN as a NEW message
+          await EventSignupService.sendOrUpdateEventEmbed(event.id);
 
           console.log(`✅ Successfully re-posted Recurring Event "${newTitle}" to Discord channel ${event.channelId}.`);
         }

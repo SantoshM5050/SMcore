@@ -111,6 +111,49 @@ export class EventSignupService {
   }
 
   /**
+   * Close a specific Discord message embed with its current parameters and participants preserved
+   */
+  static async closeEventMessage(signup: {
+    id: string;
+    title: string;
+    description?: string | null;
+    eventTime?: string | null;
+    maxMainTeam: number;
+    maxSubstitutes: number;
+    embedColor: string;
+    status: EventSignupStatus;
+    closeAt?: Date | null;
+    channelId: string;
+    messageId?: string | null;
+    guildId: string;
+    participants: Array<{
+      userId: string;
+      userTag: string;
+      roleType: ParticipantRoleType;
+      joinedAt: Date;
+    }>;
+  }) {
+    if (!signup.messageId) return;
+
+    const guild = await botClient.guilds.fetch(signup.guildId).catch(() => null);
+    if (!guild) return;
+
+    const channel = (await guild.channels.fetch(signup.channelId).catch(() => null)) as TextChannel;
+    if (!channel || !channel.isTextBased()) return;
+
+    const oldMsg = await channel.messages.fetch(signup.messageId).catch(() => null);
+    if (oldMsg) {
+      const closedEmbed = this.buildEventEmbed(
+        { ...signup, status: EventSignupStatus.CLOSED },
+        signup.participants,
+        guild.name
+      );
+      const disabledButtons = this.buildEventButtons(signup.id, EventSignupStatus.CLOSED);
+      await oldMsg.edit({ embeds: [closedEmbed], components: [disabledButtons] }).catch(() => null);
+    }
+  }
+
+  /**
    * Post or Update Event Panel Embed in Discord
    */
   static async sendOrUpdateEventEmbed(signupId: string, options?: { forceNewMessage?: boolean }) {
@@ -139,16 +182,7 @@ export class EventSignupService {
 
     // If forceNewMessage is true and there is an existing message, close the old message first
     if (options?.forceNewMessage && signup.messageId) {
-      const oldMsg = await channel.messages.fetch(signup.messageId).catch(() => null);
-      if (oldMsg) {
-        const closedEmbed = this.buildEventEmbed(
-          { ...signup, status: EventSignupStatus.CLOSED },
-          signup.participants,
-          guild.name
-        );
-        const disabledButtons = this.buildEventButtons(signup.id, EventSignupStatus.CLOSED);
-        await oldMsg.edit({ embeds: [closedEmbed], components: [disabledButtons] }).catch(() => null);
-      }
+      await this.closeEventMessage(signup);
     }
 
     const embed = this.buildEventEmbed(signup, signup.participants, guild.name);
