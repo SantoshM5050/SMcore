@@ -10,7 +10,7 @@ export async function onInteractionCreate(interaction: Interaction) {
       await handleSlashCommandInteraction(interaction);
     } else if (interaction.isButton()) {
       await handleButtonInteraction(interaction);
-    } else if (interaction.isStringSelectMenu()) {
+    } else if (interaction.isAnySelectMenu()) {
       await handleSelectMenuInteraction(interaction);
     } else if (interaction.isModalSubmit()) {
       await handleModalInteraction(interaction);

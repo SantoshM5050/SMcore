@@ -1,5 +1,5 @@
 import {
-  StringSelectMenuInteraction,
+  AnySelectMenuInteraction,
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
@@ -7,9 +7,10 @@ import {
 } from 'discord.js';
 import { prisma } from '@repo/database';
 
-export async function handleSelectMenuInteraction(interaction: StringSelectMenuInteraction) {
+export async function handleSelectMenuInteraction(interaction: AnySelectMenuInteraction) {
   const { customId, values, guildId } = interaction;
 
+  // 1. Role Request Select Role
   if (customId === 'role_request_select_role') {
     const selectedRoleId = values[0];
     if (!selectedRoleId || !guildId) return;
@@ -70,7 +71,126 @@ export async function handleSelectMenuInteraction(interaction: StringSelectMenuI
     }
 
     modal.addComponents(rows);
+    return interaction.showModal(modal);
+  }
 
-    await interaction.showModal(modal);
+  // 2. Promotion / Demotion / Left Family Member Selected from Dropdown
+  if (customId.startsWith('promo_select_user_')) {
+    const actionType = customId.replace('promo_select_user_', ''); // PROMOTION | DEMOTION | LEFT_FAMILY
+    const selectedUserId = values[0];
+    if (!selectedUserId) return;
+
+    const titles: Record<string, string> = {
+      PROMOTION: 'Grand RP Member Promotion Form',
+      DEMOTION: 'Grand RP Member Demotion Form',
+      LEFT_FAMILY: 'Grand RP Member Left Family Form',
+    };
+
+    const modal = new ModalBuilder()
+      .setCustomId(`promotion_modal_submit_${actionType}_${selectedUserId}`)
+      .setTitle(titles[actionType] || 'Grand RP Rank Form');
+
+    const nameInput = new TextInputBuilder()
+      .setCustomId('in_game_name_input')
+      .setLabel('Name (In-Game Name)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. Akash Varma')
+      .setRequired(true);
+
+    const igIdInput = new TextInputBuilder()
+      .setCustomId('in_game_id_input')
+      .setLabel('In-Game ID')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. 123456')
+      .setRequired(true);
+
+    if (actionType === 'LEFT_FAMILY') {
+      const reasonInput = new TextInputBuilder()
+        .setCustomId('reason_input')
+        .setLabel('Reason for Leaving / Kick')
+        .setStyle(TextInputStyle.Paragraph)
+        .setPlaceholder('Explain why member left or was kicked from family...')
+        .setRequired(true);
+
+      modal.addComponents(
+        new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput),
+        new ActionRowBuilder<TextInputBuilder>().addComponents(igIdInput),
+        new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput)
+      );
+    } else {
+      const prevRankInput = new TextInputBuilder()
+        .setCustomId('previous_rank_input')
+        .setLabel('Previous Rank (Role Name or ID)')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('e.g. Rank 5 / Fighter')
+        .setRequired(false);
+
+      const newRankInput = new TextInputBuilder()
+        .setCustomId('new_rank_input')
+        .setLabel('New Rank (Role Name or ID)')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('e.g. Rank 6 / Underboss')
+        .setRequired(true);
+
+      const reasonInput = new TextInputBuilder()
+        .setCustomId('reason_input')
+        .setLabel('Reason')
+        .setStyle(TextInputStyle.Paragraph)
+        .setPlaceholder('Reason for promotion or demotion...')
+        .setRequired(false);
+
+      modal.addComponents(
+        new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput),
+        new ActionRowBuilder<TextInputBuilder>().addComponents(igIdInput),
+        new ActionRowBuilder<TextInputBuilder>().addComponents(prevRankInput),
+        new ActionRowBuilder<TextInputBuilder>().addComponents(newRankInput),
+        new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput)
+      );
+    }
+
+    return interaction.showModal(modal);
+  }
+
+  // 3. Moderation Panel Member Selected from Dropdown
+  if (customId.startsWith('mod_select_user_')) {
+    const actionType = customId.replace('mod_select_user_', ''); // ban | kick | timeout | warn
+    const selectedUserId = values[0];
+    if (!selectedUserId) return;
+
+    const titles: Record<string, string> = {
+      ban: 'Ban Server Member',
+      kick: 'Kick Server Member',
+      timeout: 'Timeout / Mute Server Member',
+      warn: 'Issue Warning to Member',
+    };
+
+    const modal = new ModalBuilder()
+      .setCustomId(`mod_modal_submit_${actionType}_${selectedUserId}`)
+      .setTitle(titles[actionType] || 'Execute Moderation Action');
+
+    const reasonInput = new TextInputBuilder()
+      .setCustomId('reason_input')
+      .setLabel('Moderation Reason')
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder('Enter reason for this action...')
+      .setRequired(false);
+
+    if (actionType === 'timeout') {
+      const durationInput = new TextInputBuilder()
+        .setCustomId('duration_input')
+        .setLabel('Duration in Minutes (e.g. 10, 60, 1440)')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('60')
+        .setRequired(true);
+
+      modal.addComponents(
+        new ActionRowBuilder<TextInputBuilder>().addComponents(durationInput),
+        new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput)
+      );
+    } else {
+      modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput));
+    }
+
+    return interaction.showModal(modal);
   }
 }

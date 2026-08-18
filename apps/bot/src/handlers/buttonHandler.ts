@@ -3,6 +3,7 @@ import {
   ActionRowBuilder,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
+  UserSelectMenuBuilder,
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
@@ -28,148 +29,45 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
 
   // Grand RP Promotion / Demotion / Left Button Clicked
   if (customId === 'promo_btn_promotion' || customId === 'promo_demotion_form_btn') {
-    const modal = new ModalBuilder()
-      .setCustomId('promotion_modal_submit_PROMOTION')
-      .setTitle('Grand RP Member Promotion Form');
+    const userSelect = new UserSelectMenuBuilder()
+      .setCustomId('promo_select_user_PROMOTION')
+      .setPlaceholder('Select target member to promote...');
 
-    const nameInput = new TextInputBuilder()
-      .setCustomId('in_game_name_input')
-      .setLabel('Name (In-Game Name)')
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g. Akash Varma')
-      .setRequired(true);
+    const row = new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(userSelect);
 
-    const igIdInput = new TextInputBuilder()
-      .setCustomId('in_game_id_input')
-      .setLabel('In-Game ID')
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g. 123456')
-      .setRequired(true);
-
-    const discordUserInput = new TextInputBuilder()
-      .setCustomId('discord_user_input')
-      .setLabel('Discord User (@Mention or User ID)')
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g. @User or 1280178101326708856')
-      .setRequired(true);
-
-    const prevRankInput = new TextInputBuilder()
-      .setCustomId('previous_rank_input')
-      .setLabel('Previous Rank (Role Name or ID)')
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g. Rank 5 / Fighter')
-      .setRequired(false);
-
-    const newRankInput = new TextInputBuilder()
-      .setCustomId('new_rank_input')
-      .setLabel('New Rank (Role Name or ID)')
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g. Rank 6 / Underboss')
-      .setRequired(true);
-
-    modal.addComponents(
-      new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(igIdInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(discordUserInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(prevRankInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(newRankInput)
-    );
-
-    return interaction.showModal(modal);
+    return interaction.reply({
+      content: '📈 **Step 1 of 2:** Select the Discord Member you want to promote below:',
+      components: [row],
+      ephemeral: true,
+    });
   }
 
   if (customId === 'promo_btn_demotion') {
-    const modal = new ModalBuilder()
-      .setCustomId('promotion_modal_submit_DEMOTION')
-      .setTitle('Grand RP Member Demotion Form');
+    const userSelect = new UserSelectMenuBuilder()
+      .setCustomId('promo_select_user_DEMOTION')
+      .setPlaceholder('Select target member to demote...');
 
-    const nameInput = new TextInputBuilder()
-      .setCustomId('in_game_name_input')
-      .setLabel('Name (In-Game Name)')
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g. Akash Varma')
-      .setRequired(true);
+    const row = new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(userSelect);
 
-    const igIdInput = new TextInputBuilder()
-      .setCustomId('in_game_id_input')
-      .setLabel('In-Game ID')
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g. 123456')
-      .setRequired(true);
-
-    const discordUserInput = new TextInputBuilder()
-      .setCustomId('discord_user_input')
-      .setLabel('Discord User (@Mention or User ID)')
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g. @User or 1280178101326708856')
-      .setRequired(true);
-
-    const prevRankInput = new TextInputBuilder()
-      .setCustomId('previous_rank_input')
-      .setLabel('Previous Rank (Role Name or ID)')
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g. Rank 6 / Underboss')
-      .setRequired(false);
-
-    const newRankInput = new TextInputBuilder()
-      .setCustomId('new_rank_input')
-      .setLabel('New Rank (Role Name or ID)')
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g. Rank 5 / Fighter')
-      .setRequired(true);
-
-    modal.addComponents(
-      new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(igIdInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(discordUserInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(prevRankInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(newRankInput)
-    );
-
-    return interaction.showModal(modal);
+    return interaction.reply({
+      content: '📉 **Step 1 of 2:** Select the Discord Member you want to demote below:',
+      components: [row],
+      ephemeral: true,
+    });
   }
 
   if (customId === 'promo_btn_left') {
-    const modal = new ModalBuilder()
-      .setCustomId('promotion_modal_submit_LEFT_FAMILY')
-      .setTitle('Grand RP Member Left Family Form');
+    const userSelect = new UserSelectMenuBuilder()
+      .setCustomId('promo_select_user_LEFT_FAMILY')
+      .setPlaceholder('Select member who left the family...');
 
-    const nameInput = new TextInputBuilder()
-      .setCustomId('in_game_name_input')
-      .setLabel('Name (In-Game Name)')
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g. Akash Varma')
-      .setRequired(true);
+    const row = new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(userSelect);
 
-    const igIdInput = new TextInputBuilder()
-      .setCustomId('in_game_id_input')
-      .setLabel('In-Game ID')
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g. 123456')
-      .setRequired(true);
-
-    const discordUserInput = new TextInputBuilder()
-      .setCustomId('discord_user_input')
-      .setLabel('Discord User (@Mention or User ID)')
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g. @User or 1280178101326708856')
-      .setRequired(true);
-
-    const reasonInput = new TextInputBuilder()
-      .setCustomId('reason_input')
-      .setLabel('Reason for Left / Kick')
-      .setStyle(TextInputStyle.Paragraph)
-      .setPlaceholder('Explain why member left or was kicked from family...')
-      .setRequired(true);
-
-    modal.addComponents(
-      new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(igIdInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(discordUserInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput)
-    );
-
-    return interaction.showModal(modal);
+    return interaction.reply({
+      content: '🚪 **Step 1 of 2:** Select the Discord Member who left the family below:',
+      components: [row],
+      ephemeral: true,
+    });
   }
 
   // Event Signup Leave Button
@@ -323,44 +221,22 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     }
 
     const titles: Record<string, string> = {
-      ban: 'Ban Server Member',
-      kick: 'Kick Server Member',
-      timeout: 'Timeout / Mute Server Member',
-      warn: 'Issue Warning to Member',
+      ban: 'ban',
+      kick: 'kick',
+      timeout: 'timeout / mute',
+      warn: 'warn',
     };
 
-    const modal = new ModalBuilder()
-      .setCustomId(`mod_modal_${actionType}`)
-      .setTitle(titles[actionType] || 'Moderation Action');
+    const userSelect = new UserSelectMenuBuilder()
+      .setCustomId(`mod_select_user_${actionType}`)
+      .setPlaceholder(`Search & select member to ${titles[actionType] || actionType}...`);
 
-    const targetInput = new TextInputBuilder()
-      .setCustomId('target_user_input')
-      .setLabel('Target User ID or Mention (@User / ID)')
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g. 1280178101326708856 or @User')
-      .setRequired(true);
+    const row = new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(userSelect);
 
-    const reasonInput = new TextInputBuilder()
-      .setCustomId('reason_input')
-      .setLabel('Moderation Reason')
-      .setStyle(TextInputStyle.Paragraph)
-      .setPlaceholder('Enter reason for this action...')
-      .setRequired(false);
-
-    modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(targetInput));
-
-    if (actionType === 'timeout') {
-      const durationInput = new TextInputBuilder()
-        .setCustomId('duration_input')
-        .setLabel('Duration in Minutes (e.g. 10, 60, 1440)')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('60')
-        .setRequired(true);
-
-      modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(durationInput));
-    }
-
-    modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput));
-    return interaction.showModal(modal);
+    return interaction.reply({
+      content: `📌 **Step 1 of 2:** Select the target member to **${titles[actionType] || actionType}** below:`,
+      components: [row],
+      ephemeral: true,
+    });
   }
 }

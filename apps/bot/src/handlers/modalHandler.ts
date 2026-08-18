@@ -105,8 +105,12 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
       reason = 'No reason specified';
     }
 
-    // Parse Discord User ID if user pasted mention (<@123...>) or raw ID
-    let matchedUserId = discordUserRaw.match(/[0-9]{17,20}/)?.[0];
+    // Parse Discord User ID from customId or input field
+    let matchedUserId = customId.match(/[0-9]{17,20}/)?.[0];
+    if (!matchedUserId) {
+      matchedUserId = discordUserRaw.match(/[0-9]{17,20}/)?.[0];
+    }
+
     if (!matchedUserId) {
       // Try searching member by username or display name
       const cleanUserTag = discordUserRaw.replace(/^@/, '').trim().toLowerCase();
@@ -268,8 +272,17 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
         return interaction.editReply({ content: `🧹 Successfully purged **${deleted.size}** messages from #${channel.name || 'channel'}.` });
       }
 
-      const rawTarget = interaction.fields.getTextInputValue('target_user_input') || '';
-      const targetUserId = rawTarget.replace(/[<@!>]/g, '').trim();
+      let targetUserId = customId.match(/[0-9]{17,20}/)?.[0] || '';
+      if (!targetUserId) {
+        let rawTarget = '';
+        try {
+          rawTarget = interaction.fields.getTextInputValue('target_user_input') || '';
+        } catch {
+          rawTarget = '';
+        }
+        targetUserId = rawTarget.replace(/[<@!>]/g, '').trim();
+      }
+
       let reason: string | null = null;
       try {
         reason = interaction.fields.getTextInputValue('reason_input') || null;
@@ -278,7 +291,7 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
       }
 
       if (!targetUserId) {
-        return interaction.editReply({ content: '❌ Please enter a valid Target User ID or Mention.' });
+        return interaction.editReply({ content: '❌ Target member not selected or invalid User ID.' });
       }
 
       let targetUserTag = targetUserId;
