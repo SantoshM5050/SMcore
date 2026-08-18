@@ -68,35 +68,19 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
     }
 
     let actionType: PromotionActionType = PromotionActionType.PROMOTION;
-    if (customId.endsWith('_DEMOTION')) {
+    if (customId.includes('_DEMOTION_')) {
       actionType = PromotionActionType.DEMOTION;
-    } else if (customId.endsWith('_LEFT_FAMILY')) {
+    } else if (customId.includes('_LEFT_FAMILY_')) {
       actionType = PromotionActionType.LEFT_FAMILY;
     }
 
+    const parts = customId.split('_');
+    // Format: promotion_modal_submit_ACTIONTYPE_TARGETUSERID_NEWROLEID
+    const targetUserIdFromCustomId = parts[4] || '';
+    const newRoleIdFromCustomId = parts[5] && parts[5] !== 'NONE' ? parts[5] : null;
+
     const inGameName = interaction.fields.getTextInputValue('in_game_name_input');
     const inGameId = interaction.fields.getTextInputValue('in_game_id_input');
-
-    let discordUserRaw = '';
-    try {
-      discordUserRaw = interaction.fields.getTextInputValue('discord_user_input');
-    } catch {
-      discordUserRaw = inGameId;
-    }
-
-    let prevRankRaw = '';
-    try {
-      prevRankRaw = interaction.fields.getTextInputValue('previous_rank_input') || '';
-    } catch {
-      prevRankRaw = '';
-    }
-
-    let newRankRaw = '';
-    try {
-      newRankRaw = interaction.fields.getTextInputValue('new_rank_input') || '';
-    } catch {
-      newRankRaw = '';
-    }
 
     let reason = 'No reason specified';
     try {
@@ -105,43 +89,53 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
       reason = 'No reason specified';
     }
 
-    // Parse Discord User ID from customId or input field
-    let matchedUserId = customId.match(/[0-9]{17,20}/)?.[0];
+    // Parse Discord User ID from customId or fallback to input
+    let matchedUserId = targetUserIdFromCustomId || customId.match(/[0-9]{17,20}/)?.[0];
     if (!matchedUserId) {
-      matchedUserId = discordUserRaw.match(/[0-9]{17,20}/)?.[0];
+      let discordUserRaw = '';
+      try {
+        discordUserRaw = interaction.fields.getTextInputValue('discord_user_input') || '';
+      } catch {
+        discordUserRaw = inGameId;
+      }
+      matchedUserId = discordUserRaw.match(/[0-9]{17,20}/)?.[0] || user.id;
     }
 
-    if (!matchedUserId) {
-      // Try searching member by username or display name
-      const cleanUserTag = discordUserRaw.replace(/^@/, '').trim().toLowerCase();
-      const memberMatch = guild.members.cache.find(
-        (m) => m.user.username.toLowerCase() === cleanUserTag || m.displayName.toLowerCase() === cleanUserTag
-      );
-      if (memberMatch) {
-        matchedUserId = memberMatch.id;
-      } else {
-        matchedUserId = user.id; // Fallback to submitter
+    // Attempt resolving roles
+    let previousRoleId: string | null = null;
+    let newRoleId: string | null = newRoleIdFromCustomId;
+
+    if (!newRoleId && actionType !== PromotionActionType.LEFT_FAMILY) {
+      try {
+        const newRankRaw = interaction.fields.getTextInputValue('new_rank_input') || '';
+        if (newRankRaw) {
+          const cleanNew = newRankRaw.replace(/[<@&>]/g, '').trim();
+          const roleMatch = guild.roles.cache.find(
+            (r) => r.id === cleanNew || r.name.toLowerCase() === newRankRaw.toLowerCase().trim()
+          );
+          if (roleMatch) newRoleId = roleMatch.id;
+        }
+      } catch {
+        // Fallback null
       }
     }
 
-    // Attempt resolving roles from input
-    let previousRoleId: string | null = null;
-    let newRoleId: string | null = null;
-
-    if (prevRankRaw) {
-      const cleanPrev = prevRankRaw.replace(/[<@&>]/g, '').trim();
-      const roleMatch = guild.roles.cache.find(
-        (r) => r.id === cleanPrev || r.name.toLowerCase() === prevRankRaw.toLowerCase().trim()
-      );
-      if (roleMatch) previousRoleId = roleMatch.id;
-    }
-
-    if (newRankRaw && actionType !== PromotionActionType.LEFT_FAMILY) {
-      const cleanNew = newRankRaw.replace(/[<@&>]/g, '').trim();
-      const roleMatch = guild.roles.cache.find(
-        (r) => r.id === cleanNew || r.name.toLowerCase() === newRankRaw.toLowerCase().trim()
-      );
-      if (roleMatch) newRoleId = roleMatch.id;
+    try {
+      let prevRankRaw = '';
+      try {
+        prevRankRaw = interaction.fields.getTextInputValue('previous_rank_input') || '';
+      } catch {
+        prevRankRaw = '';
+      }
+      if (prevRankRaw) {
+        const cleanPrev = prevRankRaw.replace(/[<@&>]/g, '').trim();
+        const roleMatch = guild.roles.cache.find(
+          (r) => r.id === cleanPrev || r.name.toLowerCase() === prevRankRaw.toLowerCase().trim()
+        );
+        if (roleMatch) previousRoleId = roleMatch.id;
+      }
+    } catch {
+      // Fallback null
     }
 
     try {
