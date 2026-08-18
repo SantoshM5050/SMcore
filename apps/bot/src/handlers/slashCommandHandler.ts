@@ -1,6 +1,7 @@
 import { ChatInputCommandInteraction, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, PermissionFlagsBits } from 'discord.js';
-import { prisma, EventSignupStatus } from '@repo/database';
+import { prisma, EventSignupStatus, PromotionActionType } from '@repo/database';
 import { EventSignupService } from '../services/eventSignupService';
+import { PromotionService } from '../services/promotionService';
 
 export async function handleSlashCommandInteraction(interaction: ChatInputCommandInteraction) {
   const { commandName, guildId, memberPermissions } = interaction;
@@ -155,6 +156,114 @@ export async function handleSlashCommandInteraction(interaction: ChatInputComman
     return interaction.editReply({
       content: `✅ Event Signup "${title}" created & posted in ${channel}! Slots: ${mainSlots} Main + ${subSlots} Subs.`,
     });
+  }
+
+  if (commandName === 'setup-promotions') {
+    if (!isAdmin) {
+      return interaction.reply({ content: '❌ You need Administrator or Manage Server permission to run setup commands.', ephemeral: true });
+    }
+
+    await interaction.deferReply({ ephemeral: true });
+
+    const logChannel = interaction.options.getChannel('log_channel') as any;
+    const title = interaction.options.getString('title') || '🏆 Grand RP Family - Promotion & Demotion Panel';
+    const description =
+      interaction.options.getString('description') ||
+      'Click the button below to submit a **Rank Promotion**, **Demotion**, or mark a member as **Left Family**.\nRoles will be updated automatically in Discord & logged for High Command.';
+    const channel = interaction.channel as any;
+
+    if (logChannel) {
+      await prisma.channelConfiguration.upsert({
+        where: { guildId },
+        update: { promotionLogsChannelId: logChannel.id },
+        create: { guildId, promotionLogsChannelId: logChannel.id },
+      });
+    }
+
+    const embed = new EmbedBuilder()
+      .setTitle(title)
+      .setDescription(description)
+      .setColor('#9900FF')
+      .addFields(
+        { name: '📋 Form Fields', value: '• Name (In-Game)\n• ID (In-Game & Discord)\n• Previous Rank\n• New Rank / Left Family\n• Reason', inline: true },
+        { name: '⚡ Automation', value: '• Auto Role Swap\n• Auto Left Role Strip\n• Log Embeds', inline: true }
+      )
+      .setFooter({ text: 'Grand RP Family High Command • SMCore System' });
+
+    const button = new ButtonBuilder()
+      .setCustomId('promo_demotion_form_btn')
+      .setLabel('Submit Rank Change / Left')
+      .setStyle(ButtonStyle.Primary)
+      .setEmoji('📜');
+
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
+
+    await channel.send({ embeds: [embed], components: [row] });
+
+    return interaction.editReply({
+      content: `✅ Promotion/Demotion Panel deployed successfully in ${channel}! ${logChannel ? `Log channel set to ${logChannel}.` : ''}`,
+    });
+  }
+
+  if (commandName === 'promote' || commandName === 'demote') {
+    if (!isAdmin) {
+      return interaction.reply({ content: '❌ You need High Command / Staff permission to use promotion commands.', ephemeral: true });
+    }
+
+    await interaction.deferReply({ ephemeral: true });
+
+    const targetUser = interaction.options.getUser('user', true);
+    const inGameName = interaction.options.getString('in_game_name', true);
+    const inGameId = interaction.options.getString('in_game_id', true);
+    const previousRole = interaction.options.getRole('previous_role');
+    const newRole = interaction.options.getRole('new_role');
+    const isLeftFamily = interaction.options.getBoolean('left_family') || false;
+    const reason = interaction.options.getString('reason') || 'No reason specified';
+
+    let actionType: PromotionActionType = PromotionActionType.PROMOTION;
+    if (commandName === 'demote') {
+      actionType = isLeftFamily ? PromotionActionType.LEFT_FAMILY : PromotionActionType.DEMOTION;
+    }
+
+    if (!interaction.guild) {
+      return interaction.editReply({ content: '❌ Guild not found.' });
+    }
+
+    try {
+      const result = await PromotionService.executeAction(interaction.guild, {
+        guildId,
+        targetUserId: targetUser.id,
+        inGameName,
+        inGameId,
+        actionType,
+        previousRoleId: previousRole?.id || null,
+        newRoleId: newRole?.id || null,
+        reason,
+        executedById: interaction.user.id,
+        executedByTag: interaction.user.tag,
+      });
+
+      const actionTextMap: Record<string, string> = {
+        PROMOTION: '📈 Promoted',
+        DEMOTION: '📉 Demoted',
+        LEFT_FAMILY: '🚪 Marked as Left Family',
+      };
+
+      const embed = new EmbedBuilder()
+        .setTitle(`✅ ${actionTextMap[actionType]} Successfully`)
+        .setColor(actionType === 'PROMOTION' ? '#2ecc71' : actionType === 'DEMOTION' ? '#e74c3c' : '#95a5a6')
+        .addFields(
+          { name: 'Member', value: `${targetUser.tag} (<@${targetUser.id}>)`, inline: true },
+          { name: 'In-Game Name & ID', value: `${inGameName} (${inGameId})`, inline: true },
+          { name: 'Role Swap Status', value: result.roleSwapMessage, inline: false },
+          { name: 'Reason', value: reason, inline: false }
+        )
+        .setFooter({ text: 'Log saved to database & sent to Discord log channel.' });
+
+      return interaction.editReply({ embeds: [embed] });
+    } catch (err: any) {
+      return interaction.editReply({ content: `❌ Error processing promotion: ${err.message}` });
+    }
   }
 
   // --- MODERATION COMMAND HANDLERS ---

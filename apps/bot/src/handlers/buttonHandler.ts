@@ -26,6 +26,58 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     return interaction.editReply({ content: result.message });
   }
 
+  // Grand RP Promotion / Demotion / Left Button Clicked
+  if (customId === 'promo_demotion_form_btn') {
+    const modal = new ModalBuilder()
+      .setCustomId('promotion_modal_submit')
+      .setTitle('Grand RP Rank Update / Left Form');
+
+    const nameInput = new TextInputBuilder()
+      .setCustomId('in_game_name_input')
+      .setLabel('Name (In-Game Name)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. Akash Varma')
+      .setRequired(true);
+
+    const idInput = new TextInputBuilder()
+      .setCustomId('in_game_id_input')
+      .setLabel('ID (In-Game ID & Discord Mention/ID)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. 12345 / @User or Discord ID')
+      .setRequired(true);
+
+    const prevRankInput = new TextInputBuilder()
+      .setCustomId('previous_rank_input')
+      .setLabel('Previous Rank (Role Name or ID)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. Rank 5 / Fighter / Role ID')
+      .setRequired(false);
+
+    const newRankInput = new TextInputBuilder()
+      .setCustomId('new_rank_input')
+      .setLabel('New Rank (or type LEFT if family left)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. Rank 6 / Underboss / LEFT')
+      .setRequired(true);
+
+    const reasonInput = new TextInputBuilder()
+      .setCustomId('reason_input')
+      .setLabel('Reason')
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder('Reason for promotion, demotion, or leaving family...')
+      .setRequired(false);
+
+    modal.addComponents(
+      new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(idInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(prevRankInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(newRankInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput)
+    );
+
+    return interaction.showModal(modal);
+  }
+
   // Event Signup Leave Button
   if (customId.startsWith('event_signup_leave_')) {
     const signupId = customId.replace('event_signup_leave_', '');

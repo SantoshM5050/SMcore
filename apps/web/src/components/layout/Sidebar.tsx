@@ -30,6 +30,7 @@ const navGroups = [
       { name: 'Role Requests', href: '/applications', icon: ClipboardList, badge: 'Module 2' },
       { name: 'Welcome System', href: '/welcome', icon: UserPlus, badge: 'Module 3' },
       { name: 'Moderation Hub', href: '/moderation', icon: ShieldAlert, badge: 'Module 4' },
+      { name: 'Promotions', href: '/promotions', icon: Trophy, badge: 'Module 5' },
     ],
   },
   {

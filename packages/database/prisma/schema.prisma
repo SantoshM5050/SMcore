@@ -47,6 +47,9 @@ enum AuditAction {
   MEMBER_UNBANNED
   MEMBER_TIMED_OUT
   COMMAND_EXECUTED
+  PROMOTION_LOGGED
+  DEMOTION_LOGGED
+  MEMBER_LEFT_FAMILY
 }
 
 model Guild {
@@ -69,6 +72,7 @@ model Guild {
   eventSignups     EventSignup[]
   welcomeConfig    WelcomeConfig?
   moderationLogs   ModerationLog[]
+  promotionLogs    PromotionLog[]
 }
 
 model GuildSettings {
@@ -103,6 +107,7 @@ model ChannelConfiguration {
   generalLogsChannelId String?
   alertLogsChannelId  String?
   commandLogsChannelId String?
+  promotionLogsChannelId String?
   updatedAt           DateTime @updatedAt
 
   guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
@@ -370,6 +375,35 @@ model ModerationLog {
   guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
 
   @@index([guildId, createdAt])
+}
+
+enum PromotionActionType {
+  PROMOTION
+  DEMOTION
+  LEFT_FAMILY
+}
+
+model PromotionLog {
+  id               String              @id @default(cuid())
+  guildId          String
+  targetUserId     String
+  targetUserTag    String
+  inGameName       String
+  inGameId         String
+  actionType       PromotionActionType @default(PROMOTION)
+  previousRoleId   String?
+  previousRoleName String?
+  newRoleId        String?
+  newRoleName      String?
+  reason           String?
+  executedById     String
+  executedByTag    String
+  createdAt        DateTime            @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@index([guildId, createdAt])
+  @@index([guildId, actionType])
 }
 
 

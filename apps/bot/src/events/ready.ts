@@ -124,8 +124,57 @@ export async function onReady(client: Client) {
             { name: 'count', description: 'Number of messages to delete (1-100)', type: 4, required: true },
           ],
         },
+        {
+          name: 'setup-promotions',
+          description: 'Deploy Grand RP Family Promotion & Demotion Form button panel',
+          options: [
+            {
+              name: 'log_channel',
+              description: 'Target channel for Promotion/Demotion Log Embeds',
+              type: 7, // CHANNEL
+              required: false,
+            },
+            {
+              name: 'title',
+              description: 'Custom embed panel title',
+              type: 3, // STRING
+              required: false,
+            },
+            {
+              name: 'description',
+              description: 'Custom embed panel description',
+              type: 3, // STRING
+              required: false,
+            },
+          ],
+        },
+        {
+          name: 'promote',
+          description: 'Promote a Grand RP Family member to a new rank role',
+          options: [
+            { name: 'user', description: 'Discord Member to promote', type: 6, required: true },
+            { name: 'in_game_name', description: 'In-Game Name (e.g. Akash Varma)', type: 3, required: true },
+            { name: 'in_game_id', description: 'In-Game ID (e.g. 12345)', type: 3, required: true },
+            { name: 'new_role', description: 'New Rank Role to grant', type: 8, required: true },
+            { name: 'previous_role', description: 'Previous Rank Role to remove', type: 8, required: false },
+            { name: 'reason', description: 'Reason for promotion', type: 3, required: false },
+          ],
+        },
+        {
+          name: 'demote',
+          description: 'Demote or mark a member as Left Family',
+          options: [
+            { name: 'user', description: 'Discord Member to demote', type: 6, required: true },
+            { name: 'in_game_name', description: 'In-Game Name', type: 3, required: true },
+            { name: 'in_game_id', description: 'In-Game ID', type: 3, required: true },
+            { name: 'previous_role', description: 'Previous Rank Role to remove', type: 8, required: false },
+            { name: 'new_role', description: 'New Rank Role (leave empty if left family)', type: 8, required: false },
+            { name: 'left_family', description: 'Mark member as Left Family (removes family roles)', type: 5, required: false },
+            { name: 'reason', description: 'Reason for demotion or leave', type: 3, required: false },
+          ],
+        },
       ]);
-      console.log('✅ Registered Slash Commands (/setup-roles, /setup-event, /settings, /help, /ban, /kick, /timeout, /warn, /purge) with Discord API.');
+      console.log('✅ Registered Slash Commands (/setup-promotions, /promote, /demote, /setup-roles, /setup-event, /settings, /help, /ban, /kick, /timeout, /warn, /purge) with Discord API.');
     }
   } catch (slashErr) {
     console.error('Failed to register Slash Commands with Discord API:', slashErr);
