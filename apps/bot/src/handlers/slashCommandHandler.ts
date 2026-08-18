@@ -190,13 +190,25 @@ export async function handleSlashCommandInteraction(interaction: ChatInputComman
       )
       .setFooter({ text: 'Grand RP Family High Command • SMCore System' });
 
-    const button = new ButtonBuilder()
-      .setCustomId('promo_demotion_form_btn')
-      .setLabel('Submit Rank Change / Left')
-      .setStyle(ButtonStyle.Primary)
-      .setEmoji('📜');
+    const promoBtn = new ButtonBuilder()
+      .setCustomId('promo_btn_promotion')
+      .setLabel('Promote Member')
+      .setStyle(ButtonStyle.Success)
+      .setEmoji('📈');
 
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
+    const demoteBtn = new ButtonBuilder()
+      .setCustomId('promo_btn_demotion')
+      .setLabel('Demote Member')
+      .setStyle(ButtonStyle.Danger)
+      .setEmoji('📉');
+
+    const leftBtn = new ButtonBuilder()
+      .setCustomId('promo_btn_left')
+      .setLabel('Left Family')
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji('🚪');
+
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(promoBtn, demoteBtn, leftBtn);
 
     await channel.send({ embeds: [embed], components: [row] });
 

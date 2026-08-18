@@ -17,7 +17,6 @@ import {
   ShieldCheck,
   CheckCircle2,
   AlertCircle,
-  Hash,
   Award,
   Send,
 } from 'lucide-react';
@@ -53,8 +52,10 @@ export default function PromotionsPage() {
   const [newRoleId, setNewRoleId] = useState('');
   const [reason, setReason] = useState('');
 
-  // Channel Config Form State
-  const [logChannelIdInput, setLogChannelIdInput] = useState('');
+  // 3 Separate Log Channels Config State
+  const [promoLogChannelId, setPromoLogChannelId] = useState('');
+  const [demoteLogChannelId, setDemoteLogChannelId] = useState('');
+  const [leftLogChannelId, setLeftLogChannelId] = useState('');
   const [deployChannelIdInput, setDeployChannelIdInput] = useState('');
 
   const fetchPromotionsData = () => {
@@ -66,14 +67,16 @@ export default function PromotionsPage() {
         if (data.logs) setLogs(data.logs);
         if (data.channelConfig) {
           setChannelsConfig(data.channelConfig);
-          setLogChannelIdInput(data.channelConfig.promotionLogsChannelId || '');
+          setPromoLogChannelId(data.channelConfig.promotionLogsChannelId || '');
+          setDemoteLogChannelId(data.channelConfig.demotionLogsChannelId || '');
+          setLeftLogChannelId(data.channelConfig.leftFamilyLogsChannelId || '');
         }
         if (data.roleConfigs) setRoleConfigs(data.roleConfigs);
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
 
-    // Fetch Discord Channels List for Synced Select Dropdown
+    // Fetch Discord Channels List for Synced Select Dropdowns
     fetch(`/api/guilds/${guildId}/channels/list`)
       .then((res) => res.json())
       .then((data) => {
@@ -160,16 +163,18 @@ export default function PromotionsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'SAVE_CHANNELS',
-          promotionLogsChannelId: logChannelIdInput.trim() || null,
+          promotionLogsChannelId: promoLogChannelId.trim() || null,
+          demotionLogsChannelId: demoteLogChannelId.trim() || null,
+          leftFamilyLogsChannelId: leftLogChannelId.trim() || null,
         }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setNotification({ type: 'success', message: 'Promotion Logs Channel updated successfully!' });
+        setNotification({ type: 'success', message: 'Log Channels configured successfully for Promotions, Demotions & Left Family!' });
         setIsChannelModalOpen(false);
         fetchPromotionsData();
       } else {
-        setNotification({ type: 'error', message: data.error || 'Failed to save channel.' });
+        setNotification({ type: 'error', message: data.error || 'Failed to save channels.' });
       }
     } catch (err: any) {
       setNotification({ type: 'error', message: err.message });
@@ -199,7 +204,7 @@ export default function PromotionsPage() {
       if (res.ok && data.success) {
         setNotification({
           type: 'success',
-          message: '🏆 Grand RP Promotion & Demotion Panel deployed successfully to Discord channel!',
+          message: '🏆 Grand RP 3-Button Rank Management Panel deployed successfully to Discord channel!',
         });
         setIsDeployModalOpen(false);
       } else {
@@ -244,7 +249,7 @@ export default function PromotionsPage() {
             <Badge variant="purple">Module 5</Badge>
           </div>
           <p className="text-xs text-gray-400">
-            Submit rank promotions, demotions, or mark members who left the family with automatic Discord role swaps & log embeds.
+            Submit rank promotions, demotions, or mark members who left the family with automatic Discord role swaps & separate log channels.
           </p>
         </div>
 
@@ -264,7 +269,7 @@ export default function PromotionsPage() {
             className="flex items-center gap-2 text-xs border-border/80 hover:bg-secondary/60"
           >
             <Settings className="w-4 h-4 text-gray-400" />
-            <span>Configure Log Channel</span>
+            <span>Configure Log Channels</span>
           </Button>
 
           <Button
@@ -401,7 +406,8 @@ export default function PromotionsPage() {
                 <tr>
                   <th className="py-3 px-4 rounded-l-xl">Date & Time</th>
                   <th className="py-3 px-4">Name (In-Game)</th>
-                  <th className="py-3 px-4">ID (In-Game & Discord)</th>
+                  <th className="py-3 px-4">In-Game ID</th>
+                  <th className="py-3 px-4">Discord User</th>
                   <th className="py-3 px-4">Action</th>
                   <th className="py-3 px-4">Previous ➡️ New Rank</th>
                   <th className="py-3 px-4">Reason</th>
@@ -419,11 +425,12 @@ export default function PromotionsPage() {
                       {log.inGameName}
                     </td>
 
+                    <td className="py-3.5 px-4 font-mono font-bold text-primary">
+                      {log.inGameId}
+                    </td>
+
                     <td className="py-3.5 px-4 font-mono text-gray-300">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-primary">ID: {log.inGameId}</span>
-                        <span className="text-[10px] text-gray-500">&lt;@{log.targetUserId}&gt;</span>
-                      </div>
+                      &lt;@{log.targetUserId}&gt;
                     </td>
 
                     <td className="py-3.5 px-4">
@@ -469,50 +476,9 @@ export default function PromotionsPage() {
         </div>
       </Card>
 
-      {/* NEW PROMOTION / DEMOTION FORM MODAL */}
+      {/* NEW PROMOTION / DEMOTION / LEFT FAMILY FORM MODAL */}
       <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title="Submit Grand RP Rank Action / Left Form">
         <form onSubmit={handleSubmitPromotion} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-300 mb-1">Name (In-Game Name) *</label>
-              <Input
-                type="text"
-                placeholder="e.g. Akash Varma"
-                value={inGameName}
-                onChange={(e) => setInGameName(e.target.value)}
-                required
-                className="text-xs bg-secondary/60"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-300 mb-1">In-Game ID *</label>
-              <Input
-                type="text"
-                placeholder="e.g. 123456"
-                value={inGameId}
-                onChange={(e) => setInGameId(e.target.value)}
-                required
-                className="text-xs bg-secondary/60"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-300 mb-1">Target Discord User ID / Mention *</label>
-            <Input
-              type="text"
-              placeholder="e.g. 1280178101326708856 or @User"
-              value={targetUserId}
-              onChange={(e) => setTargetUserId(e.target.value)}
-              required
-              className="text-xs bg-secondary/60 font-mono"
-            />
-            <p className="text-[10px] text-gray-500 mt-1">
-              Used to swap Discord roles & send DM notifications automatically.
-            </p>
-          </div>
-
           <div>
             <label className="block text-xs font-bold text-gray-300 mb-1">Action Type *</label>
             <div className="grid grid-cols-3 gap-2">
@@ -554,28 +520,70 @@ export default function PromotionsPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-300 mb-1">Previous Rank Role</label>
-              <select
-                value={previousRoleId}
-                onChange={(e) => setPreviousRoleId(e.target.value)}
-                className="w-full bg-secondary/60 border border-border/80 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-primary"
-              >
-                <option value="">-- Select Previous Role (Optional) --</option>
-                {roleConfigs.map((r) => (
-                  <option key={r.roleId} value={r.roleId}>
-                    {r.roleName}
-                  </option>
-                ))}
-              </select>
+              <label className="block text-xs font-bold text-gray-300 mb-1">Name (In-Game Name) *</label>
+              <Input
+                type="text"
+                placeholder="e.g. Akash Varma"
+                value={inGameName}
+                onChange={(e) => setInGameName(e.target.value)}
+                required
+                className="text-xs bg-secondary/60"
+              />
             </div>
 
-            {actionType !== 'LEFT_FAMILY' && (
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1">In-Game ID *</label>
+              <Input
+                type="text"
+                placeholder="e.g. 123456"
+                value={inGameId}
+                onChange={(e) => setInGameId(e.target.value)}
+                required
+                className="text-xs bg-secondary/60 font-mono"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-300 mb-1">Discord User Mention / User ID *</label>
+            <Input
+              type="text"
+              placeholder="e.g. @User or 1280178101326708856"
+              value={targetUserId}
+              onChange={(e) => setTargetUserId(e.target.value)}
+              required
+              className="text-xs bg-secondary/60 font-mono"
+            />
+            <p className="text-[10px] text-gray-500 mt-1">
+              Target Discord Member ID or mention. Roles will be updated & DM sent automatically.
+            </p>
+          </div>
+
+          {actionType !== 'LEFT_FAMILY' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1">Previous Rank Role</label>
+                <select
+                  value={previousRoleId}
+                  onChange={(e) => setPreviousRoleId(e.target.value)}
+                  className="w-full bg-secondary/60 border border-border/80 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-primary"
+                >
+                  <option value="">-- Select Previous Role (Optional) --</option>
+                  {roleConfigs.map((r) => (
+                    <option key={r.roleId} value={r.roleId}>
+                      {r.roleName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-gray-300 mb-1">New Rank Role *</label>
                 <select
                   value={newRoleId}
                   onChange={(e) => setNewRoleId(e.target.value)}
                   className="w-full bg-secondary/60 border border-border/80 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-primary"
+                  required
                 >
                   <option value="">-- Select New Role --</option>
                   {roleConfigs.map((r) => (
@@ -585,14 +593,14 @@ export default function PromotionsPage() {
                   ))}
                 </select>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-bold text-gray-300 mb-1">Reason</label>
             <textarea
               rows={3}
-              placeholder="Reason for promotion, demotion, or leaving family..."
+              placeholder={actionType === 'LEFT_FAMILY' ? 'Reason for leaving or kick...' : 'Reason for promotion or demotion...'}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               className="w-full bg-secondary/60 border border-border/80 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-primary"
@@ -610,40 +618,57 @@ export default function PromotionsPage() {
         </form>
       </Modal>
 
-      {/* LOG CHANNEL CONFIGURATION MODAL WITH SYNCED CHANNEL SELECT DROPDOWN */}
-      <Modal isOpen={isChannelModalOpen} onClose={() => setIsChannelModalOpen(false)} title="Configure Promotion Logs Channel">
+      {/* CONFIGURE 3 SEPARATE LOG CHANNELS MODAL */}
+      <Modal isOpen={isChannelModalOpen} onClose={() => setIsChannelModalOpen(false)} title="Configure Separate Log Channels">
         <form onSubmit={handleSaveChannelConfig} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-gray-300 mb-1">Select Discord Channel for Logs *</label>
-            
-            {discordChannels.length > 0 ? (
-              <select
-                value={logChannelIdInput}
-                onChange={(e) => setLogChannelIdInput(e.target.value)}
-                className="w-full bg-secondary/60 border border-border/80 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-primary font-mono mb-2"
-              >
-                <option value="">-- Select Discord Channel --</option>
-                {discordChannels.map((chan) => (
-                  <option key={chan.id} value={chan.id}>
-                    #{chan.name} ({chan.id})
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <p className="text-[11px] text-amber-400 mb-2">
-                ⚠️ Fetching server channels... (Or enter Channel ID manually below):
-              </p>
-            )}
+            <label className="block text-xs font-bold text-emerald-400 mb-1">📈 Promotion Logs Channel</label>
+            <select
+              value={promoLogChannelId}
+              onChange={(e) => setPromoLogChannelId(e.target.value)}
+              className="w-full bg-secondary/60 border border-border/80 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-primary font-mono mb-2"
+            >
+              <option value="">-- Select Promotion Log Channel --</option>
+              {discordChannels.map((chan) => (
+                <option key={chan.id} value={chan.id}>
+                  #{chan.name} ({chan.id})
+                </option>
+              ))}
+            </select>
+          </div>
 
-            <Input
-              type="text"
-              placeholder="Or enter Channel ID manually (e.g. 1280178101326708856)"
-              value={logChannelIdInput}
-              onChange={(e) => setLogChannelIdInput(e.target.value)}
-              className="text-xs font-mono bg-secondary/60"
-            />
-            <p className="text-[10px] text-gray-500 mt-1.5">
-              Select or enter the Discord Text Channel ID where rich Promotion/Demotion Log Embeds will be posted automatically.
+          <div>
+            <label className="block text-xs font-bold text-rose-400 mb-1">📉 Demotion Logs Channel</label>
+            <select
+              value={demoteLogChannelId}
+              onChange={(e) => setDemoteLogChannelId(e.target.value)}
+              className="w-full bg-secondary/60 border border-border/80 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-primary font-mono mb-2"
+            >
+              <option value="">-- Select Demotion Log Channel --</option>
+              {discordChannels.map((chan) => (
+                <option key={chan.id} value={chan.id}>
+                  #{chan.name} ({chan.id})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-300 mb-1">🚪 Left Family Logs Channel</label>
+            <select
+              value={leftLogChannelId}
+              onChange={(e) => setLeftLogChannelId(e.target.value)}
+              className="w-full bg-secondary/60 border border-border/80 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-primary font-mono mb-2"
+            >
+              <option value="">-- Select Left Family Log Channel --</option>
+              {discordChannels.map((chan) => (
+                <option key={chan.id} value={chan.id}>
+                  #{chan.name} ({chan.id})
+                </option>
+              ))}
+            </select>
+            <p className="text-[10px] text-gray-500 mt-1">
+              Select dedicated channels where log embeds for Promotions, Demotions, and Left Family will be posted separately.
             </p>
           </div>
 
@@ -652,14 +677,14 @@ export default function PromotionsPage() {
               Cancel
             </Button>
             <Button type="submit" variant="primary" disabled={submitting} className="text-xs bg-primary">
-              {submitting ? 'Saving...' : 'Save Channel Config'}
+              {submitting ? 'Saving...' : 'Save Channels Config'}
             </Button>
           </div>
         </form>
       </Modal>
 
-      {/* DEPLOY PROMOTION PANEL TO DISCORD MODAL */}
-      <Modal isOpen={isDeployModalOpen} onClose={() => setIsDeployModalOpen(false)} title="Deploy Promotion Form Panel to Discord">
+      {/* DEPLOY 3-BUTTON PROMOTION PANEL TO DISCORD MODAL */}
+      <Modal isOpen={isDeployModalOpen} onClose={() => setIsDeployModalOpen(false)} title="Deploy 3-Button Rank Panel to Discord">
         <form onSubmit={handleDeployPanel} className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-gray-300 mb-1">Select Target Channel for Panel Embed *</label>
@@ -689,13 +714,18 @@ export default function PromotionsPage() {
               />
             )}
 
-            <div className="p-3 bg-secondary/40 border border-border/60 rounded-xl space-y-1 mt-2">
+            <div className="p-3 bg-secondary/40 border border-border/60 rounded-xl space-y-1.5 mt-2">
               <span className="text-[11px] font-bold text-primary flex items-center gap-1">
-                <Send className="w-3 h-3" /> Panel Content Preview:
+                <Send className="w-3 h-3" /> Panel Preview:
               </span>
               <p className="text-[10px] text-gray-400">
-                Posts an embed with title <strong>"🏆 Grand RP Family - Promotion & Demotion Panel"</strong> and an interactive button <strong>"📜 Submit Rank Change / Left"</strong>.
+                Posts an embed with 3 interactive buttons:
               </p>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">📈 Promote Member</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400">📉 Demote Member</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-500/20 text-gray-300">🚪 Left Family</span>
+              </div>
             </div>
           </div>
 

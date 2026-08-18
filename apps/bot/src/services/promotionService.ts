@@ -155,7 +155,15 @@ export class PromotionService {
       const channelConfig = await prisma.channelConfiguration.findUnique({
         where: { guildId: guild.id },
       });
-      const targetChanId = channelConfig?.promotionLogsChannelId || channelConfig?.logsChannelId;
+      let targetChanId: string | null = null;
+      if (record.actionType === PromotionActionType.PROMOTION) {
+        targetChanId = channelConfig?.promotionLogsChannelId || channelConfig?.logsChannelId || null;
+      } else if (record.actionType === PromotionActionType.DEMOTION) {
+        targetChanId = channelConfig?.demotionLogsChannelId || channelConfig?.promotionLogsChannelId || channelConfig?.logsChannelId || null;
+      } else if (record.actionType === PromotionActionType.LEFT_FAMILY) {
+        targetChanId = channelConfig?.leftFamilyLogsChannelId || channelConfig?.promotionLogsChannelId || channelConfig?.logsChannelId || null;
+      }
+
       if (!targetChanId) return;
 
       const channel = (await guild.channels.fetch(targetChanId).catch(() => null)) as TextChannel | null;

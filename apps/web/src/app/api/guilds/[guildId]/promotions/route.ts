@@ -113,24 +113,28 @@ export async function POST(request: Request, { params }: { params: { guildId: st
     const rawBotToken = process.env.DISCORD_BOT_TOKEN || '';
     const botToken = rawBotToken.trim().replace(/^["']|["']$/g, '');
 
-    // 1. Handle Saving Channel Configuration
+    // 1. Handle Saving Channel Configuration for Promotions, Demotions & Left Family
     if (action === 'SAVE_CHANNELS') {
       const updatedConfig = await prisma.channelConfiguration.upsert({
         where: { guildId },
         create: {
           guildId,
-          promotionLogsChannelId: promotionLogsChannelId || null,
+          promotionLogsChannelId: body.promotionLogsChannelId || null,
+          demotionLogsChannelId: body.demotionLogsChannelId || null,
+          leftFamilyLogsChannelId: body.leftFamilyLogsChannelId || null,
         },
         update: {
-          promotionLogsChannelId: promotionLogsChannelId || null,
+          promotionLogsChannelId: body.promotionLogsChannelId || null,
+          demotionLogsChannelId: body.demotionLogsChannelId || null,
+          leftFamilyLogsChannelId: body.leftFamilyLogsChannelId || null,
         },
       });
       return NextResponse.json({ success: true, channelConfig: updatedConfig });
     }
 
-    // 1.5 Handle Deploying Promotion Panel Embed to Discord Channel
+    // 1.5 Handle Deploying 3-Button Promotion & Demotion Panel Embed to Discord Channel
     if (action === 'DEPLOY_PANEL') {
-      const channelId = body.channelId || promotionLogsChannelId;
+      const channelId = body.channelId || body.promotionLogsChannelId;
       if (!channelId) {
         return NextResponse.json({ error: 'Target Discord channel is required to deploy Promotion Panel.' }, { status: 400 });
       }
@@ -148,12 +152,11 @@ export async function POST(request: Request, { params }: { params: { guildId: st
         body: JSON.stringify({
           embeds: [
             {
-              title: '🏆 Grand RP Family - Promotion & Demotion Panel',
-              description: 'Click the button below to submit a **Rank Promotion**, **Demotion**, or mark a member as **Left Family**.\n\nRoles will be updated automatically in Discord & logged for High Command.',
+              title: '🏆 Grand RP Family - Rank Management Panel',
+              description: 'Click any button below to submit a **Promotion**, **Demotion**, or mark a member as **Left Family**.\n\nDiscord roles will be updated automatically and logged to designated staff channels.',
               color: 10027263,
               fields: [
-                { name: '📋 Form Fields', value: '• Name (In-Game Name)\n• ID (In-Game ID & Discord @User/ID)\n• Previous Rank\n• New Rank / Left Family\n• Reason', inline: true },
-                { name: '⚡ Automation', value: '• Auto Role Swap\n• Auto Left Role Strip\n• Log Embeds', inline: true }
+                { name: 'Available Actions', value: '📈 **Promote Member** | 📉 **Demote Member** | 🚪 **Left Family**', inline: false }
               ],
               footer: { text: 'Grand RP Family High Command • SMCore System' },
               timestamp: new Date().toISOString(),
@@ -163,13 +166,9 @@ export async function POST(request: Request, { params }: { params: { guildId: st
             {
               type: 1,
               components: [
-                {
-                  type: 2,
-                  style: 1,
-                  custom_id: 'promo_demotion_form_btn',
-                  label: 'Submit Rank Change / Left',
-                  emoji: { name: '📜' },
-                },
+                { type: 2, style: 3, custom_id: 'promo_btn_promotion', label: 'Promote Member', emoji: { name: '📈' } },
+                { type: 2, style: 4, custom_id: 'promo_btn_demotion', label: 'Demote Member', emoji: { name: '📉' } },
+                { type: 2, style: 2, custom_id: 'promo_btn_left', label: 'Left Family', emoji: { name: '🚪' } },
               ],
             },
           ],
@@ -286,8 +285,18 @@ export async function POST(request: Request, { params }: { params: { guildId: st
 
     // Send Discord Log Embed if channel is configured
     const channelConfig = await prisma.channelConfiguration.findUnique({ where: { guildId } });
-    if (botToken && channelConfig?.promotionLogsChannelId) {
-      await sendPromotionLogEmbed(botToken, channelConfig.promotionLogsChannelId, log);
+    if (botToken) {
+      let targetChanId: string | null = null;
+      if (actionType === 'PROMOTION') {
+        targetChanId = channelConfig?.promotionLogsChannelId || channelConfig?.logsChannelId || null;
+      } else if (actionType === 'DEMOTION') {
+        targetChanId = channelConfig?.demotionLogsChannelId || channelConfig?.promotionLogsChannelId || channelConfig?.logsChannelId || null;
+      } else if (actionType === 'LEFT_FAMILY') {
+        targetChanId = channelConfig?.leftFamilyLogsChannelId || channelConfig?.promotionLogsChannelId || channelConfig?.logsChannelId || null;
+      }
+      if (targetChanId) {
+        await sendPromotionLogEmbed(botToken, targetChanId, log);
+      }
     }
 
     return NextResponse.json({

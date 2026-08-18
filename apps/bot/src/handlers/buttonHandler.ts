@@ -27,10 +27,10 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
   }
 
   // Grand RP Promotion / Demotion / Left Button Clicked
-  if (customId === 'promo_demotion_form_btn') {
+  if (customId === 'promo_btn_promotion' || customId === 'promo_demotion_form_btn') {
     const modal = new ModalBuilder()
-      .setCustomId('promotion_modal_submit')
-      .setTitle('Grand RP Rank Update / Left Form');
+      .setCustomId('promotion_modal_submit_PROMOTION')
+      .setTitle('Grand RP Member Promotion Form');
 
     const nameInput = new TextInputBuilder()
       .setCustomId('in_game_name_input')
@@ -39,39 +39,133 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       .setPlaceholder('e.g. Akash Varma')
       .setRequired(true);
 
-    const idInput = new TextInputBuilder()
+    const igIdInput = new TextInputBuilder()
       .setCustomId('in_game_id_input')
-      .setLabel('ID (In-Game ID & Discord Mention/ID)')
+      .setLabel('In-Game ID')
       .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g. 12345 / @User or Discord ID')
+      .setPlaceholder('e.g. 123456')
+      .setRequired(true);
+
+    const discordUserInput = new TextInputBuilder()
+      .setCustomId('discord_user_input')
+      .setLabel('Discord User (@Mention or User ID)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. @User or 1280178101326708856')
       .setRequired(true);
 
     const prevRankInput = new TextInputBuilder()
       .setCustomId('previous_rank_input')
       .setLabel('Previous Rank (Role Name or ID)')
       .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g. Rank 5 / Fighter / Role ID')
+      .setPlaceholder('e.g. Rank 5 / Fighter')
       .setRequired(false);
 
     const newRankInput = new TextInputBuilder()
       .setCustomId('new_rank_input')
-      .setLabel('New Rank (or type LEFT if family left)')
+      .setLabel('New Rank (Role Name or ID)')
       .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g. Rank 6 / Underboss / LEFT')
+      .setPlaceholder('e.g. Rank 6 / Underboss')
+      .setRequired(true);
+
+    modal.addComponents(
+      new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(igIdInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(discordUserInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(prevRankInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(newRankInput)
+    );
+
+    return interaction.showModal(modal);
+  }
+
+  if (customId === 'promo_btn_demotion') {
+    const modal = new ModalBuilder()
+      .setCustomId('promotion_modal_submit_DEMOTION')
+      .setTitle('Grand RP Member Demotion Form');
+
+    const nameInput = new TextInputBuilder()
+      .setCustomId('in_game_name_input')
+      .setLabel('Name (In-Game Name)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. Akash Varma')
+      .setRequired(true);
+
+    const igIdInput = new TextInputBuilder()
+      .setCustomId('in_game_id_input')
+      .setLabel('In-Game ID')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. 123456')
+      .setRequired(true);
+
+    const discordUserInput = new TextInputBuilder()
+      .setCustomId('discord_user_input')
+      .setLabel('Discord User (@Mention or User ID)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. @User or 1280178101326708856')
+      .setRequired(true);
+
+    const prevRankInput = new TextInputBuilder()
+      .setCustomId('previous_rank_input')
+      .setLabel('Previous Rank (Role Name or ID)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. Rank 6 / Underboss')
+      .setRequired(false);
+
+    const newRankInput = new TextInputBuilder()
+      .setCustomId('new_rank_input')
+      .setLabel('New Rank (Role Name or ID)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. Rank 5 / Fighter')
+      .setRequired(true);
+
+    modal.addComponents(
+      new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(igIdInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(discordUserInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(prevRankInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(newRankInput)
+    );
+
+    return interaction.showModal(modal);
+  }
+
+  if (customId === 'promo_btn_left') {
+    const modal = new ModalBuilder()
+      .setCustomId('promotion_modal_submit_LEFT_FAMILY')
+      .setTitle('Grand RP Member Left Family Form');
+
+    const nameInput = new TextInputBuilder()
+      .setCustomId('in_game_name_input')
+      .setLabel('Name (In-Game Name)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. Akash Varma')
+      .setRequired(true);
+
+    const igIdInput = new TextInputBuilder()
+      .setCustomId('in_game_id_input')
+      .setLabel('In-Game ID')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. 123456')
+      .setRequired(true);
+
+    const discordUserInput = new TextInputBuilder()
+      .setCustomId('discord_user_input')
+      .setLabel('Discord User (@Mention or User ID)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. @User or 1280178101326708856')
       .setRequired(true);
 
     const reasonInput = new TextInputBuilder()
       .setCustomId('reason_input')
-      .setLabel('Reason')
+      .setLabel('Reason for Left / Kick')
       .setStyle(TextInputStyle.Paragraph)
-      .setPlaceholder('Reason for promotion, demotion, or leaving family...')
-      .setRequired(false);
+      .setPlaceholder('Explain why member left or was kicked from family...')
+      .setRequired(true);
 
     modal.addComponents(
       new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(idInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(prevRankInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(newRankInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(igIdInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(discordUserInput),
       new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput)
     );
 

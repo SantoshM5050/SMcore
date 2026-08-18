@@ -108,6 +108,8 @@ model ChannelConfiguration {
   alertLogsChannelId  String?
   commandLogsChannelId String?
   promotionLogsChannelId String?
+  demotionLogsChannelId  String?
+  leftFamilyLogsChannelId String?
   updatedAt           DateTime @updatedAt
 
   guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)

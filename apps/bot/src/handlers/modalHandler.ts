@@ -58,8 +58,8 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
     }
   }
 
-  // 1.5 Grand RP Promotion/Demotion Form Submitted
-  if (customId === 'promotion_modal_submit') {
+  // 1.5 Grand RP Promotion / Demotion / Left Form Submitted
+  if (customId.startsWith('promotion_modal_submit')) {
     await interaction.deferReply({ ephemeral: true });
 
     const guild = interaction.guild;
@@ -67,18 +67,58 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
       return interaction.editReply({ content: '❌ Guild context missing.' });
     }
 
+    let actionType: PromotionActionType = PromotionActionType.PROMOTION;
+    if (customId.endsWith('_DEMOTION')) {
+      actionType = PromotionActionType.DEMOTION;
+    } else if (customId.endsWith('_LEFT_FAMILY')) {
+      actionType = PromotionActionType.LEFT_FAMILY;
+    }
+
     const inGameName = interaction.fields.getTextInputValue('in_game_name_input');
-    const rawId = interaction.fields.getTextInputValue('in_game_id_input');
-    const prevRankRaw = interaction.fields.getTextInputValue('previous_rank_input') || '';
-    const newRankRaw = interaction.fields.getTextInputValue('new_rank_input');
-    const reason = interaction.fields.getTextInputValue('reason_input') || 'No reason specified';
+    const inGameId = interaction.fields.getTextInputValue('in_game_id_input');
 
-    // Parse Discord User ID if user pasted mention or ID in ID field
-    const matchedUserId = rawId.match(/[0-9]{17,20}/)?.[0] || user.id;
+    let discordUserRaw = '';
+    try {
+      discordUserRaw = interaction.fields.getTextInputValue('discord_user_input');
+    } catch {
+      discordUserRaw = inGameId;
+    }
 
-    // Check if new rank is "LEFT" or "LEFT FAMILY"
-    const isLeftFamily = newRankRaw.trim().toUpperCase().includes('LEFT');
-    const actionType: PromotionActionType = isLeftFamily ? PromotionActionType.LEFT_FAMILY : PromotionActionType.PROMOTION;
+    let prevRankRaw = '';
+    try {
+      prevRankRaw = interaction.fields.getTextInputValue('previous_rank_input') || '';
+    } catch {
+      prevRankRaw = '';
+    }
+
+    let newRankRaw = '';
+    try {
+      newRankRaw = interaction.fields.getTextInputValue('new_rank_input') || '';
+    } catch {
+      newRankRaw = '';
+    }
+
+    let reason = 'No reason specified';
+    try {
+      reason = interaction.fields.getTextInputValue('reason_input') || 'No reason specified';
+    } catch {
+      reason = 'No reason specified';
+    }
+
+    // Parse Discord User ID if user pasted mention (<@123...>) or raw ID
+    let matchedUserId = discordUserRaw.match(/[0-9]{17,20}/)?.[0];
+    if (!matchedUserId) {
+      // Try searching member by username or display name
+      const cleanUserTag = discordUserRaw.replace(/^@/, '').trim().toLowerCase();
+      const memberMatch = guild.members.cache.find(
+        (m) => m.user.username.toLowerCase() === cleanUserTag || m.displayName.toLowerCase() === cleanUserTag
+      );
+      if (memberMatch) {
+        matchedUserId = memberMatch.id;
+      } else {
+        matchedUserId = user.id; // Fallback to submitter
+      }
+    }
 
     // Attempt resolving roles from input
     let previousRoleId: string | null = null;
@@ -92,7 +132,7 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
       if (roleMatch) previousRoleId = roleMatch.id;
     }
 
-    if (newRankRaw && !isLeftFamily) {
+    if (newRankRaw && actionType !== PromotionActionType.LEFT_FAMILY) {
       const cleanNew = newRankRaw.replace(/[<@&>]/g, '').trim();
       const roleMatch = guild.roles.cache.find(
         (r) => r.id === cleanNew || r.name.toLowerCase() === newRankRaw.toLowerCase().trim()
@@ -105,7 +145,7 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
         guildId,
         targetUserId: matchedUserId,
         inGameName,
-        inGameId: rawId,
+        inGameId,
         actionType,
         previousRoleId,
         newRoleId,
@@ -114,17 +154,30 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
         executedByTag: user.tag,
       });
 
+      const titleTextMap: Record<string, string> = {
+        PROMOTION: '📈 Member Promotion Processed',
+        DEMOTION: '📉 Member Demotion Processed',
+        LEFT_FAMILY: '🚪 Left Family Action Processed',
+      };
+
       const embed = new EmbedBuilder()
-        .setTitle('✅ Grand RP Form Submitted & Processed')
-        .setColor(actionType === PromotionActionType.PROMOTION ? '#2ecc71' : '#95a5a6')
+        .setTitle(`✅ ${titleTextMap[actionType] || 'Form Processed'}`)
+        .setColor(
+          actionType === PromotionActionType.PROMOTION
+            ? '#2ecc71'
+            : actionType === PromotionActionType.DEMOTION
+            ? '#e74c3c'
+            : '#95a5a6'
+        )
         .addFields(
-          { name: 'Name', value: inGameName, inline: true },
-          { name: 'ID', value: rawId, inline: true },
-          { name: 'Action', value: actionType, inline: true },
+          { name: 'Name', value: `\`${inGameName}\``, inline: true },
+          { name: 'In-Game ID', value: `\`${inGameId}\``, inline: true },
+          { name: 'Discord Member', value: `<@${matchedUserId}>`, inline: true },
+          { name: 'Action', value: `\`${actionType}\``, inline: true },
           { name: 'Role Swap Status', value: result.roleSwapMessage, inline: false },
           { name: 'Reason', value: reason, inline: false }
         )
-        .setFooter({ text: 'Log entry recorded & sent to Discord log channel.' });
+        .setFooter({ text: 'Log saved & sent to designated log channel.' });
 
       return interaction.editReply({ embeds: [embed] });
     } catch (err: any) {
