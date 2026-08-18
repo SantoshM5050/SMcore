@@ -128,6 +128,62 @@ export async function POST(request: Request, { params }: { params: { guildId: st
       return NextResponse.json({ success: true, channelConfig: updatedConfig });
     }
 
+    // 1.5 Handle Deploying Promotion Panel Embed to Discord Channel
+    if (action === 'DEPLOY_PANEL') {
+      const channelId = body.channelId || promotionLogsChannelId;
+      if (!channelId) {
+        return NextResponse.json({ error: 'Target Discord channel is required to deploy Promotion Panel.' }, { status: 400 });
+      }
+
+      if (!botToken) {
+        return NextResponse.json({ error: 'DISCORD_BOT_TOKEN is not configured.' }, { status: 400 });
+      }
+
+      const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bot ${botToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          embeds: [
+            {
+              title: '🏆 Grand RP Family - Promotion & Demotion Panel',
+              description: 'Click the button below to submit a **Rank Promotion**, **Demotion**, or mark a member as **Left Family**.\n\nRoles will be updated automatically in Discord & logged for High Command.',
+              color: 10027263,
+              fields: [
+                { name: '📋 Form Fields', value: '• Name (In-Game Name)\n• ID (In-Game ID & Discord @User/ID)\n• Previous Rank\n• New Rank / Left Family\n• Reason', inline: true },
+                { name: '⚡ Automation', value: '• Auto Role Swap\n• Auto Left Role Strip\n• Log Embeds', inline: true }
+              ],
+              footer: { text: 'Grand RP Family High Command • SMCore System' },
+              timestamp: new Date().toISOString(),
+            },
+          ],
+          components: [
+            {
+              type: 1,
+              components: [
+                {
+                  type: 2,
+                  style: 1,
+                  custom_id: 'promo_demotion_form_btn',
+                  label: 'Submit Rank Change / Left',
+                  emoji: { name: '📜' },
+                },
+              ],
+            },
+          ],
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        return NextResponse.json({ error: `Discord API error: ${errText}` }, { status: 400 });
+      }
+
+      return NextResponse.json({ success: true, message: 'Promotion Panel successfully deployed to Discord channel!' });
+    }
+
     // 2. Handle Submitting Rank Change / Promotion / Demotion / Left Family
     if (!targetUserId || !inGameName || !inGameId) {
       return NextResponse.json({ error: 'Target User ID, In-Game Name, and In-Game ID are required.' }, { status: 400 });
