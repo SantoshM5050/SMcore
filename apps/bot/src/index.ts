@@ -22,6 +22,8 @@ if (dns && dns.setDefaultResultOrder) {
 
 let lastLoginError: string | null = null;
 let isLoggingIn = false;
+let lastLoginAttemptTime = 0;
+let useMinimalIntents = false;
 const PORT = Number(process.env.PORT || process.env.BOT_PORT) || 3001;
 
 function attachClientListeners(client: typeof botClient) {
@@ -60,8 +62,6 @@ function attachClientListeners(client: typeof botClient) {
   });
 }
 
-let useMinimalIntents = false;
-
 function doLogin() {
   const rawToken = process.env.DISCORD_BOT_TOKEN || config.token || '';
   const token = rawToken.trim().replace(/^["']|["']$/g, '').trim();
@@ -79,9 +79,16 @@ function doLogin() {
   }
 
   const currentStatus = botClient && botClient.ws ? botClient.ws.status : 5;
-  // 0 = READY, 1 = CONNECTING, 4 = NEARLY
-  if (currentStatus === 0 || currentStatus === 1 || currentStatus === 4) {
-    console.log(`⏳ Client status is ${currentStatus}, waiting for connection...`);
+  // 0 = READY, 1 = CONNECTING, 2 = RECONNECTING, 3 = IDLE, 4 = NEARLY
+  if (currentStatus === 0 || currentStatus === 1 || currentStatus === 2 || currentStatus === 3 || currentStatus === 4) {
+    console.log(`⏳ Discord Client status is ${currentStatus}, letting client connect naturally...`);
+    return;
+  }
+
+  // Rate limit protection: Cooldown of 45 seconds between new Client login attempts
+  const now = Date.now();
+  if (now - lastLoginAttemptTime < 45000) {
+    console.log(`⏳ Cooldown active (last login attempt was ${Math.round((now - lastLoginAttemptTime) / 1000)}s ago). Waiting for rate limit reset...`);
     return;
   }
 
@@ -91,18 +98,19 @@ function doLogin() {
   }
 
   isLoggingIn = true;
-  console.log(`🔑 Creating fresh Discord client (minimalIntents: ${useMinimalIntents}) & attempting login (Token length: ${token.length}, prevStatus: ${currentStatus})...`);
+  lastLoginAttemptTime = now;
+  console.log(`🔑 Creating fresh Discord client (minimalIntents: ${useMinimalIntents}) & attempting login...`);
 
   // Re-create a fresh Client instance
   const activeClient = resetBotClient(useMinimalIntents);
   attachClientListeners(activeClient);
 
-  // Safety fallback: reset isLoggingIn flag after 20 seconds if not ready
+  // Safety fallback: reset isLoggingIn flag after 30 seconds if not ready
   setTimeout(() => {
     if (!activeClient.isReady()) {
       isLoggingIn = false;
     }
-  }, 20000);
+  }, 30000);
 
   try {
     const loginPromise = activeClient.login(token);
@@ -121,7 +129,7 @@ function doLogin() {
         if (!useMinimalIntents && (errStr.includes('Disallowed') || errStr.includes('intent') || errStr.includes('4014'))) {
           console.warn('⚠️ Privileged Intents rejected. Retrying login with minimal intents...');
           useMinimalIntents = true;
-          setTimeout(doLogin, 2000);
+          setTimeout(doLogin, 5000);
         }
       });
   } catch (syncErr: any) {
@@ -131,9 +139,8 @@ function doLogin() {
   }
 }
 
-const server = http.createServer(async (req, res) => {
-  const urlRaw = req.url || '/';
-  const url = urlRaw.split('?')[0].replace(/\/$/, '') || '/';
+// Pure in-memory HTTP Health Check Server (Zero outbound Discord API calls per ping)
+const server = http.createServer((req, res) => {
   const method = req.method?.toUpperCase();
 
   if (method === 'GET' || method === 'HEAD') {
@@ -148,38 +155,17 @@ const server = http.createServer(async (req, res) => {
     }
 
     const token = (process.env.DISCORD_BOT_TOKEN || config.token || '').trim();
-    const isReady = botClient.isReady();
-    const wsStatus = botClient.ws ? botClient.ws.status : -1;
-
-    // If disconnected and not currently logging in, attempt login
-    if (!isReady && !isLoggingIn && token) {
-      doLogin();
-    }
+    const isReady = botClient ? botClient.isReady() : false;
+    const wsStatus = botClient && botClient.ws ? botClient.ws.status : -1;
 
     let discordReason = isReady ? 'Connected' : 'Not Connected';
     if (!isReady) {
       if (!token) {
         discordReason = 'DISCORD_BOT_TOKEN environment variable is missing in Render settings';
       } else if (lastLoginError) {
-        discordReason = `Login failed: ${lastLoginError}`;
+        discordReason = `Login status: ${lastLoginError}`;
       } else {
-        discordReason = `Gateway status: ${wsStatus} (0=Ready, 1=Connecting, 5=Disconnected)`;
-      }
-    }
-
-    let gatewayApi: any = null;
-    if (token) {
-      try {
-        const res = await fetch('https://discord.com/api/v10/gateway/bot', {
-          headers: {
-            Authorization: `Bot ${token}`,
-            'User-Agent': 'SMCoreBot/1.0.0 (https://smcore.onrender.com)',
-          },
-        });
-        const body = await res.json().catch(() => null);
-        gatewayApi = { httpStatus: res.status, body };
-      } catch (err: any) {
-        gatewayApi = { error: err.message || String(err) };
+        discordReason = `Gateway status: ${wsStatus} (0=Ready, 1=Connecting, 2=Reconnecting, 5=Disconnected)`;
       }
     }
 
@@ -189,10 +175,8 @@ const server = http.createServer(async (req, res) => {
         service: 'SMCore Bot',
         discord: isReady,
         discordReason,
-        gatewayApi,
         tokenConfigured: Boolean(token),
         tokenLength: token.length,
-        tokenPrefix: token ? token.substring(0, 10) + '...' : 'NONE',
         wsStatus,
         lastError: lastLoginError,
         uptime: Math.floor(process.uptime()),
@@ -240,20 +224,19 @@ const gracefulShutdown = (signal: string) => {
   server.close(() => {
     console.log('HTTP health server closed.');
   });
-  botClient.destroy();
+  if (botClient) botClient.destroy();
   process.exit(0);
 };
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
+// Initial login attempt
 doLogin();
 
-// Heartbeat check: Automatically retry login every 30 seconds if client remains unready
+// Heartbeat check every 60 seconds with safe rate limit checks
 setInterval(() => {
   if (botClient && !botClient.isReady()) {
     doLogin();
   }
-}, 30000);
-
-
+}, 60000);
