@@ -1,9 +1,6 @@
 import {
   ButtonInteraction,
   ActionRowBuilder,
-  StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder,
-  UserSelectMenuBuilder,
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
@@ -11,6 +8,7 @@ import {
 import { ApplicationService } from '../services/applicationService';
 import { RoleService } from '../services/roleService';
 import { EventSignupService } from '../services/eventSignupService';
+import { StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
 
 export async function handleButtonInteraction(interaction: ButtonInteraction) {
   const { customId, guildId, user, member } = interaction;
@@ -27,47 +25,152 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     return interaction.editReply({ content: result.message });
   }
 
-  // Grand RP Promotion / Demotion / Left Button Clicked
+  // Grand RP Promotion Button Clicked
   if (customId === 'promo_btn_promotion' || customId === 'promo_demotion_form_btn') {
-    const userSelect = new UserSelectMenuBuilder()
-      .setCustomId('promo_select_user_PROMOTION')
-      .setPlaceholder('Select target member to promote...');
+    const modal = new ModalBuilder()
+      .setCustomId('promotion_modal_submit_PROMOTION')
+      .setTitle('Grand RP Member Promotion Form');
 
-    const row = new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(userSelect);
+    const nameInput = new TextInputBuilder()
+      .setCustomId('in_game_name_input')
+      .setLabel('Name (In-Game Name)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. Akash Varma')
+      .setRequired(true);
 
-    return interaction.reply({
-      content: '📈 **Step 1 of 2:** Select the Discord Member you want to promote below:',
-      components: [row],
-      ephemeral: true,
-    });
+    const igIdInput = new TextInputBuilder()
+      .setCustomId('in_game_id_input')
+      .setLabel('In-Game ID')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. 123456')
+      .setRequired(true);
+
+    const discordUserInput = new TextInputBuilder()
+      .setCustomId('discord_user_input')
+      .setLabel('Discord User (@Mention, Username, or ID)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. @Akash or 1280178101326708856')
+      .setRequired(true);
+
+    const prevRankInput = new TextInputBuilder()
+      .setCustomId('previous_rank_input')
+      .setLabel('Previous Rank (Number e.g. 5, or Name)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. 5 or Fighter (Optional)')
+      .setRequired(false);
+
+    const newRankInput = new TextInputBuilder()
+      .setCustomId('new_rank_input')
+      .setLabel('New Rank (Number e.g. 6, or Name)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. 6 or Underboss')
+      .setRequired(true);
+
+    modal.addComponents(
+      new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(igIdInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(discordUserInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(prevRankInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(newRankInput)
+    );
+
+    return interaction.showModal(modal);
   }
 
+  // Grand RP Demotion Button Clicked
   if (customId === 'promo_btn_demotion') {
-    const userSelect = new UserSelectMenuBuilder()
-      .setCustomId('promo_select_user_DEMOTION')
-      .setPlaceholder('Select target member to demote...');
+    const modal = new ModalBuilder()
+      .setCustomId('promotion_modal_submit_DEMOTION')
+      .setTitle('Grand RP Member Demotion Form');
 
-    const row = new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(userSelect);
+    const nameInput = new TextInputBuilder()
+      .setCustomId('in_game_name_input')
+      .setLabel('Name (In-Game Name)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. Akash Varma')
+      .setRequired(true);
 
-    return interaction.reply({
-      content: '📉 **Step 1 of 2:** Select the Discord Member you want to demote below:',
-      components: [row],
-      ephemeral: true,
-    });
+    const igIdInput = new TextInputBuilder()
+      .setCustomId('in_game_id_input')
+      .setLabel('In-Game ID')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. 123456')
+      .setRequired(true);
+
+    const discordUserInput = new TextInputBuilder()
+      .setCustomId('discord_user_input')
+      .setLabel('Discord User (@Mention, Username, or ID)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. @Akash or 1280178101326708856')
+      .setRequired(true);
+
+    const prevRankInput = new TextInputBuilder()
+      .setCustomId('previous_rank_input')
+      .setLabel('Previous Rank (Number e.g. 6, or Name)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. 6 or Underboss (Optional)')
+      .setRequired(false);
+
+    const newRankInput = new TextInputBuilder()
+      .setCustomId('new_rank_input')
+      .setLabel('New Rank (Number e.g. 5, or Name)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. 5 or Fighter')
+      .setRequired(true);
+
+    modal.addComponents(
+      new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(igIdInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(discordUserInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(prevRankInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(newRankInput)
+    );
+
+    return interaction.showModal(modal);
   }
 
+  // Grand RP Left Family Button Clicked
   if (customId === 'promo_btn_left') {
-    const userSelect = new UserSelectMenuBuilder()
-      .setCustomId('promo_select_user_LEFT_FAMILY')
-      .setPlaceholder('Select member who left the family...');
+    const modal = new ModalBuilder()
+      .setCustomId('promotion_modal_submit_LEFT_FAMILY')
+      .setTitle('Grand RP Member Left Family Form');
 
-    const row = new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(userSelect);
+    const nameInput = new TextInputBuilder()
+      .setCustomId('in_game_name_input')
+      .setLabel('Name (In-Game Name)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. Akash Varma')
+      .setRequired(true);
 
-    return interaction.reply({
-      content: '🚪 **Step 1 of 2:** Select the Discord Member who left the family below:',
-      components: [row],
-      ephemeral: true,
-    });
+    const igIdInput = new TextInputBuilder()
+      .setCustomId('in_game_id_input')
+      .setLabel('In-Game ID')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. 123456')
+      .setRequired(true);
+
+    const discordUserInput = new TextInputBuilder()
+      .setCustomId('discord_user_input')
+      .setLabel('Discord User (@Mention, Username, or ID)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. @Akash or 1280178101326708856')
+      .setRequired(true);
+
+    const reasonInput = new TextInputBuilder()
+      .setCustomId('reason_input')
+      .setLabel('Reason for Leaving / Kick')
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder('Explain why member left or was kicked from family...')
+      .setRequired(true);
+
+    modal.addComponents(
+      new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(igIdInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(discordUserInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput)
+    );
+
+    return interaction.showModal(modal);
   }
 
   // Event Signup Leave Button
@@ -154,13 +257,17 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
 
     try {
       await ApplicationService.approveApplication(applicationId, user.id, user.tag);
-      return interaction.editReply({ content: '✅ Application approved successfully! The role has been granted and applicant notified.' });
+      return interaction.editReply({
+        content: '✅ Application approved successfully! Role granted to applicant and review embed updated.',
+      });
     } catch (error: any) {
-      return interaction.editReply({ content: `❌ Failed to approve application: ${error.message}` });
+      return interaction.editReply({
+        content: `❌ Failed to approve application: ${error.message}`,
+      });
     }
   }
 
-  // 3. Staff "Reject" Button Clicked -> Open Modal
+  // 3. Staff "Reject" Button Clicked
   if (customId.startsWith('app_reject_')) {
     const applicationId = customId.replace('app_reject_', '');
 
@@ -221,22 +328,44 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     }
 
     const titles: Record<string, string> = {
-      ban: 'ban',
-      kick: 'kick',
-      timeout: 'timeout / mute',
-      warn: 'warn',
+      ban: 'Ban Server Member',
+      kick: 'Kick Server Member',
+      timeout: 'Timeout / Mute Server Member',
+      warn: 'Issue Warning to Member',
     };
 
-    const userSelect = new UserSelectMenuBuilder()
-      .setCustomId(`mod_select_user_${actionType}`)
-      .setPlaceholder(`Search & select member to ${titles[actionType] || actionType}...`);
+    const modal = new ModalBuilder()
+      .setCustomId(`mod_modal_${actionType}`)
+      .setTitle(titles[actionType] || 'Moderation Action');
 
-    const row = new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(userSelect);
+    const targetInput = new TextInputBuilder()
+      .setCustomId('target_user_input')
+      .setLabel('Target User (@Mention, Username, or ID)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. @Akash, 1280178101326708856, or akashvarma')
+      .setRequired(true);
 
-    return interaction.reply({
-      content: `📌 **Step 1 of 2:** Select the target member to **${titles[actionType] || actionType}** below:`,
-      components: [row],
-      ephemeral: true,
-    });
+    const reasonInput = new TextInputBuilder()
+      .setCustomId('reason_input')
+      .setLabel('Moderation Reason')
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder('Enter reason for this action...')
+      .setRequired(false);
+
+    modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(targetInput));
+
+    if (actionType === 'timeout') {
+      const durationInput = new TextInputBuilder()
+        .setCustomId('duration_input')
+        .setLabel('Duration in Minutes (e.g. 10, 60, 1440)')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('60')
+        .setRequired(true);
+
+      modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(durationInput));
+    }
+
+    modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput));
+    return interaction.showModal(modal);
   }
 }

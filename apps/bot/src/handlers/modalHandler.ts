@@ -1,7 +1,71 @@
-import { ModalSubmitInteraction, EmbedBuilder } from 'discord.js';
+import { ModalSubmitInteraction, EmbedBuilder, Guild } from 'discord.js';
 import { prisma, PromotionActionType } from '@repo/database';
 import { ApplicationService } from '../services/applicationService';
 import { PromotionService } from '../services/promotionService';
+
+function findSmartRoleMatch(guild: Guild, input: string): string | null {
+  if (!input) return null;
+  const clean = input.replace(/[<@&>]/g, '').trim();
+  if (!clean) return null;
+
+  // 1. Exact Role ID Match
+  const byId = guild.roles.cache.get(clean);
+  if (byId) return byId.id;
+
+  const cleanLower = clean.toLowerCase();
+  const roles = Array.from(guild.roles.cache.values());
+
+  // 2. Exact Role Name Match (case-insensitive)
+  const exact = roles.find((r) => r.name.toLowerCase() === cleanLower);
+  if (exact) return exact.id;
+
+  // 3. Rank Number Match (e.g., input "5" matches "Rank 5", "Rank 5 - Fighter", "5 | Fighter")
+  const byRankNum = roles.find((r) => {
+    const rName = r.name.toLowerCase();
+    return (
+      rName === `rank ${cleanLower}` ||
+      rName.startsWith(`rank ${cleanLower} `) ||
+      rName.startsWith(`rank ${cleanLower}-`) ||
+      rName.startsWith(`rank ${cleanLower} -`) ||
+      rName.startsWith(`rank ${cleanLower} |`) ||
+      rName.includes(`rank ${cleanLower}`) ||
+      rName.startsWith(`${cleanLower} `) ||
+      rName.startsWith(`${cleanLower}-`)
+    );
+  });
+  if (byRankNum) return byRankNum.id;
+
+  // 4. Substring / Partial Name Match (e.g. "underboss" matches "Rank 6 - Underboss")
+  const partial = roles.find((r) => r.name.toLowerCase().includes(cleanLower));
+  if (partial) return partial.id;
+
+  return null;
+}
+
+function findSmartUserMatch(guild: Guild, input: string, fallbackUserId: string): string {
+  if (!input) return fallbackUserId;
+  const clean = input.replace(/[<@!>]/g, '').trim();
+  if (!clean) return fallbackUserId;
+
+  // 1. Direct ID regex match (17-20 digits)
+  const idMatch = clean.match(/[0-9]{17,20}/)?.[0];
+  if (idMatch) return idMatch;
+
+  const cleanLower = clean.replace(/^@/, '').toLowerCase();
+  if (!cleanLower) return fallbackUserId;
+
+  // 2. Username / Nickname match
+  const memberMatch = guild.members.cache.find(
+    (m) =>
+      m.user.username.toLowerCase() === cleanLower ||
+      m.displayName.toLowerCase() === cleanLower ||
+      m.user.username.toLowerCase().includes(cleanLower) ||
+      m.displayName.toLowerCase().includes(cleanLower)
+  );
+
+  if (memberMatch) return memberMatch.id;
+  return fallbackUserId;
+}
 
 export async function handleModalInteraction(interaction: ModalSubmitInteraction) {
   const { customId, guildId, user } = interaction;
@@ -68,19 +132,35 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
     }
 
     let actionType: PromotionActionType = PromotionActionType.PROMOTION;
-    if (customId.includes('_DEMOTION_')) {
+    if (customId.includes('_DEMOTION') || customId.endsWith('_DEMOTION')) {
       actionType = PromotionActionType.DEMOTION;
-    } else if (customId.includes('_LEFT_FAMILY_')) {
+    } else if (customId.includes('_LEFT_FAMILY') || customId.endsWith('_LEFT_FAMILY')) {
       actionType = PromotionActionType.LEFT_FAMILY;
     }
 
-    const parts = customId.split('_');
-    // Format: promotion_modal_submit_ACTIONTYPE_TARGETUSERID_NEWROLEID
-    const targetUserIdFromCustomId = parts[4] || '';
-    const newRoleIdFromCustomId = parts[5] && parts[5] !== 'NONE' ? parts[5] : null;
-
     const inGameName = interaction.fields.getTextInputValue('in_game_name_input');
     const inGameId = interaction.fields.getTextInputValue('in_game_id_input');
+
+    let discordUserRaw = '';
+    try {
+      discordUserRaw = interaction.fields.getTextInputValue('discord_user_input') || '';
+    } catch {
+      discordUserRaw = inGameId;
+    }
+
+    let prevRankRaw = '';
+    try {
+      prevRankRaw = interaction.fields.getTextInputValue('previous_rank_input') || '';
+    } catch {
+      prevRankRaw = '';
+    }
+
+    let newRankRaw = '';
+    try {
+      newRankRaw = interaction.fields.getTextInputValue('new_rank_input') || '';
+    } catch {
+      newRankRaw = '';
+    }
 
     let reason = 'No reason specified';
     try {
@@ -89,54 +169,12 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
       reason = 'No reason specified';
     }
 
-    // Parse Discord User ID from customId or fallback to input
-    let matchedUserId = targetUserIdFromCustomId || customId.match(/[0-9]{17,20}/)?.[0];
-    if (!matchedUserId) {
-      let discordUserRaw = '';
-      try {
-        discordUserRaw = interaction.fields.getTextInputValue('discord_user_input') || '';
-      } catch {
-        discordUserRaw = inGameId;
-      }
-      matchedUserId = discordUserRaw.match(/[0-9]{17,20}/)?.[0] || user.id;
-    }
+    // Smart User Resolution: Resolves from ID, Mention (<@123...>), @Username, or Display Name
+    const matchedUserId = findSmartUserMatch(guild, discordUserRaw, user.id);
 
-    // Attempt resolving roles
-    let previousRoleId: string | null = null;
-    let newRoleId: string | null = newRoleIdFromCustomId;
-
-    if (!newRoleId && actionType !== PromotionActionType.LEFT_FAMILY) {
-      try {
-        const newRankRaw = interaction.fields.getTextInputValue('new_rank_input') || '';
-        if (newRankRaw) {
-          const cleanNew = newRankRaw.replace(/[<@&>]/g, '').trim();
-          const roleMatch = guild.roles.cache.find(
-            (r) => r.id === cleanNew || r.name.toLowerCase() === newRankRaw.toLowerCase().trim()
-          );
-          if (roleMatch) newRoleId = roleMatch.id;
-        }
-      } catch {
-        // Fallback null
-      }
-    }
-
-    try {
-      let prevRankRaw = '';
-      try {
-        prevRankRaw = interaction.fields.getTextInputValue('previous_rank_input') || '';
-      } catch {
-        prevRankRaw = '';
-      }
-      if (prevRankRaw) {
-        const cleanPrev = prevRankRaw.replace(/[<@&>]/g, '').trim();
-        const roleMatch = guild.roles.cache.find(
-          (r) => r.id === cleanPrev || r.name.toLowerCase() === prevRankRaw.toLowerCase().trim()
-        );
-        if (roleMatch) previousRoleId = roleMatch.id;
-      }
-    } catch {
-      // Fallback null
-    }
+    // Smart Role Resolution: Resolves from Role ID, Exact Name, Rank Number (e.g. "5", "6"), or Partial Name ("underboss")
+    const previousRoleId = findSmartRoleMatch(guild, prevRankRaw);
+    const newRoleId = actionType === PromotionActionType.LEFT_FAMILY ? null : findSmartRoleMatch(guild, newRankRaw);
 
     try {
       const result = await PromotionService.executeAction(guild, {
@@ -274,7 +312,7 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
         } catch {
           rawTarget = '';
         }
-        targetUserId = rawTarget.replace(/[<@!>]/g, '').trim();
+        targetUserId = findSmartUserMatch(guild, rawTarget, '');
       }
 
       let reason: string | null = null;
@@ -285,7 +323,7 @@ export async function handleModalInteraction(interaction: ModalSubmitInteraction
       }
 
       if (!targetUserId) {
-        return interaction.editReply({ content: '❌ Target member not selected or invalid User ID.' });
+        return interaction.editReply({ content: '❌ Target member not found. Please enter a valid @Mention, Username, or User ID.' });
       }
 
       let targetUserTag = targetUserId;
