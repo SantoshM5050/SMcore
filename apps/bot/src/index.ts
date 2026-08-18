@@ -79,27 +79,30 @@ function doLogin() {
   }
 
   const currentStatus = botClient && botClient.ws ? botClient.ws.status : 5;
-  // 0 = READY, 1 = CONNECTING, 2 = RECONNECTING, 3 = IDLE, 4 = NEARLY
-  if (currentStatus === 0 || currentStatus === 1 || currentStatus === 2 || currentStatus === 3 || currentStatus === 4) {
-    console.log(`⏳ Discord Client status is ${currentStatus}, letting client connect naturally...`);
+  // Discord.js Status Constants:
+  // 0 = READY, 1 = CONNECTING, 2 = RECONNECTING, 3 = IDLE, 4 = NEARLY, 5 = DISCONNECTED
+  // Note: Status 3 (IDLE) is the initial state before login() is called, and Status 5 is DISCONNECTED.
+  // We must ONLY skip when client is already READY (0) or actively connecting (1, 2, 4).
+  if (currentStatus === 0 || currentStatus === 1 || currentStatus === 2 || currentStatus === 4) {
+    console.log(`⏳ Discord Client status is ${currentStatus} (0=Ready, 1=Connecting, 2=Reconnecting, 4=Nearly), letting connection proceed...`);
     return;
   }
 
   // Rate limit protection: Cooldown of 45 seconds between new Client login attempts
   const now = Date.now();
   if (now - lastLoginAttemptTime < 45000) {
-    console.log(`⏳ Cooldown active (last login attempt was ${Math.round((now - lastLoginAttemptTime) / 1000)}s ago). Waiting for rate limit reset...`);
+    console.log(`⏳ Login cooldown active (last attempt was ${Math.round((now - lastLoginAttemptTime) / 1000)}s ago, Gateway Status: ${currentStatus}). Waiting for cooldown...`);
     return;
   }
 
   if (isLoggingIn) {
-    console.log('⏳ Login attempt already in progress...');
+    console.log(`⏳ Login attempt already in progress (Gateway Status: ${currentStatus})...`);
     return;
   }
 
   isLoggingIn = true;
   lastLoginAttemptTime = now;
-  console.log(`🔑 Creating fresh Discord client (minimalIntents: ${useMinimalIntents}) & attempting login...`);
+  console.log(`🔑 Initiating Discord Gateway login (Gateway Status: ${currentStatus}, minimalIntents: ${useMinimalIntents})...`);
 
   // Re-create a fresh Client instance
   const activeClient = resetBotClient(useMinimalIntents);
@@ -129,6 +132,7 @@ function doLogin() {
         if (!useMinimalIntents && (errStr.includes('Disallowed') || errStr.includes('intent') || errStr.includes('4014'))) {
           console.warn('⚠️ Privileged Intents rejected. Retrying login with minimal intents...');
           useMinimalIntents = true;
+          lastLoginAttemptTime = 0; // Reset cooldown for immediate fallback
           setTimeout(doLogin, 5000);
         }
       });
