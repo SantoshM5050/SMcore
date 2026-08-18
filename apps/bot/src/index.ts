@@ -137,77 +137,69 @@ const server = http.createServer(async (req, res) => {
   const method = req.method?.toUpperCase();
 
   if (method === 'GET' || method === 'HEAD') {
-    if (
-      url === '/' ||
-      url === '/health' ||
-      url === '/api/health' ||
-      url === '/ping' ||
-      url === '/status'
-    ) {
-      res.writeHead(200, {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      });
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+    });
 
-      if (method === 'HEAD') {
-        res.end();
-        return;
-      }
-
-      const token = (process.env.DISCORD_BOT_TOKEN || config.token || '').trim();
-      const isReady = botClient.isReady();
-      const wsStatus = botClient.ws ? botClient.ws.status : -1;
-
-      // If disconnected and not currently logging in, attempt login
-      if (!isReady && !isLoggingIn && token) {
-        doLogin();
-      }
-
-      let discordReason = isReady ? 'Connected' : 'Not Connected';
-      if (!isReady) {
-        if (!token) {
-          discordReason = 'DISCORD_BOT_TOKEN environment variable is missing in Render settings';
-        } else if (lastLoginError) {
-          discordReason = `Login failed: ${lastLoginError}`;
-        } else {
-          discordReason = `Gateway status: ${wsStatus} (0=Ready, 1=Connecting, 5=Disconnected)`;
-        }
-      }
-
-      let gatewayApi: any = null;
-      if (token) {
-        try {
-          const res = await fetch('https://discord.com/api/v10/gateway/bot', {
-            headers: {
-              Authorization: `Bot ${token}`,
-              'User-Agent': 'SMCoreBot/1.0.0 (https://smcore.onrender.com)',
-            },
-          });
-          const body = await res.json().catch(() => null);
-          gatewayApi = { httpStatus: res.status, body };
-        } catch (err: any) {
-          gatewayApi = { error: err.message || String(err) };
-        }
-      }
-
-      res.end(
-        JSON.stringify({
-          status: 'ok',
-          service: 'SMCore Bot',
-          discord: isReady,
-          discordReason,
-          gatewayApi,
-          tokenConfigured: Boolean(token),
-          tokenLength: token.length,
-          tokenPrefix: token ? token.substring(0, 10) + '...' : 'NONE',
-          wsStatus,
-          lastError: lastLoginError,
-          uptime: Math.floor(process.uptime()),
-          timestamp: new Date().toISOString(),
-        })
-      );
+    if (method === 'HEAD') {
+      res.end();
       return;
     }
+
+    const token = (process.env.DISCORD_BOT_TOKEN || config.token || '').trim();
+    const isReady = botClient.isReady();
+    const wsStatus = botClient.ws ? botClient.ws.status : -1;
+
+    // If disconnected and not currently logging in, attempt login
+    if (!isReady && !isLoggingIn && token) {
+      doLogin();
+    }
+
+    let discordReason = isReady ? 'Connected' : 'Not Connected';
+    if (!isReady) {
+      if (!token) {
+        discordReason = 'DISCORD_BOT_TOKEN environment variable is missing in Render settings';
+      } else if (lastLoginError) {
+        discordReason = `Login failed: ${lastLoginError}`;
+      } else {
+        discordReason = `Gateway status: ${wsStatus} (0=Ready, 1=Connecting, 5=Disconnected)`;
+      }
+    }
+
+    let gatewayApi: any = null;
+    if (token) {
+      try {
+        const res = await fetch('https://discord.com/api/v10/gateway/bot', {
+          headers: {
+            Authorization: `Bot ${token}`,
+            'User-Agent': 'SMCoreBot/1.0.0 (https://smcore.onrender.com)',
+          },
+        });
+        const body = await res.json().catch(() => null);
+        gatewayApi = { httpStatus: res.status, body };
+      } catch (err: any) {
+        gatewayApi = { error: err.message || String(err) };
+      }
+    }
+
+    res.end(
+      JSON.stringify({
+        status: 'ok',
+        service: 'SMCore Bot',
+        discord: isReady,
+        discordReason,
+        gatewayApi,
+        tokenConfigured: Boolean(token),
+        tokenLength: token.length,
+        tokenPrefix: token ? token.substring(0, 10) + '...' : 'NONE',
+        wsStatus,
+        lastError: lastLoginError,
+        uptime: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString(),
+      })
+    );
+    return;
   }
 
   if (method === 'OPTIONS') {
