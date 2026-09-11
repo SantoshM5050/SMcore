@@ -1,21 +1,16 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import { AuthService } from '@/lib/auth';
 import { DiscordApi } from '@/lib/discord';
-import { AuditAction } from '@repo/database';
+import { AuditAction, StaffPermission } from '@repo/database';
 import { logDashboardAudit } from '@/lib/auditLogger';
+import { checkStaffPermission } from '@/lib/rbac';
 import { z } from 'zod';
 
-const channelConfigSchema = z.object({
-  requestChannelId: z.string().nullable().optional(),
-  reviewChannelId: z.string().nullable().optional(),
-  logsChannelId: z.string().nullable().optional(),
-  modLogChannelId: z.string().nullable().optional(),
-  voiceLogsChannelId: z.string().nullable().optional(),
-  messageLogsChannelId: z.string().nullable().optional(),
-  generalLogsChannelId: z.string().nullable().optional(),
-  alertLogsChannelId: z.string().nullable().optional(),
-  commandLogsChannelId: z.string().nullable().optional(),
+const channelActionSchema = z.object({
+  action: z.enum(['LOCK', 'UNLOCK', 'SLOWMODE', 'PURGE']),
+  channelId: z.string().min(1),
+  slowmodeSeconds: z.number().int().min(0).max(21600).optional(),
+  purgeCount: z.number().int().min(1).max(100).optional(),
 });
 
 export async function GET(request: Request, { params }: { params: { guildId: string } }) {
@@ -26,31 +21,13 @@ export async function GET(request: Request, { params }: { params: { guildId: str
 
   const { guildId } = params;
 
-  let discordChannels: any[] = [];
   try {
-    discordChannels = await DiscordApi.getGuildChannels(guildId);
-  } catch (err) {
+    const channels = await DiscordApi.getGuildChannels(guildId);
+    return NextResponse.json(channels);
+  } catch (err: any) {
     console.warn(`Could not fetch live Discord channels for guild ${guildId}:`, err);
+    return NextResponse.json({ error: 'Failed to fetch channels from Discord' }, { status: 500 });
   }
-
-  const config = await prisma.channelConfiguration.findUnique({
-    where: { guildId },
-  });
-
-  return NextResponse.json({
-    config: config || {
-      requestChannelId: null,
-      reviewChannelId: null,
-      logsChannelId: null,
-      modLogChannelId: null,
-      voiceLogsChannelId: null,
-      messageLogsChannelId: null,
-      generalLogsChannelId: null,
-      alertLogsChannelId: null,
-      commandLogsChannelId: null,
-    },
-    discordChannels,
-  });
 }
 
 export async function POST(request: Request, { params }: { params: { guildId: string } }) {
@@ -61,7 +38,7 @@ export async function POST(request: Request, { params }: { params: { guildId: st
 
   const { guildId } = params;
   const body = await request.json().catch(() => ({}));
-  const validation = channelConfigSchema.safeParse(body);
+  const validation = channelActionSchema.safeParse(body);
 
   if (!validation.success) {
     return NextResponse.json({ error: validation.error.errors[0].message }, { status: 400 });
@@ -69,50 +46,39 @@ export async function POST(request: Request, { params }: { params: { guildId: st
 
   const data = validation.data;
 
-  const updatedConfig = await prisma.channelConfiguration.upsert({
-    where: { guildId },
-    update: {
-      requestChannelId: data.requestChannelId,
-      reviewChannelId: data.reviewChannelId,
-      logsChannelId: data.logsChannelId,
-      modLogChannelId: data.modLogChannelId,
-      voiceLogsChannelId: data.voiceLogsChannelId,
-      messageLogsChannelId: data.messageLogsChannelId,
-      generalLogsChannelId: data.generalLogsChannelId,
-      alertLogsChannelId: data.alertLogsChannelId,
-      commandLogsChannelId: data.commandLogsChannelId,
-    },
-    create: {
-      guildId,
-      requestChannelId: data.requestChannelId,
-      reviewChannelId: data.reviewChannelId,
-      logsChannelId: data.logsChannelId,
-      modLogChannelId: data.modLogChannelId,
-      voiceLogsChannelId: data.voiceLogsChannelId,
-      messageLogsChannelId: data.messageLogsChannelId,
-      generalLogsChannelId: data.generalLogsChannelId,
-      alertLogsChannelId: data.alertLogsChannelId,
-      commandLogsChannelId: data.commandLogsChannelId,
-    },
-  });
+  // RBAC check
+  const hasPerm = await checkStaffPermission(guildId, user.discordId, StaffPermission.MANAGE_SETTINGS);
+  if (!hasPerm) {
+    return NextResponse.json({ error: 'Missing MANAGE_SETTINGS permission' }, { status: 403 });
+  }
 
-  await logDashboardAudit(
-    guildId,
-    user.discordId,
-    `${user.username}#${user.discriminator}`,
-    AuditAction.CHANNEL_UPDATED,
-    {
-      requestChannelId: data.requestChannelId,
-      reviewChannelId: data.reviewChannelId,
-      logsChannelId: data.logsChannelId,
-      modLogChannelId: data.modLogChannelId,
-      voiceLogsChannelId: data.voiceLogsChannelId,
-      messageLogsChannelId: data.messageLogsChannelId,
-      generalLogsChannelId: data.generalLogsChannelId,
-      alertLogsChannelId: data.alertLogsChannelId,
-      commandLogsChannelId: data.commandLogsChannelId,
+  try {
+    if (data.action === 'LOCK') {
+      await DiscordApi.setChannelLock(data.channelId, guildId, true);
+    } else if (data.action === 'UNLOCK') {
+      await DiscordApi.setChannelLock(data.channelId, guildId, false);
+    } else if (data.action === 'SLOWMODE') {
+      await DiscordApi.setSlowmode(data.channelId, data.slowmodeSeconds ?? 0);
+    } else if (data.action === 'PURGE') {
+      const deleted = await DiscordApi.purgeMessages(data.channelId, data.purgeCount ?? 10);
+      return NextResponse.json({ success: true, count: deleted });
     }
-  );
 
-  return NextResponse.json(updatedConfig);
+    await logDashboardAudit(
+      guildId,
+      user.discordId,
+      `${user.username}#${user.discriminator}`,
+      AuditAction.SETTINGS_UPDATED,
+      {
+        channelId: data.channelId,
+        action: data.action,
+        slowmodeSeconds: data.slowmodeSeconds,
+        purgeCount: data.purgeCount,
+      }
+    );
+
+    return NextResponse.json({ success: true, action: data.action });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || 'Action failed' }, { status: 500 });
+  }
 }

@@ -9,11 +9,15 @@ import { onGuildCreate } from './events/guildCreate';
 import { onGuildDelete } from './events/guildDelete';
 import { onGuildMemberAdd } from './events/guildMemberAdd';
 import { onGuildMemberRemove } from './events/guildMemberRemove';
+import { onGuildMemberUpdate } from './events/guildMemberUpdate';
 import { onVoiceStateUpdate } from './events/voiceStateUpdate';
+import { onMessageCreate } from './events/messageCreate';
 import { onMessageDelete } from './events/messageDelete';
 import { onMessageUpdate } from './events/messageUpdate';
-import { onAutoModerationActionExecution } from './events/autoModerationActionExecution';
 import { onGuildBanAdd, onGuildBanRemove } from './events/guildBanEvents';
+import { onChannelCreate, onChannelDelete, onChannelUpdate } from './events/channelEvents';
+import { onRoleCreate, onRoleDelete, onRoleUpdate } from './events/roleEvents';
+import { onGuildUpdate } from './events/guildUpdate';
 
 // Force DNS resolution to prefer IPv4 first (bypasses IPv6 connect timeouts on Render/Linux)
 if (dns && dns.setDefaultResultOrder) {
@@ -38,12 +42,20 @@ function attachClientListeners(client: typeof botClient) {
   client.on(Events.GuildDelete, onGuildDelete);
   client.on(Events.GuildMemberAdd, onGuildMemberAdd);
   client.on(Events.GuildMemberRemove, onGuildMemberRemove);
+  client.on(Events.GuildMemberUpdate, onGuildMemberUpdate);
   client.on(Events.VoiceStateUpdate, onVoiceStateUpdate);
+  client.on(Events.MessageCreate, onMessageCreate);
   client.on(Events.MessageDelete, onMessageDelete);
   client.on(Events.MessageUpdate, onMessageUpdate);
-  client.on(Events.AutoModerationActionExecution, onAutoModerationActionExecution);
   client.on(Events.GuildBanAdd, onGuildBanAdd);
   client.on(Events.GuildBanRemove, onGuildBanRemove);
+  client.on(Events.ChannelCreate, onChannelCreate);
+  client.on(Events.ChannelDelete, onChannelDelete);
+  client.on(Events.ChannelUpdate, onChannelUpdate);
+  client.on(Events.GuildRoleCreate, onRoleCreate);
+  client.on(Events.GuildRoleDelete, onRoleDelete);
+  client.on(Events.GuildRoleUpdate, onRoleUpdate);
+  client.on(Events.GuildUpdate, onGuildUpdate);
 
   client.on(Events.Error, (error: any) => {
     console.error('🔴 Discord Client Error:', error);
@@ -79,19 +91,14 @@ function doLogin() {
   }
 
   const currentStatus = botClient && botClient.ws ? botClient.ws.status : 5;
-  // Discord.js Status Constants:
-  // 0 = READY, 1 = CONNECTING, 2 = RECONNECTING, 3 = IDLE, 4 = NEARLY, 5 = DISCONNECTED
-  // Note: Status 3 (IDLE) is the initial state before login() is called, and Status 5 is DISCONNECTED.
-  // We must ONLY skip when client is already READY (0) or actively connecting (1, 2, 4).
   if (currentStatus === 0 || currentStatus === 1 || currentStatus === 2 || currentStatus === 4) {
-    console.log(`⏳ Discord Client status is ${currentStatus} (0=Ready, 1=Connecting, 2=Reconnecting, 4=Nearly), letting connection proceed...`);
+    console.log(`⏳ Discord Client status is ${currentStatus}, letting connection proceed...`);
     return;
   }
 
-  // Rate limit protection: Cooldown of 45 seconds between new Client login attempts
   const now = Date.now();
   if (now - lastLoginAttemptTime < 45000) {
-    console.log(`⏳ Login cooldown active (last attempt was ${Math.round((now - lastLoginAttemptTime) / 1000)}s ago, Gateway Status: ${currentStatus}). Waiting for cooldown...`);
+    console.log(`⏳ Login cooldown active (Gateway Status: ${currentStatus}). Waiting for cooldown...`);
     return;
   }
 
@@ -104,11 +111,9 @@ function doLogin() {
   lastLoginAttemptTime = now;
   console.log(`🔑 Initiating Discord Gateway login (Gateway Status: ${currentStatus}, minimalIntents: ${useMinimalIntents})...`);
 
-  // Re-create a fresh Client instance
   const activeClient = resetBotClient(useMinimalIntents);
   attachClientListeners(activeClient);
 
-  // Safety fallback: reset isLoggingIn flag after 30 seconds if not ready
   setTimeout(() => {
     if (!activeClient.isReady()) {
       isLoggingIn = false;
@@ -132,7 +137,7 @@ function doLogin() {
         if (!useMinimalIntents && (errStr.includes('Disallowed') || errStr.includes('intent') || errStr.includes('4014'))) {
           console.warn('⚠️ Privileged Intents rejected. Retrying login with minimal intents...');
           useMinimalIntents = true;
-          lastLoginAttemptTime = 0; // Reset cooldown for immediate fallback
+          lastLoginAttemptTime = 0;
           setTimeout(doLogin, 5000);
         }
       });
@@ -143,7 +148,7 @@ function doLogin() {
   }
 }
 
-// Pure in-memory HTTP Health Check Server (Zero outbound Discord API calls per ping)
+// Pure in-memory HTTP Health Check Server
 const server = http.createServer((req, res) => {
   const method = req.method?.toUpperCase();
 
@@ -238,7 +243,7 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 // Initial login attempt
 doLogin();
 
-// Heartbeat check every 60 seconds with safe rate limit checks
+// Heartbeat check every 60 seconds
 setInterval(() => {
   if (botClient && !botClient.isReady()) {
     doLogin();

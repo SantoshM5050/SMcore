@@ -1,269 +1,281 @@
-import { EmbedBuilder, TextChannel } from 'discord.js';
-import { prisma, AuditAction } from '@repo/database';
-import { botClient } from '../client';
+import {
+  Client,
+  EmbedBuilder,
+  ForumChannel,
+  Guild,
+  TextChannel,
+  ThreadChannel,
+  ChannelType,
+} from 'discord.js';
+import {
+  prisma,
+  LogCategory,
+  LogDestinationType,
+  ForumThreadMode,
+} from '@repo/database';
+import { logger } from '../logger';
+
+export interface LogPayload {
+  guild: Guild;
+  category: LogCategory;
+  eventType: string;
+  title: string;
+  description?: string;
+  fields?: { name: string; value: string; inline?: boolean }[];
+  targetId?: string;
+  targetTag?: string;
+  executorId?: string;
+  executorTag?: string;
+  channelId?: string;
+  caseNumber?: number;
+  colorHex?: string;
+  metadata?: Record<string, any>;
+}
 
 export class LogService {
+  private static threadCache: Map<string, string> = new Map();
+
   /**
-   * Log an event to PostgreSQL audit trail and configured Discord log channel
+   * Dispatches a log entry to database and to Discord (Text or Forum channel).
    */
-  static async logEvent(
-    guildId: string,
-    userId: string,
-    userTag: string,
-    action: AuditAction,
-    details: Record<string, any>,
-    ipAddress?: string
-  ) {
+  public static async log(payload: LogPayload): Promise<void> {
+    const { guild, category, eventType, title, description, fields, targetId, targetTag, executorId, executorTag, channelId, caseNumber, colorHex, metadata } = payload;
+
     try {
-      // 1. Write to AuditLog DB
-      await prisma.auditLog.create({
+      // 1. Persist to Database LogEntry
+      await prisma.logEntry.create({
         data: {
-          guildId,
-          userId,
-          userTag,
-          action,
-          details,
-          ipAddress,
+          guildId: guild.id,
+          category,
+          eventType,
+          targetId: targetId || null,
+          targetTag: targetTag || null,
+          executorId: executorId || null,
+          executorTag: executorTag || null,
+          channelId: channelId || null,
+          details: {
+            title,
+            description,
+            fields: fields || [],
+            caseNumber: caseNumber || null,
+            metadata: metadata || {},
+          },
+        },
+      }).catch((dbErr) => {
+        logger.warn({ err: dbErr.message }, 'Failed to save LogEntry to database');
+      });
+
+      // 2. Fetch Log Configuration for Guild & Category
+      const config = await prisma.logConfiguration.findUnique({
+        where: {
+          guildId_category: {
+            guildId: guild.id,
+            category,
+          },
         },
       });
 
-      // 2. Fetch Channel Configuration & Guild Settings
-      const channelConfig = await prisma.channelConfiguration.findUnique({
-        where: { guildId },
-      });
-
-      const settings = await prisma.guildSettings.findUnique({
-        where: { guildId },
-      });
-
-      if (!settings?.loggingEnabled || !channelConfig) {
+      if (!config || !config.enabled || !config.channelId) {
         return;
       }
 
-      // 3. Resolve target channel based on event category
-      const targetChannelId = this.resolveTargetChannelId(action, channelConfig);
-      if (!targetChannelId) return;
-
-      // 4. Post to Discord Log Channel
-      const logChannel = (await botClient.channels.fetch(targetChannelId).catch(() => null)) as TextChannel | null;
-      if (!logChannel || !logChannel.isTextBased()) return;
-
-      const actionTitle = this.formatActionTitle(action);
-      const actionIcon = this.getActionIcon(action);
-      const timestampSec = Math.floor(Date.now() / 1000);
-
+      // 3. Construct Embed
       const embed = new EmbedBuilder()
-        .setTitle(`${actionIcon} ${actionTitle}`)
-        .setColor(this.getActionColor(action))
+        .setTitle(title)
+        .setColor((colorHex as any) || (config.embedColor as any) || 0x5865f2)
         .setTimestamp();
 
-      if (details.userAvatar) {
-        embed.setAuthor({ name: userTag, iconURL: details.userAvatar });
-      } else if (userTag !== 'SYSTEM') {
-        embed.setAuthor({ name: userTag });
+      if (description) {
+        embed.setDescription(description);
       }
 
-      // Add User & Timestamp as primary fields
-      if (userId !== 'SYSTEM') {
-        embed.addFields({
-          name: '👤 User',
-          value: `<@${userId}>\n\`${userTag}\``,
-          inline: true,
-        });
+      if (fields && fields.length > 0) {
+        embed.addFields(fields);
       }
 
-      // Add Channel if present
-      if (details.channelId) {
-        embed.addFields({
-          name: '💬 Channel',
-          value: `<#${details.channelId}>`,
-          inline: true,
-        });
-      } else if (details.fromChannelId && details.toChannelId) {
-        embed.addFields({
-          name: '🔄 Voice Transfer',
-          value: `<#${details.fromChannelId}> ➡️ <#${details.toChannelId}>`,
-          inline: false,
-        });
+      // Format footer with case ID and timestamp
+      const footerParts: string[] = [];
+      if (caseNumber && config.showIds) {
+        footerParts.push(`Case #${caseNumber}`);
+      }
+      if (targetId && config.showIds) {
+        footerParts.push(`User ID: ${targetId}`);
+      }
+      footerParts.push(`Category: ${category}`);
+      embed.setFooter({ text: footerParts.join(' • ') });
+
+      // 4. Dispatch to Discord Channel
+      const targetChannel = await guild.channels.fetch(config.channelId).catch(() => null);
+      if (!targetChannel) {
+        return;
       }
 
-      embed.addFields({
-        name: '⏰ Time',
-        value: `<t:${timestampSec}:R>`,
-        inline: true,
-      });
-
-      // Filter out internal/technical keys from details body
-      const hiddenKeys = ['channelId', 'fromChannelId', 'toChannelId', 'userAvatar', 'messageId'];
-      const visibleDetails = Object.entries(details).filter(
-        ([key, val]) => !hiddenKeys.includes(key) && val !== undefined && val !== null
-      );
-
-      if (visibleDetails.length > 0) {
-        visibleDetails.forEach(([key, val]) => {
-          const fieldName = this.formatKeyName(key);
-
-          if (key === 'before' || key === 'after' || key === 'content') {
-            const strVal = String(val);
-            embed.addFields({
-              name: fieldName,
-              value: strVal.length > 900 ? `\`\`\`${strVal.slice(0, 900)}...\`\`\`` : `\`\`\`${strVal}\`\`\``,
-              inline: false,
-            });
-          } else if (key === 'messageLink') {
-            embed.addFields({
-              name: fieldName,
-              value: `[Jump to Message](${val})`,
-              inline: false,
-            });
-          } else {
-            embed.addFields({
-              name: fieldName,
-              value: String(val),
-              inline: true,
-            });
-          }
+      if (config.destinationType === LogDestinationType.TEXT_CHANNEL && targetChannel.isTextBased()) {
+        await (targetChannel as TextChannel).send({ embeds: [embed] }).catch((err) => {
+          logger.warn({ err: err.message, channelId: targetChannel.id }, 'Failed to post log to text channel');
         });
+      } else if (config.destinationType === LogDestinationType.FORUM_CHANNEL && targetChannel.type === ChannelType.GuildForum) {
+        await this.dispatchToForum(guild, targetChannel as ForumChannel, config.forumThreadMode, category, eventType, caseNumber, embed);
       }
-
-      embed.setFooter({ text: 'SMCore Audit Trail' });
-
-      await logChannel.send({ embeds: [embed] }).catch(() => null);
-    } catch (error) {
-      console.error('Failed to execute logEvent:', error);
+    } catch (err: any) {
+      logger.error({ err: err.message, category, eventType }, 'Unexpected error in LogService');
     }
   }
 
   /**
-   * Resolves the target Discord channel ID based on action category fallback hierarchy
+   * Resolves or creates a thread in a Forum Channel based on forumThreadMode.
    */
-  private static resolveTargetChannelId(action: AuditAction, config: any): string | null {
-    switch (action) {
-      case AuditAction.VOICE_JOINED:
-      case AuditAction.VOICE_LEFT:
-      case AuditAction.VOICE_MOVED:
-        return config.voiceLogsChannelId || config.logsChannelId || null;
+  private static async dispatchToForum(
+    guild: Guild,
+    forumChannel: ForumChannel,
+    mode: ForumThreadMode,
+    category: LogCategory,
+    eventType: string,
+    caseNumber: number | undefined,
+    embed: EmbedBuilder
+  ): Promise<void> {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      let threadKey = '';
+      let defaultName = '';
 
-      case AuditAction.MESSAGE_DELETED:
-      case AuditAction.MESSAGE_EDITED:
-        return config.messageLogsChannelId || config.logsChannelId || null;
+      switch (mode) {
+        case ForumThreadMode.DAILY:
+          threadKey = `DAILY_${category}_${today}`;
+          defaultName = `📅 ${category} Logs - ${today}`;
+          break;
+        case ForumThreadMode.EVENT_TYPE:
+          threadKey = `EVENT_${category}_${eventType}`;
+          defaultName = `⚡ ${category} - ${eventType}`;
+          break;
+        case ForumThreadMode.PER_CASE:
+          if (caseNumber) {
+            threadKey = `CASE_${caseNumber}`;
+            defaultName = `🔨 Case #${caseNumber} - ${eventType}`;
+          } else {
+            threadKey = `CATEGORY_${category}`;
+            defaultName = this.getCategoryThreadName(category);
+          }
+          break;
+        case ForumThreadMode.CATEGORY:
+        default:
+          threadKey = `CATEGORY_${category}`;
+          defaultName = this.getCategoryThreadName(category);
+          break;
+      }
 
-      case AuditAction.AUTOMOD_ALERT:
-        return config.alertLogsChannelId || config.modLogChannelId || config.logsChannelId || null;
+      // Check DB for existing thread
+      let forumRecord = await prisma.forumLogThread.findUnique({
+        where: {
+          guildId_forumChannelId_threadKey: {
+            guildId: guild.id,
+            forumChannelId: forumChannel.id,
+            threadKey,
+          },
+        },
+      });
 
-      case AuditAction.MEMBER_KICKED:
-      case AuditAction.MEMBER_BANNED:
-      case AuditAction.MEMBER_UNBANNED:
-      case AuditAction.MEMBER_TIMED_OUT:
-        return config.modLogChannelId || config.logsChannelId || null;
+      let thread: ThreadChannel | null = null;
+      if (forumRecord) {
+        thread = (await forumChannel.threads.fetch(forumRecord.threadId).catch(() => null)) as ThreadChannel | null;
+      }
 
-      case AuditAction.COMMAND_EXECUTED:
-        return config.commandLogsChannelId || config.logsChannelId || null;
+      // If thread exists but is archived, unarchive it
+      if (thread) {
+        if (thread.archived) {
+          await thread.setArchived(false).catch(() => null);
+        }
+      } else {
+        // Create new Forum Thread
+        const newThread = await forumChannel.threads.create({
+          name: defaultName.slice(0, 100),
+          message: {
+            content: `📜 **${defaultName}**\nLogs for \`${category}\` automatically synchronized by SMCore.`,
+            embeds: [embed],
+          },
+        });
 
-      case AuditAction.ROLE_CREATED:
-      case AuditAction.ROLE_DELETED:
-      case AuditAction.ROLE_ADDED:
-      case AuditAction.ROLE_REMOVED:
-      case AuditAction.ROLE_UPDATED:
-      case AuditAction.CHANNEL_CREATED:
-      case AuditAction.CHANNEL_DELETED:
-      case AuditAction.CHANNEL_UPDATED:
-        return config.generalLogsChannelId || config.logsChannelId || null;
+        thread = newThread;
 
+        // Save or update DB record
+        await prisma.forumLogThread.upsert({
+          where: {
+            guildId_forumChannelId_threadKey: {
+              guildId: guild.id,
+              forumChannelId: forumChannel.id,
+              threadKey,
+            },
+          },
+          create: {
+            guildId: guild.id,
+            forumChannelId: forumChannel.id,
+            category,
+            threadKey,
+            threadId: newThread.id,
+            threadName: defaultName,
+          },
+          update: {
+            threadId: newThread.id,
+            threadName: defaultName,
+          },
+        }).catch((err) => {
+          logger.warn({ err: err.message }, 'Failed to upsert ForumLogThread in DB');
+        });
+
+        return; // Embed already posted as the starter message
+      }
+
+      // Post to active thread
+      if (thread) {
+        await thread.send({ embeds: [embed] }).catch((err) => {
+          logger.warn({ err: err.message, threadId: thread?.id }, 'Failed to post message to forum thread');
+        });
+      }
+    } catch (err: any) {
+      logger.warn({ err: err.message, forumId: forumChannel.id }, 'Failed to dispatch to forum channel');
+    }
+  }
+
+  private static getCategoryThreadName(category: LogCategory): string {
+    switch (category) {
+      case LogCategory.MODERATION:
+        return '🔨 Moderation Logs';
+      case LogCategory.MEMBER:
+        return '👤 Member Logs';
+      case LogCategory.VOICE:
+        return '🔊 Voice Logs';
+      case LogCategory.MESSAGE:
+        return '💬 Message Logs';
+      case LogCategory.ROLE:
+        return '🎭 Role Logs';
+      case LogCategory.CHANNEL:
+        return '#️⃣ Channel Logs';
+      case LogCategory.SERVER:
       default:
-        return config.logsChannelId || null;
+        return '⚙️ Server Logs';
     }
   }
 
-  private static formatKeyName(key: string): string {
-    const map: Record<string, string> = {
-      channel: 'Channel',
-      from: 'From Channel',
-      to: 'To Channel',
-      before: '📝 Before (Old Content)',
-      after: '✏️ After (New Content)',
-      content: '💬 Message Content',
-      rule: '🚨 Rule Triggered',
-      matchedKeyword: '🔤 Blocked Word / Link',
-      actionTaken: '🛡️ Action Applied',
-      messageLink: '🔗 Message Link',
-      reason: '📄 Reason',
-      attachments: '📎 Attachments',
-    };
-
-    if (map[key]) return map[key];
-
-    return key
-      .replace(/([A-Z])/g, ' $1')
-      .replace(/^./, (str) => str.toUpperCase())
-      .trim();
-  }
-
-  private static getActionIcon(action: AuditAction): string {
-    switch (action) {
-      case AuditAction.VOICE_JOINED: return '🔊';
-      case AuditAction.VOICE_LEFT: return '🔇';
-      case AuditAction.VOICE_MOVED: return '🔄';
-      case AuditAction.MESSAGE_DELETED: return '🗑️';
-      case AuditAction.MESSAGE_EDITED: return '✏️';
-      case AuditAction.AUTOMOD_ALERT: return '🚨';
-      case AuditAction.MEMBER_KICKED: return '👢';
-      case AuditAction.MEMBER_BANNED: return '🔨';
-      case AuditAction.MEMBER_UNBANNED: return '🔓';
-      case AuditAction.MEMBER_TIMED_OUT: return '⏳';
-      case AuditAction.COMMAND_EXECUTED: return '⚡';
-      case AuditAction.ROLE_CREATED:
-      case AuditAction.ROLE_DELETED:
-      case AuditAction.ROLE_ADDED:
-      case AuditAction.ROLE_REMOVED:
-      case AuditAction.ROLE_UPDATED: return '🏷️';
-      case AuditAction.CHANNEL_CREATED:
-      case AuditAction.CHANNEL_DELETED:
-      case AuditAction.CHANNEL_UPDATED: return '📁';
-      case AuditAction.APPLICATION_APPROVED: return '🟢';
-      case AuditAction.APPLICATION_REJECTED: return '🔴';
-      case AuditAction.APPLICATION_SUBMITTED: return '📋';
-      case AuditAction.SETTINGS_UPDATED: return '⚙️';
-      default: return '🛡️';
-    }
-  }
-
-  private static formatActionTitle(action: AuditAction): string {
-    switch (action) {
-      case AuditAction.VOICE_JOINED: return 'Voice Joined';
-      case AuditAction.VOICE_LEFT: return 'Voice Disconnected';
-      case AuditAction.VOICE_MOVED: return 'Voice Channel Switched';
-      case AuditAction.MESSAGE_DELETED: return 'Message Deleted';
-      case AuditAction.MESSAGE_EDITED: return 'Message Edited';
-      case AuditAction.AUTOMOD_ALERT: return 'AutoMod Violation Alert';
-      case AuditAction.MEMBER_BANNED: return 'Member Banned';
-      case AuditAction.MEMBER_UNBANNED: return 'Member Unbanned';
-      case AuditAction.MEMBER_KICKED: return 'Member Kicked';
-      case AuditAction.MEMBER_TIMED_OUT: return 'Member Timed Out';
-      default:
-        return action
-          .replace(/_/g, ' ')
-          .toLowerCase()
-          .replace(/\b\w/g, (l) => l.toUpperCase());
-    }
-  }
-
-  private static getActionColor(action: AuditAction): number {
-    switch (action) {
-      case AuditAction.VOICE_JOINED: return 0x57f287; // Emerald Green
-      case AuditAction.VOICE_LEFT: return 0xed4245; // Crimson Red
-      case AuditAction.VOICE_MOVED: return 0xfee75c; // Vivid Yellow
-      case AuditAction.MESSAGE_DELETED: return 0xed4245; // Red
-      case AuditAction.MESSAGE_EDITED: return 0x3498db; // Sapphire Blue
-      case AuditAction.AUTOMOD_ALERT: return 0xe74c3c; // Bright Red
-      case AuditAction.MEMBER_BANNED:
-      case AuditAction.MEMBER_KICKED: return 0x992d22; // Dark Red
-      case AuditAction.MEMBER_TIMED_OUT: return 0xe67e22; // Orange
-      case AuditAction.COMMAND_EXECUTED: return 0x9b59b6; // Purple
-      case AuditAction.APPLICATION_APPROVED: return 0x57f287;
-      case AuditAction.APPLICATION_REJECTED: return 0xed4245;
-      case AuditAction.APPLICATION_SUBMITTED: return 0x5865f2;
-      default: return 0x95a5a6;
+  /**
+   * Dispatches a test log entry to verify channel & forum permissions.
+   */
+  public static async sendTestLog(guild: Guild, category: LogCategory): Promise<boolean> {
+    try {
+      await this.log({
+        guild,
+        category,
+        eventType: 'TEST_LOG',
+        title: `🧪 Test Log - ${category}`,
+        description: `This is a verification test log dispatched from the **SMCore Dashboard**. Permissions and routing for \`${category}\` are operational.`,
+        colorHex: '#10B981',
+        fields: [
+          { name: 'Status', value: '✅ Operational', inline: true },
+          { name: 'Server', value: guild.name, inline: true },
+        ],
+      });
+      return true;
+    } catch (err) {
+      return false;
     }
   }
 }

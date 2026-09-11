@@ -2,7 +2,7 @@
   "name": "smcore-discord-bot",
   "version": "1.0.0",
   "private": true,
-  "description": "SMCore Discord Bot - Enterprise Server Management & Role Request Platform",
+  "description": "SMCore Discord Bot - Enterprise Server Management & Community Operations Platform",
   "repository": {
     "type": "git",
     "url": "https://github.com/SantoshM5050/SMcore.git"
@@ -23,22 +23,23 @@
     "start:bot": "npm run start --workspace=apps/bot",
     "start": "node scripts/start-all.js",
     "build": "npm run build:db && npm run build:web && npm run build:bot",
-    "test": "echo \"Running test suite...\" && node -e \"console.log('✅ SMCore Unit Tests Passed successfully!')\"",
+    "test": "node scripts/test-moderation.js",
     "db:generate": "npm run generate --workspace=packages/database",
     "db:push": "npm run db:push --workspace=packages/database",
     "db:seed": "npm run seed --workspace=packages/database",
     "lint": "npm run lint --workspace=apps/web && npm run lint --workspace=apps/bot",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
   },
-  "dependencies": {
-    "prisma": "^5.22.0"
-  },
   "devDependencies": {
     "@types/node": "^20.11.0",
     "prettier": "^3.2.5",
+    "prisma": "^5.22.0",
     "typescript": "^5.3.3"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
   }
 }

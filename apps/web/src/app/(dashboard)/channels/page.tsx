@@ -17,8 +17,6 @@ export default function ChannelsPage() {
   const guildId = searchParams.get('guildId') || '';
 
   const [channels, setChannels] = useState<DiscordChannel[]>([]);
-  const [requestChannelId, setRequestChannelId] = useState<string>('');
-  const [reviewChannelId, setReviewChannelId] = useState<string>('');
   const [logsChannelId, setLogsChannelId] = useState<string>('');
   const [modLogChannelId, setModLogChannelId] = useState<string>('');
   const [voiceLogsChannelId, setVoiceLogsChannelId] = useState<string>('');
@@ -37,8 +35,6 @@ export default function ChannelsPage() {
       .then((data) => {
         if (data.discordChannels) setChannels(data.discordChannels);
         if (data.config) {
-          setRequestChannelId(data.config.requestChannelId || '');
-          setReviewChannelId(data.config.reviewChannelId || '');
           setLogsChannelId(data.config.logsChannelId || '');
           setModLogChannelId(data.config.modLogChannelId || '');
           setVoiceLogsChannelId(data.config.voiceLogsChannelId || '');
@@ -60,8 +56,6 @@ export default function ChannelsPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        requestChannelId: requestChannelId || null,
-        reviewChannelId: reviewChannelId || null,
         logsChannelId: logsChannelId || null,
         modLogChannelId: modLogChannelId || null,
         voiceLogsChannelId: voiceLogsChannelId || null,
@@ -82,7 +76,7 @@ export default function ChannelsPage() {
       <div>
         <h1 className="text-3xl font-extrabold text-white tracking-tight">Channel & Logging Integration</h1>
         <p className="text-sm text-gray-400 mt-1">
-          Bind Discord text channels for applications, staff review, and dedicated multi-stream logs.
+          Bind Discord text channels for server audit trails and dedicated multi-stream logs.
         </p>
       </div>
 
@@ -91,7 +85,7 @@ export default function ChannelsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Hash className="w-5 h-5 text-primary" /> Application & Core Channels
+              <Hash className="w-5 h-5 text-primary" /> Multi-Stream Log Channels
             </CardTitle>
           </CardHeader>
 
@@ -99,57 +93,13 @@ export default function ChannelsPage() {
             <div className="py-12 text-center text-gray-500 text-sm">Fetching Discord text channels...</div>
           ) : (
             <div className="space-y-6 p-6 pt-0">
-              {/* Role Request Channel */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Role Request Channel (Panel Host)
-                </label>
-                <p className="text-xs text-gray-500 mb-2">
-                  The permanent application panel embed with the Apply button will be deployed into this channel.
-                </p>
-                <select
-                  value={requestChannelId}
-                  onChange={(e) => setRequestChannelId(e.target.value)}
-                  className="w-full bg-input border border-border rounded-lg px-3.5 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="">Select a channel...</option>
-                  {channels.map((ch) => (
-                    <option key={ch.id} value={ch.id}>
-                      #{ch.name} (ID: {ch.id})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Review Channel */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Review Channel (Staff Inspection)
-                </label>
-                <p className="text-xs text-gray-500 mb-2">
-                  All submitted role request applications will be posted into this private staff channel for review.
-                </p>
-                <select
-                  value={reviewChannelId}
-                  onChange={(e) => setReviewChannelId(e.target.value)}
-                  className="w-full bg-input border border-border rounded-lg px-3.5 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="">Select a channel...</option>
-                  {channels.map((ch) => (
-                    <option key={ch.id} value={ch.id}>
-                      #{ch.name} (ID: {ch.id})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               {/* Default Audit Logs Channel */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
                   Fallback Audit Logs Channel
                 </label>
                 <p className="text-xs text-gray-500 mb-2">
-                  System events and fallbacks for unassigned log streams will post here.
+                  Catch-all log channel used when specific category channels are not mapped.
                 </p>
                 <select
                   value={logsChannelId}
@@ -164,26 +114,33 @@ export default function ChannelsPage() {
                   ))}
                 </select>
               </div>
-            </div>
-          )}
-        </Card>
 
-        {/* Multi-Stream Dedicated Event Logs */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Layers className="w-5 h-5 text-indigo-400" /> Multi-Stream Dedicated Event Logs
-            </CardTitle>
-          </CardHeader>
-
-          {loading ? null : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 pt-0">
-              {/* Voice Events */}
+              {/* Moderation Logs */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-                  <Volume2 className="w-4 h-4 text-emerald-400" /> Voice Events Channel
+                  <ShieldAlert className="w-4 h-4 text-rose-400" /> Moderation Log Channel
                 </label>
-                <p className="text-xs text-gray-500 mb-2">Voice channel joins, disconnects, and moves.</p>
+                <p className="text-xs text-gray-500 mb-2">Bans, kicks, timeouts, warnings, and purges.</p>
+                <select
+                  value={modLogChannelId}
+                  onChange={(e) => setModLogChannelId(e.target.value)}
+                  className="w-full bg-input border border-border rounded-lg px-3.5 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">Use Fallback Audit Channel</option>
+                  {channels.map((ch) => (
+                    <option key={ch.id} value={ch.id}>
+                      #{ch.name} (ID: {ch.id})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Voice Logs */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+                  <Volume2 className="w-4 h-4 text-purple-400" /> Voice State Activity Channel
+                </label>
+                <p className="text-xs text-gray-500 mb-2">Voice joins, leaves, and channel moves.</p>
                 <select
                   value={voiceLogsChannelId}
                   onChange={(e) => setVoiceLogsChannelId(e.target.value)}
@@ -201,9 +158,9 @@ export default function ChannelsPage() {
               {/* Message Logs */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-                  <MessageSquare className="w-4 h-4 text-sky-400" /> Message Logs Channel
+                  <MessageSquare className="w-4 h-4 text-blue-400" /> Message Updates & Deletions Channel
                 </label>
-                <p className="text-xs text-gray-500 mb-2">Deleted and edited message text & attachments.</p>
+                <p className="text-xs text-gray-500 mb-2">Message edits and message deletion logs.</p>
                 <select
                   value={messageLogsChannelId}
                   onChange={(e) => setMessageLogsChannelId(e.target.value)}
@@ -218,12 +175,12 @@ export default function ChannelsPage() {
                 </select>
               </div>
 
-              {/* AutoMod / Alerts */}
+              {/* Security & AutoMod */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-                  <AlertTriangle className="w-4 h-4 text-rose-400" /> Security & Alert Channel
+                  <AlertTriangle className="w-4 h-4 text-amber-400" /> AutoMod & Security Alerts Channel
                 </label>
-                <p className="text-xs text-gray-500 mb-2">AutoMod blocked links, keyword rules, and triggers.</p>
+                <p className="text-xs text-gray-500 mb-2">AutoMod blocked messages, spam, and keyword violations.</p>
                 <select
                   value={alertLogsChannelId}
                   onChange={(e) => setAlertLogsChannelId(e.target.value)}
@@ -238,32 +195,12 @@ export default function ChannelsPage() {
                 </select>
               </div>
 
-              {/* Moderation Logs */}
+              {/* Command Execution */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-                  <ShieldAlert className="w-4 h-4 text-amber-400" /> Timeouts & Bans Channel
+                  <Terminal className="w-4 h-4 text-emerald-400" /> Command Execution Audit Channel
                 </label>
-                <p className="text-xs text-gray-500 mb-2">Member timeouts, bans, unbans, and kicks.</p>
-                <select
-                  value={modLogChannelId}
-                  onChange={(e) => setModLogChannelId(e.target.value)}
-                  className="w-full bg-input border border-border rounded-lg px-3.5 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="">Use Fallback Audit Channel</option>
-                  {channels.map((ch) => (
-                    <option key={ch.id} value={ch.id}>
-                      #{ch.name} (ID: {ch.id})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Command Logs */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-                  <Terminal className="w-4 h-4 text-purple-400" /> Command Execution Channel
-                </label>
-                <p className="text-xs text-gray-500 mb-2">Slash command usage across the server.</p>
+                <p className="text-xs text-gray-500 mb-2">Audit trail of slash commands executed by staff and members.</p>
                 <select
                   value={commandLogsChannelId}
                   onChange={(e) => setCommandLogsChannelId(e.target.value)}

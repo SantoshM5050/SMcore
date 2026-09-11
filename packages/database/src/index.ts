@@ -31,4 +31,5 @@ export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
 });
 
 export * from '@prisma/client';
+export * from './validators';
 

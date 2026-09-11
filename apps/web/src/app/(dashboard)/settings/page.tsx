@@ -12,17 +12,12 @@ export default function SettingsPage() {
   const searchParams = useSearchParams();
   const guildId = searchParams.get('guildId') || '';
 
-  const [cooldownMinutes, setCooldownMinutes] = useState(5);
   const [autoDmEnabled, setAutoDmEnabled] = useState(true);
   const [loggingEnabled, setLoggingEnabled] = useState(true);
-  const [screenshotRequired, setScreenshotRequired] = useState(false);
-  const [screenshotAllowed, setScreenshotAllowed] = useState(true);
-  const [onePendingOnly, setOnePendingOnly] = useState(true);
   const [defaultEmbedColor, setDefaultEmbedColor] = useState('#5865F2');
   const [timezone, setTimezone] = useState('UTC');
   const [language, setLanguage] = useState('en');
   const [commonRoleId, setCommonRoleId] = useState<string>('');
-  const [reviewPingRoleId, setReviewPingRoleId] = useState('');
   const [roles, setRoles] = useState<{ roleId: string; roleName: string }[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -41,17 +36,12 @@ export default function SettingsPage() {
     ])
       .then(([settingsData, rolesData]) => {
         if (settingsData && !settingsData.error) {
-          setCooldownMinutes(settingsData.cooldownMinutes ?? 5);
           setAutoDmEnabled(settingsData.autoDmEnabled ?? true);
           setLoggingEnabled(settingsData.loggingEnabled ?? true);
-          setScreenshotRequired(settingsData.screenshotRequired ?? false);
-          setScreenshotAllowed(settingsData.screenshotAllowed ?? true);
-          setOnePendingOnly(settingsData.onePendingOnly ?? true);
           setDefaultEmbedColor(settingsData.defaultEmbedColor || '#5865F2');
           setTimezone(settingsData.timezone || 'UTC');
           setLanguage(settingsData.language || 'en');
           setCommonRoleId(settingsData.commonRoleId || '');
-          setReviewPingRoleId(settingsData.reviewPingRoleId || '');
         }
         if (Array.isArray(rolesData)) {
           setRoles(rolesData);
@@ -68,17 +58,12 @@ export default function SettingsPage() {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        cooldownMinutes: Number(cooldownMinutes),
         autoDmEnabled,
         loggingEnabled,
-        screenshotRequired,
-        screenshotAllowed,
-        onePendingOnly,
         defaultEmbedColor,
         timezone,
         language,
         commonRoleId: commonRoleId || null,
-        reviewPingRoleId: reviewPingRoleId || null,
       }),
     });
 
@@ -114,7 +99,7 @@ export default function SettingsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/40 pb-4">
         <div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Guild Platform Settings</h1>
-          <p className="text-sm text-gray-400 mt-1">Configure global application behaviors, screenshots, and automated notifications.</p>
+          <p className="text-sm text-gray-400 mt-1">Configure global server behaviors, notification preferences, and embed aesthetics.</p>
         </div>
         <div className="flex flex-col items-start sm:items-end">
           <Button
@@ -139,7 +124,7 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <SettingsIcon className="w-5 h-5 text-primary" /> Application Restrictions & Rules
+              <SettingsIcon className="w-5 h-5 text-primary" /> Global Server & Bot Automation Settings
             </CardTitle>
           </CardHeader>
 
@@ -149,35 +134,8 @@ export default function SettingsPage() {
             <div className="space-y-6 divide-y divide-border/60 p-6 pt-0">
               <div className="pt-2">
                 <Switch
-                  label="Enforce Single Pending Application"
-                  description="Prevent users from submitting duplicate applications if they already have one pending review."
-                  checked={onePendingOnly}
-                  onChange={setOnePendingOnly}
-                />
-              </div>
-
-              <div className="pt-4">
-                <Switch
-                  label="Allow Screenshot Proof Attachment"
-                  description="Enable screenshot proof URL input field on application modal."
-                  checked={screenshotAllowed}
-                  onChange={setScreenshotAllowed}
-                />
-              </div>
-
-              <div className="pt-4">
-                <Switch
-                  label="Mandatory Screenshot Proof"
-                  description="Require applicants to provide a valid screenshot URL before submitting."
-                  checked={screenshotRequired}
-                  onChange={setScreenshotRequired}
-                />
-              </div>
-
-              <div className="pt-4">
-                <Switch
                   label="Enable Automatic Direct Messages (DM)"
-                  description="Send applicant an automated DM notification upon approval or rejection with reason."
+                  description="Send members automated DM notifications for important server actions and promotions."
                   checked={autoDmEnabled}
                   onChange={setAutoDmEnabled}
                 />
@@ -194,17 +152,17 @@ export default function SettingsPage() {
 
               <div className="pt-4 space-y-1.5">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Common Approved Role (Optional)
+                  Default Member Server Role (Optional)
                 </label>
                 <p className="text-xs text-gray-500 mb-2">
-                  Select a common/default role (e.g. Member or Verified) to automatically assign to the user alongside their requested role upon approval.
+                  Select a common/default role (e.g. Member or Verified) for server member identification.
                 </p>
                 <select
                   value={commonRoleId}
                   onChange={(e) => setCommonRoleId(e.target.value)}
                   className="w-full bg-input border border-border rounded-lg px-3.5 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary"
                 >
-                  <option value="">-- None (Only assign requested role) --</option>
+                  <option value="">-- None --</option>
                   {roles.map((r) => (
                     <option key={r.roleId} value={r.roleId}>
                       {r.roleName} ({r.roleId})
@@ -213,38 +171,9 @@ export default function SettingsPage() {
                 </select>
               </div>
 
-              <div className="pt-4 space-y-1.5">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Role Application Review Ping (Optional)
-                </label>
-                <p className="text-xs text-gray-500 mb-2">
-                  Select a role (or @everyone / @here) to automatically ping in the review channel whenever a user submits a role application.
-                </p>
-                <select
-                  value={reviewPingRoleId}
-                  onChange={(e) => setReviewPingRoleId(e.target.value)}
-                  className="w-full bg-input border border-border rounded-lg px-3.5 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="">-- Auto-ping all configured Staff Roles --</option>
-                  <option value="everyone">@everyone</option>
-                  <option value="here">@here</option>
-                  {roles.map((r) => (
-                    <option key={r.roleId} value={r.roleId}>
-                      @{r.roleName} ({r.roleId})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="pt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Input
-                  label="Application Cooldown (Minutes)"
-                  type="number"
-                  value={cooldownMinutes}
-                  onChange={(e) => setCooldownMinutes(Number(e.target.value))}
-                />
-                <Input
-                  label="Default Embed Color"
+                  label="Default Embed Color (Hex)"
                   value={defaultEmbedColor}
                   onChange={(e) => setDefaultEmbedColor(e.target.value)}
                 />

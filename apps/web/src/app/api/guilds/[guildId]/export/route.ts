@@ -10,31 +10,56 @@ export async function GET(request: Request, { params }: { params: { guildId: str
 
   const { guildId } = params;
 
-  const [guild, settings, channels, roles, staff, embeds] = await Promise.all([
+  const [
+    guild,
+    settings,
+    staffRoles,
+    autoModRules,
+    antiSpam,
+    antiLink,
+    antiInvite,
+    antiMention,
+    antiRaid,
+    joinSecurity,
+    logConfigs,
+    escalationRules,
+  ] = await Promise.all([
     prisma.guild.findUnique({ where: { id: guildId } }),
     prisma.guildSettings.findUnique({ where: { guildId } }),
-    prisma.channelConfiguration.findUnique({ where: { guildId } }),
-    prisma.roleConfiguration.findMany({ where: { guildId } }),
-    prisma.staffPermission.findMany({ where: { guildId } }),
-    prisma.embedConfig.findFirst({ where: { guildId } }),
+    prisma.staffRole.findMany({ where: { guildId } }),
+    prisma.autoModRule.findMany({ where: { guildId } }),
+    prisma.antiSpamConfig.findUnique({ where: { guildId } }),
+    prisma.antiLinkConfig.findUnique({ where: { guildId } }),
+    prisma.antiInviteConfig.findUnique({ where: { guildId } }),
+    prisma.antiMentionConfig.findUnique({ where: { guildId } }),
+    prisma.antiRaidConfig.findUnique({ where: { guildId } }),
+    prisma.joinSecurityConfig.findUnique({ where: { guildId } }),
+    prisma.logConfiguration.findMany({ where: { guildId } }),
+    prisma.warningEscalationRule.findMany({ where: { guildId } }),
   ]);
 
   const configExport = {
-    version: '1.0.0',
+    version: '2.0.0',
     exportedAt: new Date().toISOString(),
     guildId,
     guildName: guild?.name || 'Discord Server',
     settings,
-    channels,
-    roles,
-    staff,
-    embeds,
+    staffRoles,
+    autoModRules,
+    antiSpam,
+    antiLink,
+    antiInvite,
+    antiMention,
+    antiRaid,
+    joinSecurity,
+    logConfigs,
+    escalationRules,
   };
 
   return new NextResponse(JSON.stringify(configExport, null, 2), {
     headers: {
       'Content-Type': 'application/json',
-      'Content-Disposition': `attachment; filename=server_config_${guildId}_backup.json`,
+      'Content-Disposition': `attachment; filename=smcore_config_${guildId}_backup.json`,
     },
   });
 }

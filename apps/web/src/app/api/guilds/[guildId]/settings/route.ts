@@ -1,22 +1,21 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { AuthService } from '@/lib/auth';
-import { AuditAction } from '@repo/database';
+import { AuditAction, StaffPermission } from '@repo/database';
 import { logDashboardAudit } from '@/lib/auditLogger';
+import { checkStaffPermission } from '@/lib/rbac';
 import { z } from 'zod';
 
 const settingsSchema = z.object({
-  cooldownMinutes: z.number().int().min(0).max(1440),
-  autoDmEnabled: z.boolean(),
-  loggingEnabled: z.boolean(),
-  screenshotRequired: z.boolean(),
-  screenshotAllowed: z.boolean(),
-  onePendingOnly: z.boolean(),
-  defaultEmbedColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
-  timezone: z.string(),
-  language: z.string(),
-  commonRoleId: z.string().nullable().optional(),
-  reviewPingRoleId: z.string().nullable().optional(),
+  autoDmEnabled: z.boolean().optional(),
+  loggingEnabled: z.boolean().optional(),
+  defaultEmbedColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  timezone: z.string().optional(),
+  language: z.string().optional(),
+  muteRoleId: z.string().nullable().optional(),
+  quarantineRoleId: z.string().nullable().optional(),
+  appealUrl: z.string().url().nullable().or(z.literal('')).optional(),
+  raidModeActive: z.boolean().optional(),
 });
 
 export async function GET(request: Request, { params }: { params: { guildId: string } }) {
@@ -47,6 +46,11 @@ export async function PATCH(request: Request, { params }: { params: { guildId: s
   }
 
   const { guildId } = params;
+  const hasPerm = await checkStaffPermission(guildId, user.discordId, StaffPermission.MANAGE_SETTINGS);
+  if (!hasPerm) {
+    return NextResponse.json({ error: 'Missing MANAGE_SETTINGS permission' }, { status: 403 });
+  }
+
   const body = await request.json().catch(() => ({}));
   const validation = settingsSchema.safeParse(body);
 
@@ -55,6 +59,7 @@ export async function PATCH(request: Request, { params }: { params: { guildId: s
   }
 
   const data = validation.data;
+  if (data.appealUrl === '') data.appealUrl = null;
 
   const updatedSettings = await prisma.guildSettings.upsert({
     where: { guildId },

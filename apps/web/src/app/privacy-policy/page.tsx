@@ -83,7 +83,7 @@ export default function PrivacyPolicyPage() {
               <span className="text-emerald-400">4.</span> Data Security & Storage
             </h2>
             <p className="text-sm text-gray-300 leading-relaxed">
-              Data is stored securely in encrypted PostgreSQL database storage behind authenticated APIs. Access to review role applications is restricted solely to authorized server staff members holding designated staff role permissions.
+              Data is stored securely in encrypted PostgreSQL database storage behind authenticated APIs. Access to manage server features and moderation logs is restricted solely to authorized server staff members holding designated staff role permissions.
             </p>
           </section>
 
@@ -92,7 +92,7 @@ export default function PrivacyPolicyPage() {
               <span className="text-emerald-400">5.</span> Data Retention & Right to Deletion
             </h2>
             <p className="text-sm text-gray-300 leading-relaxed">
-              Users or server owners may request data deletion or removal of their application records by contacting server administrators or purging historical application logs via the Dashboard settings.
+              Users or server owners may request data deletion or removal of their server records by contacting server administrators or purging historical logs via the Dashboard settings.
             </p>
           </section>
 

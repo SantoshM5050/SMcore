@@ -38,7 +38,8 @@ export default function ModerationPage() {
     fetch(`/api/guilds/${guildId}/moderation`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.logs && Array.isArray(data.logs)) setLogs(data.logs);
+        const list = data.cases || data.logs || [];
+        if (Array.isArray(list)) setLogs(list);
         if (data.channelsConfig) {
           setModLogChannelId(data.channelsConfig.modLogChannelId || '');
           setModPanelChannelId(data.channelsConfig.modPanelChannelId || '');

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma, ModerationAction } from '@repo/database';
 import { AuthService } from '@/lib/auth';
-import { ApplicationStatus } from '@repo/database';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,28 +15,41 @@ export async function GET(request: Request, { params }: { params: { guildId: str
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  const [totalPending, totalApproved, totalRejected, applicationsToday, allApps] = await Promise.all([
-    prisma.application.count({ where: { guildId, status: ApplicationStatus.PENDING } }),
-    prisma.application.count({ where: { guildId, status: ApplicationStatus.APPROVED } }),
-    prisma.application.count({ where: { guildId, status: ApplicationStatus.REJECTED } }),
-    prisma.application.count({ where: { guildId, createdAt: { gte: startOfToday } } }),
-    prisma.application.findMany({
+  const [
+    totalCases,
+    totalBans,
+    totalTimeouts,
+    totalKicks,
+    totalWarnings,
+    autoModBlocks,
+    actionsToday,
+    settings,
+    recentCases,
+    allCases14Days,
+  ] = await Promise.all([
+    prisma.moderationCase.count({ where: { guildId } }),
+    prisma.moderationCase.count({ where: { guildId, action: ModerationAction.BAN } }),
+    prisma.moderationCase.count({ where: { guildId, action: ModerationAction.TIMEOUT } }),
+    prisma.moderationCase.count({ where: { guildId, action: ModerationAction.KICK } }),
+    prisma.warning.count({ where: { guildId, isActive: true } }),
+    prisma.moderationCase.count({ where: { guildId, action: ModerationAction.AUTOMOD } }),
+    prisma.moderationCase.count({ where: { guildId, createdAt: { gte: startOfToday } } }),
+    prisma.guildSettings.findUnique({ where: { guildId } }),
+    prisma.moderationCase.findMany({
       where: { guildId },
-      select: {
-        createdAt: true,
-        roleName: true,
-        reviewerTag: true,
-        status: true,
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    }),
+    prisma.moderationCase.findMany({
+      where: {
+        guildId,
+        createdAt: { gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) },
       },
-      orderBy: { createdAt: 'asc' },
+      select: { createdAt: true },
     }),
   ]);
 
-  const totalProcessed = totalApproved + totalRejected;
-  const approvalRate = totalProcessed > 0 ? Math.round((totalApproved / totalProcessed) * 100) : 0;
-  const rejectionRate = totalProcessed > 0 ? Math.round((totalRejected / totalProcessed) * 100) : 0;
-
-  // Applications per day (last 14 days)
+  // Daily trend calculation
   const daysMap = new Map<string, number>();
   for (let i = 13; i >= 0; i--) {
     const d = new Date();
@@ -46,51 +58,29 @@ export async function GET(request: Request, { params }: { params: { guildId: str
     daysMap.set(dateStr, 0);
   }
 
-  allApps.forEach((app) => {
-    const dateStr = new Date(app.createdAt).toISOString().split('T')[0];
+  allCases14Days.forEach((c) => {
+    const dateStr = new Date(c.createdAt).toISOString().split('T')[0];
     if (daysMap.has(dateStr)) {
       daysMap.set(dateStr, (daysMap.get(dateStr) || 0) + 1);
     }
   });
 
-  const applicationsPerDay = Array.from(daysMap.entries()).map(([date, count]) => ({
+  const actionsPerDay = Array.from(daysMap.entries()).map(([date, count]) => ({
     date,
     count,
   }));
 
-  // Most requested roles
-  const roleCountMap: Record<string, number> = {};
-  allApps.forEach((app) => {
-    roleCountMap[app.roleName] = (roleCountMap[app.roleName] || 0) + 1;
-  });
-
-  const mostRequestedRoles = Object.entries(roleCountMap)
-    .map(([roleName, count]) => ({ roleName, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
-
-  // Most active staff
-  const staffCountMap: Record<string, number> = {};
-  allApps.forEach((app) => {
-    if (app.reviewerTag) {
-      staffCountMap[app.reviewerTag] = (staffCountMap[app.reviewerTag] || 0) + 1;
-    }
-  });
-
-  const mostActiveStaff = Object.entries(staffCountMap)
-    .map(([staffTag, count]) => ({ staffTag, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
-
   return NextResponse.json({
-    totalPending,
-    totalApproved,
-    totalRejected,
-    applicationsToday,
-    approvalRate,
-    rejectionRate,
-    applicationsPerDay,
-    mostRequestedRoles,
-    mostActiveStaff,
+    totalCases,
+    totalBans,
+    totalTimeouts,
+    totalKicks,
+    totalWarnings,
+    autoModBlocks,
+    raidEvents: 0,
+    raidModeActive: settings?.raidModeActive || false,
+    actionsToday,
+    actionsPerDay,
+    recentCases,
   });
 }

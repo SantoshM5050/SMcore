@@ -6,12 +6,12 @@
 
 ```mermaid
 graph TD
-    A[Discord Client User] -->|Button Click / Modal Submit| B[smcore-bot]
-    B -->|Grants Role / Updates DB| C[(smcore-postgres)]
+    A[Discord Guild Member] -->|Event Button Click / Mod Interaction| B[smcore-bot]
+    B -->|Records Signups / Logs Actions| C[(smcore-postgres)]
     B -->|Invalidates Cache| D[(smcore-redis)]
     E[Server Staff / Admin] -->|HTTPS Web Dashboard| F[smcore-dashboard]
     F -->|OAuth2 / RBAC Session| C
-    F -->|Deploy Embed / Config| B
+    F -->|Configures Events / Moderation / Settings| B
 ```
 
 ---
@@ -21,7 +21,7 @@ graph TD
 1. **`smcore-bot` (`apps/bot`)**:
    - Built with Discord.js v14.
    - Listens to Discord Gateway events.
-   - Handles Button, Select Menu, and Modal component interactions cleanly.
+   - Handles Event Signups, Moderation actions, Welcome greetings, and Grand RP promotion tracking.
    - Assigns Discord guild roles dynamically.
 
 2. **`smcore-dashboard` (`apps/web`)**:
@@ -31,11 +31,12 @@ graph TD
 
 3. **`@repo/database` (`packages/database`)**:
    - Managed with Prisma ORM 5.22.
-   - Stores multi-tenant guild configurations, applications, staff permissions, embed panels, and audit logs.
+   - Stores multi-tenant guild configurations, staff permissions, event signups, welcome configs, moderation logs, promotion logs, and audit logs.
 
 ---
 
 ## Multi-Tenancy & Data Isolation
 
-All configuration tables (`GuildSettings`, `ChannelConfiguration`, `RoleConfiguration`, `Application`, `StaffPermission`, `EmbedConfig`, `AuditLog`) enforce composite key relationships and indexing on `guildId`. Data for Guild A is completely isolated from Guild B.
+All configuration tables (`GuildSettings`, `ChannelConfiguration`, `RoleConfiguration`, `StaffPermission`, `EventSignup`, `WelcomeConfig`, `ModerationLog`, `PromotionLog`, `AuditLog`) enforce composite key relationships and indexing on `guildId`. Data for Guild A is completely isolated from Guild B.
+
 

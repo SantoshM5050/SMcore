@@ -13,9 +13,6 @@ export async function GET() {
 
   const allGuilds = await prisma.guild.findMany({
     orderBy: { createdAt: 'desc' },
-    include: {
-      staffPermissions: true,
-    },
   });
 
   if (allGuilds.length === 0) {
@@ -88,8 +85,5 @@ export async function GET() {
     return false;
   });
 
-  // Strip included staffPermissions before returning
-  const sanitized = userGuilds.map(({ staffPermissions, ...guild }) => guild);
-
-  return NextResponse.json(sanitized);
+  return NextResponse.json(userGuilds);
 }

@@ -7,7 +7,7 @@
     "prebuild": "cd ../.. && npm run build:db",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@repo/database": "*",

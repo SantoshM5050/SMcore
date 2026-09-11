@@ -1,54 +1,20 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma, ModerationAction, AuditAction, StaffPermission } from '@repo/database';
 import { AuthService } from '@/lib/auth';
+import { DiscordApi } from '@/lib/discord';
+import { logDashboardAudit } from '@/lib/auditLogger';
+import { checkStaffPermission } from '@/lib/rbac';
+import { z } from 'zod';
 
-async function sendModerationLogEmbed(botToken: string, channelId: string, data: any) {
-  if (!botToken || !channelId) return;
-
-  const colorMap: Record<string, number> = {
-    BAN: 15158332,
-    KICK: 15105570,
-    TIMEOUT: 3447003,
-    WARN: 16776960,
-    PURGE: 10181046,
-  };
-
-  const actionEmoji: Record<string, string> = {
-    BAN: '🚫 BAN',
-    KICK: '🥾 KICK',
-    TIMEOUT: '⏱️ TIMEOUT / MUTE',
-    WARN: '⚠️ WARN',
-    PURGE: '🧹 PURGE MESSAGES',
-  };
-
-  const embed: any = {
-    title: `🛡️ Moderation Action - ${actionEmoji[data.action] || data.action}`,
-    color: colorMap[data.action] || 5793266,
-    fields: [
-      { name: 'Target User', value: `${data.targetUserTag} (${data.targetUserId !== 'N/A' && data.targetUserId !== 'CHANNEL' ? `<@${data.targetUserId}>` : data.targetUserId})`, inline: true },
-      { name: 'Moderator Staff', value: `@${data.moderatorTag} (<@${data.moderatorId}>)`, inline: true },
-      { name: 'Reason', value: data.reason || 'No reason specified', inline: false },
-    ],
-    timestamp: new Date().toISOString(),
-    footer: { text: 'SMCore Moderation Logs' },
-  };
-
-  if (data.durationMinutes) {
-    embed.fields.push({ name: 'Duration', value: `${data.durationMinutes} Minutes`, inline: true });
-  }
-  if (data.count) {
-    embed.fields.push({ name: 'Messages Deleted', value: `${data.count} Messages`, inline: true });
-  }
-
-  await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bot ${botToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ embeds: [embed] }),
-  }).catch((err) => console.warn('[ModLog Embed Send Failed]:', err));
-}
+const actionSchema = z.object({
+  action: z.nativeEnum(ModerationAction),
+  targetId: z.string().min(1),
+  targetTag: z.string().optional().default('Unknown User'),
+  reason: z.string().optional().default('No reason specified'),
+  durationMinutes: z.number().int().min(1).optional(),
+  channelId: z.string().optional(),
+  purgeCount: z.number().int().min(1).max(100).optional(),
+});
 
 export async function GET(request: Request, { params }: { params: { guildId: string } }) {
   const user = await AuthService.getSessionUser();
@@ -59,18 +25,27 @@ export async function GET(request: Request, { params }: { params: { guildId: str
   const { guildId } = params;
 
   try {
-    const [logs, channelsConfig] = await Promise.all([
-      prisma.moderationLog.findMany({
+    const [cases, totalCases, totalBans, totalTimeouts, totalWarnings] = await Promise.all([
+      prisma.moderationCase.findMany({
         where: { guildId },
         orderBy: { createdAt: 'desc' },
         take: 50,
       }),
-      prisma.channelConfiguration.findUnique({
-        where: { guildId },
-      }),
+      prisma.moderationCase.count({ where: { guildId } }),
+      prisma.moderationCase.count({ where: { guildId, action: ModerationAction.BAN } }),
+      prisma.moderationCase.count({ where: { guildId, action: ModerationAction.TIMEOUT } }),
+      prisma.warning.count({ where: { guildId, isActive: true } }),
     ]);
 
-    return NextResponse.json({ logs, channelsConfig });
+    return NextResponse.json({
+      cases,
+      stats: {
+        totalCases,
+        totalBans,
+        totalTimeouts,
+        totalWarnings,
+      },
+    });
   } catch (err: any) {
     console.error('[Moderation API GET Error]:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -84,211 +59,156 @@ export async function POST(request: Request, { params }: { params: { guildId: st
   }
 
   const { guildId } = params;
+  const body = await request.json().catch(() => ({}));
+  const validation = actionSchema.safeParse(body);
+
+  if (!validation.success) {
+    return NextResponse.json({ error: validation.error.errors[0].message }, { status: 400 });
+  }
+
+  const data = validation.data;
+  const botToken = (process.env.DISCORD_BOT_TOKEN || '').trim().replace(/^["']|["']$/g, '');
+
+  // RBAC Permission Checking
+  let requiredPerm: StaffPermission = StaffPermission.WARN_MEMBERS;
+  if (data.action === ModerationAction.BAN || data.action === ModerationAction.UNBAN) {
+    requiredPerm = StaffPermission.BAN_MEMBERS;
+  } else if (data.action === ModerationAction.KICK) {
+    requiredPerm = StaffPermission.KICK_MEMBERS;
+  } else if (data.action === ModerationAction.TIMEOUT || data.action === ModerationAction.TIMEOUT_REMOVE) {
+    requiredPerm = StaffPermission.TIMEOUT_MEMBERS;
+  } else if (
+    data.action === ModerationAction.PURGE ||
+    data.action === ModerationAction.LOCK ||
+    data.action === ModerationAction.UNLOCK ||
+    data.action === ModerationAction.SLOWMODE
+  ) {
+    requiredPerm = StaffPermission.MANAGE_SETTINGS;
+  }
+
+  const hasPerm = await checkStaffPermission(guildId, user.discordId, requiredPerm);
+  if (!hasPerm) {
+    return NextResponse.json({ error: `Missing required permission: ${requiredPerm}` }, { status: 403 });
+  }
 
   try {
-    const body = await request.json();
-    const { action, targetUserId, targetUserTag, reason, durationMinutes, channelId, messageCount, modLogChannelId, modPanelChannelId } = body;
-
-    const rawBotToken = process.env.DISCORD_BOT_TOKEN || '';
-    const botToken = rawBotToken.trim().replace(/^["']|["']$/g, '');
-
-    // Handle Saving Channel Configurations
-    if (action === 'SAVE_CHANNELS') {
-      const updatedConfig = await prisma.channelConfiguration.upsert({
-        where: { guildId },
-        create: {
-          guildId,
-          modLogChannelId: modLogChannelId || null,
-          modPanelChannelId: modPanelChannelId || null,
-        },
-        update: {
-          modLogChannelId: modLogChannelId || null,
-          modPanelChannelId: modPanelChannelId || null,
-        },
-      });
-      return NextResponse.json({ success: true, channelsConfig: updatedConfig });
-    }
-
-    // Handle Deploying Interactive Moderation Control Panel Embed
-    if (action === 'DEPLOY_PANEL') {
-      const targetChan = channelId || modPanelChannelId;
-      if (!targetChan) {
-        return NextResponse.json({ error: 'Target Discord channel is required to deploy Moderation Panel' }, { status: 400 });
-      }
-
-      if (!botToken) {
-        return NextResponse.json({ error: 'Bot token not configured' }, { status: 400 });
-      }
-
-      const res = await fetch(`https://discord.com/api/v10/channels/${targetChan}/messages`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bot ${botToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          embeds: [
-            {
-              title: '🛡️ Interactive Moderation Control Panel',
-              description: 'Click any button below to execute a server moderation action.\n\nA pop-up dialog will open in Discord allowing you to specify the **Target User ID / Mention** and **Reason**.',
-              color: 15158332,
-              fields: [
-                { name: 'Available Tools', value: '🚫 Ban Member | 🥾 Kick Member | ⏱️ Timeout Member | ⚠️ Issue Warning | 🧹 Purge Chat Messages', inline: false }
-              ],
-              footer: { text: 'SMCore Discord Staff Moderation Hub' },
-              timestamp: new Date().toISOString(),
-            },
-          ],
-          components: [
-            {
-              type: 1,
-              components: [
-                { type: 2, style: 4, custom_id: 'mod_panel_ban', label: 'Ban User', emoji: { name: '🚫' } },
-                { type: 2, style: 3, custom_id: 'mod_panel_kick', label: 'Kick User', emoji: { name: '🥾' } },
-                { type: 2, style: 1, custom_id: 'mod_panel_timeout', label: 'Timeout', emoji: { name: '⏱️' } },
-                { type: 2, style: 2, custom_id: 'mod_panel_warn', label: 'Warn User', emoji: { name: '⚠️' } },
-                { type: 2, style: 2, custom_id: 'mod_panel_purge', label: 'Purge', emoji: { name: '🧹' } },
-              ],
-            },
-          ],
-        }),
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        return NextResponse.json({ error: `Discord API error: ${errText}` }, { status: 400 });
-      }
-
-      // Save panel channel ID
-      await prisma.channelConfiguration.upsert({
-        where: { guildId },
-        create: { guildId, modPanelChannelId: targetChan },
-        update: { modPanelChannelId: targetChan },
-      });
-
-      return NextResponse.json({ success: true, message: 'Moderation Control Panel successfully deployed to channel!' });
-    }
-
-    if (!action) {
-      return NextResponse.json({ error: 'Moderation action is required' }, { status: 400 });
-    }
-
-    let executionSuccess = false;
-    let errorDetail = '';
-
+    // 1. Execute via Discord API if bot token available
     if (botToken) {
-      if (action === 'BAN' && targetUserId) {
-        const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/bans/${targetUserId}`, {
+      if (data.action === ModerationAction.BAN) {
+        await fetch(`https://discord.com/api/v10/guilds/${guildId}/bans/${data.targetId}`, {
           method: 'PUT',
           headers: {
             Authorization: `Bot ${botToken}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ reason: reason || `Banned by ${user.username} via SMCore Dashboard` }),
+          body: JSON.stringify({ reason: data.reason }),
         });
-        executionSuccess = res.ok || res.status === 204;
-        if (!executionSuccess) errorDetail = await res.text();
-      } else if (action === 'KICK' && targetUserId) {
-        const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${targetUserId}`, {
+      } else if (data.action === ModerationAction.UNBAN) {
+        await fetch(`https://discord.com/api/v10/guilds/${guildId}/bans/${data.targetId}`, {
           method: 'DELETE',
-          headers: {
-            Authorization: `Bot ${botToken}`,
-            'X-Audit-Log-Reason': reason || `Kicked by ${user.username} via SMCore Dashboard`,
-          },
+          headers: { Authorization: `Bot ${botToken}` },
         });
-        executionSuccess = res.ok || res.status === 204;
-        if (!executionSuccess) errorDetail = await res.text();
-      } else if (action === 'TIMEOUT' && targetUserId) {
-        const mins = Number(durationMinutes) || 10;
-        const untilDate = new Date(Date.now() + mins * 60 * 1000).toISOString();
-        const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${targetUserId}`, {
+      } else if (data.action === ModerationAction.KICK) {
+        await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${data.targetId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bot ${botToken}` },
+        });
+      } else if (data.action === ModerationAction.TIMEOUT) {
+        const durationMs = (data.durationMinutes || 60) * 60 * 1000;
+        const communicationDisabledUntil = new Date(Date.now() + durationMs).toISOString();
+        await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${data.targetId}`, {
           method: 'PATCH',
           headers: {
             Authorization: `Bot ${botToken}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            communication_disabled_until: untilDate,
-          }),
+          body: JSON.stringify({ communication_disabled_until: communicationDisabledUntil }),
         });
-        executionSuccess = res.ok || res.status === 200;
-        if (!executionSuccess) errorDetail = await res.text();
-      } else if (action === 'PURGE' && channelId) {
-        const limit = Math.min(Math.max(Number(messageCount) || 10, 1), 100);
-        const getMsgsRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages?limit=${limit}`, {
-          headers: { Authorization: `Bot ${botToken}` },
+      } else if (data.action === ModerationAction.TIMEOUT_REMOVE) {
+        await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${data.targetId}`, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bot ${botToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ communication_disabled_until: null }),
         });
-        if (getMsgsRes.ok) {
-          const msgs: { id: string }[] = await getMsgsRes.json();
-          if (msgs.length > 0) {
-            const bulkRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/bulk-delete`, {
-              method: 'POST',
-              headers: {
-                Authorization: `Bot ${botToken}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                messages: msgs.map((m) => m.id),
-              }),
-            });
-            executionSuccess = bulkRes.ok || bulkRes.status === 204;
-            if (!executionSuccess) errorDetail = await bulkRes.text();
-          } else {
-            executionSuccess = true;
-          }
-        }
-      } else if (action === 'WARN') {
-        executionSuccess = true;
+      } else if (data.action === ModerationAction.PURGE && data.channelId) {
+        await DiscordApi.purgeMessages(data.channelId, data.purgeCount || 10);
+      } else if (data.action === ModerationAction.LOCK && data.channelId) {
+        await DiscordApi.setChannelLock(data.channelId, guildId, true);
+      } else if (data.action === ModerationAction.UNLOCK && data.channelId) {
+        await DiscordApi.setChannelLock(data.channelId, guildId, false);
       }
-    } else {
-      executionSuccess = true;
     }
 
-    // Record Moderation Log
-    const modLog = await prisma.moderationLog.create({
-      data: {
-        guildId,
-        targetUserId: targetUserId || 'N/A',
-        targetUserTag: targetUserTag || targetUserId || 'N/A',
-        moderatorId: user.discordId,
-        moderatorTag: user.username,
-        action,
-        reason: reason || null,
-        durationMinutes: durationMinutes ? Number(durationMinutes) : null,
-        count: messageCount ? Number(messageCount) : null,
-      },
+    // 2. Determine case number
+    const lastCase = await prisma.moderationCase.findFirst({
+      where: { guildId },
+      orderBy: { caseNumber: 'desc' },
+      select: { caseNumber: true },
     });
+    const nextCaseNumber = (lastCase?.caseNumber || 0) + 1;
 
-    // Also record into AuditLog
-    await prisma.auditLog.create({
+    // 3. Record Moderation Case
+    const modCase = await prisma.moderationCase.create({
       data: {
         guildId,
-        userId: user.discordId,
-        userTag: user.username,
-        action: 'SETTINGS_UPDATED',
-        details: {
-          modAction: action,
-          target: targetUserTag || targetUserId || channelId || 'Server Member',
-          reason: reason || null,
-          durationMinutes: durationMinutes || null,
+        caseNumber: nextCaseNumber,
+        action: data.action,
+        targetId: data.targetId,
+        targetTag: data.targetTag,
+        moderatorId: user.discordId,
+        moderatorTag: `${user.username}#${user.discriminator}`,
+        reason: data.reason,
+        durationMinutes: data.durationMinutes || null,
+        metadata: {
+          channelId: data.channelId || null,
+          purgeCount: data.purgeCount || null,
+          executedVia: 'DASHBOARD',
         },
       },
     });
 
-    // Post rich Moderation Log Embed into configured modLogChannelId
-    const channelsConfig = await prisma.channelConfiguration.findUnique({ where: { guildId } });
-    if (botToken && channelsConfig?.modLogChannelId) {
-      await sendModerationLogEmbed(botToken, channelsConfig.modLogChannelId, modLog);
+    // If action is WARN, also create Warning record
+    if (data.action === ModerationAction.WARN) {
+      const lastWarn = await prisma.warning.findFirst({
+        where: { guildId, userId: data.targetId },
+        orderBy: { warningNumber: 'desc' },
+        select: { warningNumber: true },
+      });
+      await prisma.warning.create({
+        data: {
+          guildId,
+          userId: data.targetId,
+          userTag: data.targetTag,
+          moderatorId: user.discordId,
+          moderatorTag: `${user.username}#${user.discriminator}`,
+          reason: data.reason,
+          warningNumber: (lastWarn?.warningNumber || 0) + 1,
+          caseId: modCase.id,
+        },
+      });
     }
 
-    return NextResponse.json({
-      success: true,
-      executionSuccess,
-      errorDetail,
-      log: modLog,
-    });
+    // 4. Audit Log
+    await logDashboardAudit(
+      guildId,
+      user.discordId,
+      `${user.username}#${user.discriminator}`,
+      AuditAction.CASE_CREATED,
+      {
+        caseNumber: nextCaseNumber,
+        action: data.action,
+        targetId: data.targetId,
+        targetTag: data.targetTag,
+        reason: data.reason,
+      }
+    );
+
+    return NextResponse.json(modCase);
   } catch (err: any) {
-    console.error('[Moderation API POST Error]:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error('[Moderation POST Action Error]:', err);
+    return NextResponse.json({ error: err.message || 'Execution failed' }, { status: 500 });
   }
 }

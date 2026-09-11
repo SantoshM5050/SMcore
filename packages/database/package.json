@@ -6,9 +6,9 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "node ../../scripts/db-sync.js && tsc",
-    "generate": "npx prisma generate",
-    "db:push": "npx prisma db push",
-    "seed": "npx tsx prisma/seed.ts"
+    "generate": "prisma generate",
+    "db:push": "prisma db push",
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

@@ -1,12 +1,14 @@
-import { prisma, StaffPermissionLevel } from '@repo/database';
+import { prisma, StaffPermission } from '@repo/database';
 import { DiscordApi } from './discord';
 
 export interface UserGuildPermissions {
+  isOwner: boolean;
   isAdmin: boolean;
-  isHighCommand: boolean;
-  isManager: boolean;
-  canManageApplications: boolean;
+  permissions: StaffPermission[];
+  hasPermission: (perm: StaffPermission) => boolean;
   canConfigureGuild: boolean;
+  canModerate: boolean;
+  canViewLogs: boolean;
 }
 
 export class RbacService {
@@ -18,7 +20,6 @@ export class RbacService {
     guildId: string,
     accessToken?: string
   ): Promise<UserGuildPermissions> {
-    // 1. Fetch guild info from DB
     const guild = await prisma.guild.findUnique({
       where: { id: guildId },
     });
@@ -26,7 +27,7 @@ export class RbacService {
     const isOwner = guild?.ownerId === discordUserId;
     let isAdmin = isOwner;
 
-    // If OAuth access token provided, check Discord permissions flag (0x8 = ADMINISTRATOR)
+    // Check Discord permissions flag (0x8 = ADMINISTRATOR)
     if (accessToken && !isAdmin) {
       try {
         const userGuilds = await DiscordApi.getUserGuilds(accessToken);
@@ -43,42 +44,56 @@ export class RbacService {
       }
     }
 
-    if (isAdmin) {
+    const allPermissions = Object.values(StaffPermission) as StaffPermission[];
+
+    if (isAdmin || isOwner) {
       return {
+        isOwner,
         isAdmin: true,
-        isHighCommand: true,
-        isManager: true,
-        canManageApplications: true,
+        permissions: allPermissions,
+        hasPermission: () => true,
         canConfigureGuild: true,
+        canModerate: true,
+        canViewLogs: true,
       };
     }
 
-    // 2. Fetch staff permission definitions from DB
-    const staffRoles = await prisma.staffPermission.findMany({
+    // Check staff role permissions for member
+    // Query bot / Discord for user's roles if possible or check all assigned staff roles in DB
+    const staffRoles = await prisma.staffRole.findMany({
       where: { guildId },
     });
 
-    if (staffRoles.length === 0) {
-      return {
-        isAdmin: false,
-        isHighCommand: false,
-        isManager: false,
-        canManageApplications: false,
-        canConfigureGuild: false,
-      };
+    // In web dashboard session without member role query, admins have full access.
+    // If not admin, collect granted permissions from bound roles
+    const granted = new Set<StaffPermission>();
+    for (const r of staffRoles) {
+      for (const p of r.permissions) {
+        granted.add(p);
+      }
     }
 
-    // Default to false for non-admins if role matching is needed
-    // In full production, staff member roles are verified against Discord Guild API member object
-    const isHighCommand = false;
-    const isManager = false;
+    const permsList = Array.from(granted);
 
     return {
-      isAdmin,
-      isHighCommand,
-      isManager,
-      canManageApplications: isAdmin || isHighCommand || isManager,
-      canConfigureGuild: isAdmin,
+      isOwner: false,
+      isAdmin: false,
+      permissions: permsList,
+      hasPermission: (perm: StaffPermission) => granted.has(perm),
+      canConfigureGuild: granted.has(StaffPermission.MANAGE_SETTINGS),
+      canModerate: granted.has(StaffPermission.VIEW_MODERATION),
+      canViewLogs: granted.has(StaffPermission.VIEW_LOGS),
     };
   }
 }
+
+export async function checkStaffPermission(
+  guildId: string,
+  discordUserId: string,
+  requiredPermission: StaffPermission,
+  accessToken?: string
+): Promise<boolean> {
+  const perms = await RbacService.checkUserPermissions(discordUserId, guildId, accessToken);
+  return perms.hasPermission(requiredPermission);
+}
+

@@ -1,6 +1,6 @@
-# Nexus Discord Bot – REST API Documentation
+# SMCore Discord Bot – REST API Documentation
 
-**Nexus Dashboard** exposes a secure REST API for server management, application auditing, role synchronization, embed panel deployment, and system analytics.
+**SMCore Dashboard** exposes a secure REST API for server management, event signups, welcome greeting automation, moderation logging, Grand RP promotion tracking, and system health.
 
 All guild endpoints require Discord OAuth2 session cookies and administrator/staff permission validation (`RbacService`).
 
@@ -19,24 +19,34 @@ All guild endpoints require Discord OAuth2 session cookies and administrator/sta
 - `GET /api/guilds/:guildId`: Returns detailed settings, channels, and stats for a specific guild.
 
 ### Roles & Channels API
-- `GET /api/guilds/:guildId/roles`: Returns live Discord roles and DB configuration.
-- `PATCH /api/guilds/:guildId/roles`: Updates requestable status, enabled status, min rank requirements.
-- `GET /api/guilds/:guildId/channels`: Returns live text channels for request, review, and log binding.
-- `PATCH /api/guilds/:guildId/channels`: Updates bound channel IDs.
+- `GET /api/guilds/:guildId/roles`: Returns live Discord roles synchronized with the database.
+- `GET /api/guilds/:guildId/channels`: Returns live text channels for logging and notification binding.
+- `PATCH /api/guilds/:guildId/channels`: Updates bound logging and operational channel IDs.
 
-### Applications & Review API
-- `GET /api/guilds/:guildId/applications`: Paginated list of applications with status filter (`PENDING`, `APPROVED`, `REJECTED`).
-- `POST /api/guilds/:guildId/applications/:id/approve`: Approves application, grants Discord role, sends DM.
-- `POST /api/guilds/:guildId/applications/:id/reject`: Rejects application with reason, updates embed, sends DM.
-- `GET /api/guilds/:guildId/applications/:id/comments`: Returns internal staff comment thread.
-- `POST /api/guilds/:guildId/applications/:id/comments`: Adds internal staff comment.
+### Events & Signups API
+- `GET /api/guilds/:guildId/events`: Returns active and historical event signups.
+- `POST /api/guilds/:guildId/events`: Creates an on-demand event signup embed with main team and substitute rosters.
+- `PATCH /api/guilds/:guildId/events`: Updates an existing event or closes/cancels signups.
 
-### Embed Builder API
-- `GET /api/guilds/:guildId/embeds`: Returns embed panel configurations.
-- `POST /api/guilds/:guildId/embeds`: Upserts panel embed configuration.
-- `POST /api/guilds/:guildId/embeds/deploy`: Deploys or updates panel embed in target Discord channel.
+### Welcome & Greetings API
+- `GET /api/guilds/:guildId/welcome`: Returns welcome card and greeting embed configuration.
+- `POST /api/guilds/:guildId/welcome`: Upserts welcome/goodbye channels, embeds, and auto-roles.
 
-### System & Health API
-- `GET /api/health`: Returns system uptime, database latency, Redis connection, memory usage.
+### Moderation API
+- `GET /api/guilds/:guildId/moderation`: Returns guild moderation logs and active case history.
+- `POST /api/guilds/:guildId/moderation`: Dispatches moderation actions (ban, kick, timeout, warn, purge).
+
+### Grand RP Promotions API
+- `GET /api/guilds/:guildId/promotions`: Returns promotion and demotion logs.
+- `POST /api/guilds/:guildId/promotions`: Records promotion, demotion, or left-family logs with in-game details.
+
+### Staff & Permissions API
+- `GET /api/guilds/:guildId/staff`: Returns staff roles with assigned permission levels.
+- `POST /api/guilds/:guildId/staff`: Grants staff permissions to a Discord role.
+- `DELETE /api/guilds/:guildId/staff`: Revokes staff permissions from a Discord role.
+
+### Analytics & System Health API
+- `GET /api/guilds/:guildId/analytics`: Returns aggregated server actions, event statistics, and recent activity feed.
+- `GET /api/health`: Returns system uptime, database latency, Redis connection, and gateway status.
 - `GET /api/guilds/:guildId/export`: Downloads JSON configuration backup.
 - `POST /api/guilds/:guildId/import`: Restores server configuration from JSON backup.

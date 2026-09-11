@@ -1,57 +1,48 @@
-import { GuildMember, EmbedBuilder, TextChannel } from 'discord.js';
-import { prisma } from '@repo/database';
+import { GuildMember } from 'discord.js';
+import { LogCategory } from '@repo/database';
+import { AntiRaidService } from '../services/antiRaidService';
+import { JoinSecurityService } from '../services/joinSecurityService';
+import { LogService } from '../services/logService';
+import { logger } from '../logger';
 
 export async function onGuildMemberAdd(member: GuildMember) {
   try {
-    const guildId = member.guild.id;
+    const guild = member.guild;
 
-    // Fetch WelcomeConfig from DB
-    const welcomeConfig = await prisma.welcomeConfig.findUnique({
-      where: { guildId },
+    // 1. Anti-Raid Join Frequency Spike Detection
+    const raidDetected = await AntiRaidService.handleMemberJoin(member);
+    if (raidDetected) {
+      logger.warn({ guildId: guild.id, userId: member.id }, 'Join handled during raid spike');
+    }
+
+    // 2. Member Join Security Gate (Account Age, Default Avatar)
+    await JoinSecurityService.inspectMember(member);
+
+    // 3. Log Member Join
+    const accountAgeDays = Math.floor(
+      (Date.now() - member.user.createdTimestamp) / (24 * 60 * 60 * 1000)
+    );
+
+    await LogService.log({
+      guild,
+      category: LogCategory.MEMBER,
+      eventType: 'MEMBER_JOIN',
+      title: '📥 Member Joined',
+      targetId: member.id,
+      targetTag: member.user.tag,
+      colorHex: '#10B981',
+      fields: [
+        { name: 'Member', value: `<@${member.id}> (${member.user.tag})`, inline: true },
+        { name: 'Account Age', value: `${accountAgeDays} days old`, inline: true },
+        { name: 'Server Member Count', value: `${guild.memberCount}`, inline: true },
+        {
+          name: 'Account Created',
+          value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`,
+          inline: true,
+        },
+      ],
     });
-
-    if (!welcomeConfig || !welcomeConfig.enabled) return;
-
-    // 1. Auto-Assign Role if configured
-    if (welcomeConfig.autoRoleId) {
-      try {
-        const role = member.guild.roles.cache.get(welcomeConfig.autoRoleId);
-        if (role) {
-          await member.roles.add(role);
-          console.log(`[Auto-Role] Assigned role @${role.name} to ${member.user.tag} in ${member.guild.name}`);
-        }
-      } catch (roleErr: any) {
-        console.warn(`[Auto-Role Error] Could not assign role ${welcomeConfig.autoRoleId}:`, roleErr.message);
-      }
-    }
-
-    // 2. Post Welcome Embed if channel is configured
-    if (welcomeConfig.channelId) {
-      const channel = member.guild.channels.cache.get(welcomeConfig.channelId) as TextChannel;
-      if (channel && channel.isTextBased()) {
-        const title = welcomeConfig.embedTitle || 'Welcome to the Server!';
-        const description = (welcomeConfig.embedDescription || 'Hey {user}, welcome to {server}!')
-          .replace(/\{user\}/g, `<@${member.user.id}>`)
-          .replace(/\{server\}/g, member.guild.name);
-
-        const embed = new EmbedBuilder()
-          .setTitle(title)
-          .setDescription(description)
-          .setColor((welcomeConfig.embedColor || '#5865F2') as any)
-          .setThumbnail(member.user.displayAvatarURL({ forceStatic: false }))
-          .setTimestamp();
-
-        if (welcomeConfig.bannerUrl) {
-          embed.setImage(welcomeConfig.bannerUrl);
-        }
-
-        await channel.send({
-          content: `Welcome <@${member.user.id}>!`,
-          embeds: [embed],
-        });
-      }
-    }
   } catch (err: any) {
-    console.error('[GuildMemberAdd Event Error]:', err);
+    logger.error({ err: err.message }, 'Error in guildMemberAdd event handler');
   }
 }

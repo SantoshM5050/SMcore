@@ -14,7 +14,7 @@ export async function GET(request: Request, { params }: { params: { guildId: str
     where: { id: guildId },
     include: {
       settings: true,
-      channels: true,
+      staffRoles: true,
     },
   });
 

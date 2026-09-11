@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma, StaffPermission, AuditAction } from '@repo/database';
 import { AuthService } from '@/lib/auth';
-import { StaffPermissionLevel, AuditAction } from '@repo/database';
 import { logDashboardAudit } from '@/lib/auditLogger';
 import { z } from 'zod';
 
 const staffSchema = z.object({
-  roleId: z.string(),
-  roleName: z.string(),
-  permissionLevel: z.enum(['HIGH_COMMAND', 'ROLE_REQUEST_MANAGER']),
+  roleId: z.string().min(1),
+  roleName: z.string().min(1),
+  roleColor: z.string().optional().default('#5865F2'),
+  permissions: z.array(z.nativeEnum(StaffPermission)).min(1),
 });
 
 export async function GET(request: Request, { params }: { params: { guildId: string } }) {
@@ -19,11 +19,12 @@ export async function GET(request: Request, { params }: { params: { guildId: str
 
   const { guildId } = params;
 
-  const staffPermissions = await prisma.staffPermission.findMany({
+  const staffRoles = await prisma.staffRole.findMany({
     where: { guildId },
+    orderBy: { createdAt: 'desc' },
   });
 
-  return NextResponse.json(staffPermissions);
+  return NextResponse.json(staffRoles);
 }
 
 export async function POST(request: Request, { params }: { params: { guildId: string } }) {
@@ -41,24 +42,25 @@ export async function POST(request: Request, { params }: { params: { guildId: st
   }
 
   const data = validation.data;
-  const permLevel = data.permissionLevel as StaffPermissionLevel;
 
-  const staffPerm = await prisma.staffPermission.upsert({
+  const staffRole = await prisma.staffRole.upsert({
     where: {
-      guildId_roleId_permissionLevel: {
+      guildId_roleId: {
         guildId,
         roleId: data.roleId,
-        permissionLevel: permLevel,
       },
     },
     update: {
       roleName: data.roleName,
+      roleColor: data.roleColor,
+      permissions: data.permissions,
     },
     create: {
       guildId,
       roleId: data.roleId,
       roleName: data.roleName,
-      permissionLevel: permLevel,
+      roleColor: data.roleColor,
+      permissions: data.permissions,
     },
   });
 
@@ -66,16 +68,16 @@ export async function POST(request: Request, { params }: { params: { guildId: st
     guildId,
     user.discordId,
     `${user.username}#${user.discriminator}`,
-    AuditAction.PERMISSION_CHANGED,
+    AuditAction.STAFF_UPDATED,
     {
       roleId: data.roleId,
       roleName: data.roleName,
-      permissionLevel: permLevel,
-      actionType: 'ADD',
+      permissions: data.permissions,
+      actionType: 'UPSERT',
     }
   );
 
-  return NextResponse.json(staffPerm);
+  return NextResponse.json(staffRole);
 }
 
 export async function DELETE(request: Request, { params }: { params: { guildId: string } }) {
@@ -89,10 +91,10 @@ export async function DELETE(request: Request, { params }: { params: { guildId: 
   const id = searchParams.get('id');
 
   if (!id) {
-    return NextResponse.json({ error: 'Missing permission ID' }, { status: 400 });
+    return NextResponse.json({ error: 'Missing staff role ID' }, { status: 400 });
   }
 
-  const deleted = await prisma.staffPermission.delete({
+  const deleted = await prisma.staffRole.delete({
     where: { id },
   });
 
@@ -100,14 +102,13 @@ export async function DELETE(request: Request, { params }: { params: { guildId: 
     guildId,
     user.discordId,
     `${user.username}#${user.discriminator}`,
-    AuditAction.PERMISSION_CHANGED,
+    AuditAction.STAFF_UPDATED,
     {
       roleId: deleted.roleId,
       roleName: deleted.roleName,
-      permissionLevel: deleted.permissionLevel,
-      actionType: 'REMOVE',
+      actionType: 'DELETE',
     }
   );
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json(deleted);
 }

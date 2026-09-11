@@ -5,55 +5,43 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
   LayoutDashboard,
-  ClipboardList,
-  ShieldCheck,
-  Hash,
-  Users,
-  Palette,
-  Settings,
-  BarChart3,
-  ScrollText,
-  User,
-  Zap,
-  Trophy,
-  UserPlus,
   ShieldAlert,
+  ShieldCheck,
+  ScrollText,
+  AlertTriangle,
+  Hash,
+  Radio,
+  FileText,
+  Users,
+  Settings,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navGroups = [
   {
-    title: 'CORE MODULES',
+    title: 'MODERATION & SECURITY',
     items: [
       { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-      { name: 'Event Signups', href: '/events', icon: Trophy, badge: 'Module 1' },
-      { name: 'Role Requests', href: '/applications', icon: ClipboardList, badge: 'Module 2' },
-      { name: 'Welcome System', href: '/welcome', icon: UserPlus, badge: 'Module 3' },
-      { name: 'Moderation Hub', href: '/moderation', icon: ShieldAlert, badge: 'Module 4' },
-      { name: 'Promotions', href: '/promotions', icon: Trophy, badge: 'Module 5' },
+      { name: 'Moderation Hub', href: '/moderation', icon: ShieldAlert },
+      { name: 'Cases Ledger', href: '/moderation/cases', icon: ScrollText },
+      { name: 'Warnings & Escalation', href: '/moderation/warnings', icon: AlertTriangle },
+      { name: 'AutoMod & Anti-Raid', href: '/automod', icon: ShieldCheck },
+      { name: 'Channel Controls', href: '/channels', icon: Hash },
     ],
   },
   {
-    title: 'MODULE 2 CONFIG & TOOLS',
+    title: 'LOGGING & AUDITING',
     items: [
-      { name: 'Requestable Roles', href: '/roles', icon: ShieldCheck },
-      { name: 'Panel Embed Builder', href: '/embed-builder', icon: Palette },
+      { name: 'Log Routing & Forum', href: '/logs', icon: Radio },
+      { name: 'Audit Trail', href: '/audit-logs', icon: FileText },
     ],
   },
   {
-    title: 'COMMON SERVER SETTINGS',
+    title: 'ADMINISTRATION',
     items: [
-      { name: 'Guild Settings', href: '/settings', icon: Settings },
-      { name: 'Channel Routes', href: '/channels', icon: Hash },
-      { name: 'Staff Permissions', href: '/staff', icon: Users },
-    ],
-  },
-  {
-    title: 'SYSTEM LOGS & PROFILE',
-    items: [
-      { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-      { name: 'Audit Logs', href: '/logs', icon: ScrollText },
-      { name: 'Profile', href: '/profile', icon: User },
+      { name: 'Staff & Permissions', href: '/staff', icon: Users },
+      { name: 'Server Settings', href: '/settings', icon: Settings },
     ],
   },
 ];
@@ -66,14 +54,14 @@ export function Sidebar() {
   return (
     <aside className="w-64 bg-card border-r border-border/80 min-h-screen flex flex-col justify-between p-4 sticky top-0 h-screen z-30 shadow-2xl overflow-y-auto">
       <div className="space-y-5">
-        {/* SMCore Brand Header */}
+        {/* Brand Header */}
         <div className="flex items-center gap-3 px-3 py-3 border-b border-border/60">
           <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-primary/50 shadow-lg shadow-primary/30 flex items-center justify-center bg-black/50">
             <img src="/logo.png" alt="SMCORE Logo" className="w-full h-full object-cover" />
           </div>
           <div>
             <h1 className="font-extrabold text-white text-lg tracking-wider leading-none">SMCORE</h1>
-            <span className="text-[10px] text-primary font-bold tracking-widest uppercase">System Hub</span>
+            <span className="text-[10px] text-primary font-bold tracking-widest uppercase">Moderation SaaS</span>
           </div>
         </div>
 
@@ -88,7 +76,7 @@ export function Sidebar() {
               <div className="space-y-1">
                 {group.items.map((item) => {
                   const Icon = item.icon;
-                  const isActive = pathname === item.href;
+                  const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
                   const fullHref = guildId ? `${item.href}?guildId=${guildId}` : item.href;
 
                   return (
@@ -111,15 +99,6 @@ export function Sidebar() {
                         />
                         <span>{item.name}</span>
                       </div>
-
-                      {item.badge && (
-                        <span className={cn(
-                          'text-[9px] px-1.5 py-0.5 rounded-full font-extrabold uppercase',
-                          isActive ? 'bg-white/20 text-white' : 'bg-primary/20 text-primary'
-                        )}>
-                          {item.badge}
-                        </span>
-                      )}
                     </Link>
                   );
                 })}
@@ -129,13 +108,13 @@ export function Sidebar() {
         </nav>
       </div>
 
-      {/* Footer Info */}
+      {/* Footer */}
       <div className="p-3 bg-secondary/40 border border-border/50 rounded-xl text-center mt-4">
         <div className="flex items-center justify-center gap-1.5 text-xs text-primary font-bold mb-0.5">
           <Zap className="w-3.5 h-3.5 fill-current" />
-          <span>SMCore Platform v14.2</span>
+          <span>SMCore Security Suite</span>
         </div>
-        <p className="text-[10px] text-gray-500">Enterprise Bot & Dashboard</p>
+        <p className="text-[10px] text-gray-500">Discord Moderation Platform</p>
       </div>
     </aside>
   );

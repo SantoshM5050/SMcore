@@ -53,7 +53,7 @@ export default function TermsOfServicePage() {
               <span className="text-purple-400">2.</span> Description of Service
             </h2>
             <p className="text-sm text-gray-300 leading-relaxed">
-              SMCore provides gaming server management, automated role application forms, staff approval pipelines, audit logging, and custom panel embed features for Discord servers.
+              SMCore provides gaming server management, interactive event signups, automated welcome greetings, comprehensive moderation tools, and Grand RP promotion tracking for Discord servers.
             </p>
           </section>
 
@@ -89,7 +89,7 @@ export default function TermsOfServicePage() {
               <span className="text-purple-400">4.</span> User Conduct & Misuse
             </h2>
             <p className="text-sm text-gray-300 leading-relaxed">
-              You agree not to exploit, spam, attempt unauthorized database access, or use automated scripts to manipulate role request forms or dashboard endpoints. Server administrators reserve the right to blacklist users from role requests at their discretion.
+              You agree not to exploit, spam, attempt unauthorized database access, or use automated scripts to manipulate bot interactions or dashboard endpoints. Server administrators reserve the right to restrict users at their discretion.
             </p>
           </section>
 
