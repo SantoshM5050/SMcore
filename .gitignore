@@ -4,6 +4,10 @@
 .env.*
 !.env.example
 
+# Design & Documentation References (Local Only)
+stitch/
+SMCore_Master_Product_Docs.md
+
 # Dependencies
 node_modules/
 
