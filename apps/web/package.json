@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "echo \"Web package verified\""
+    "test": "node --test __tests__/**/*.test.mjs"
   },
   "dependencies": {
     "@smcore/database": "*",

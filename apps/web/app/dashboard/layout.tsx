@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import { GuildProvider } from '@/lib/context/guildContext';
 import { Sidebar } from '@/components/sidebar';
 import { Topbar } from '@/components/topbar';
 
@@ -8,14 +11,16 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-background text-text-primary">
-      <Sidebar />
-      <div className="flex flex-col pl-64">
-        <Topbar />
-        <main className="flex-1 p-8">
-          <div className="mx-auto max-w-7xl">{children}</div>
-        </main>
+    <GuildProvider>
+      <div className="min-h-screen bg-surface text-on-surface">
+        <Sidebar />
+        <div className="pl-72">
+          <Topbar />
+          <main className="relative w-full pt-16 bg-surface min-h-[calc(100vh-4rem)]">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </GuildProvider>
   );
 }

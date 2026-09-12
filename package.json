@@ -16,7 +16,7 @@
     "build:web": "npm run build --workspace=apps/web",
     "build": "npm run build:packages && npm run build:bot && npm run build:web",
     "lint": "npm run lint --workspace=packages/shared && npm run lint --workspace=packages/database && npm run lint --workspace=apps/bot && npm run lint --workspace=apps/web",
-    "test": "npm run test --workspace=packages/shared && npm run test --workspace=packages/database && npm run test --workspace=apps/bot",
+    "test": "npm run test --workspace=packages/shared && npm run test --workspace=packages/database && npm run test --workspace=apps/bot && npm run test --workspace=apps/web",
     "db:generate": "npm run generate --workspace=packages/database",
     "db:push": "npm run db:push --workspace=packages/database",
     "db:migrate": "npm run db:migrate --workspace=packages/database",

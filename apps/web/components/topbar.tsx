@@ -1,41 +1,94 @@
+'use client';
+
 import React from 'react';
-import { ChevronDown, Search, Server, User } from 'lucide-react';
+import { useGuild } from '../lib/context/guildContext';
 
 export function Topbar() {
+  const { selectedGuildId, availableGuilds, health, isDbOffline } = useGuild();
+  const currentGuild = availableGuilds.find((g) => g.id === selectedGuildId) || {
+    name: 'Apex Network',
+    id: selectedGuildId,
+  };
+
   return (
-    <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-outline-variant bg-surface/80 px-6 backdrop-blur-md">
-      {/* Guild Selector (Placeholder) */}
-      <div className="flex items-center gap-3">
-        <button className="flex items-center gap-2.5 rounded-lg border border-outline-variant bg-surface-container px-3 py-1.5 text-xs font-medium text-text-primary hover:bg-surface-container-high transition-colors">
-          <Server className="h-4 w-4 text-primary" />
-          <span>Select Discord Server</span>
-          <ChevronDown className="h-3.5 w-3.5 text-text-muted" />
-        </button>
-      </div>
+    <header className="fixed top-0 left-72 right-0 h-16 bg-surface/85 backdrop-blur-xl z-40 border-b border-outline-variant/30 shadow-[0_1px_12px_rgba(0,0,0,0.35)]">
+      <div className="h-16 w-full px-6 flex items-center justify-between">
+        {/* Left Telemetry Strip */}
+        <div className="flex items-center gap-4">
+          {/* Bot Gateway Telemetry */}
+          <div
+            className={`flex items-center gap-2 font-mono text-[11px] px-2.5 py-1 rounded-full border ${
+              health.bot === 'online'
+                ? 'bg-tertiary-container/20 text-tertiary border-tertiary/30'
+                : 'bg-error-container/20 text-error border-error/30'
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                health.bot === 'online' ? 'bg-tertiary animate-pulse' : 'bg-error'
+              }`}
+            />
+            <span>Bot Gateway: {health.bot === 'online' ? 'Online' : 'Standby'}</span>
+            <span className="text-outline-variant">•</span>
+            <span>{health.pingMs}ms</span>
+            <span className="text-outline-variant">•</span>
+            <span>v1.0.0</span>
+          </div>
 
-      {/* Center Search / Command bar */}
-      <div className="relative hidden w-96 md:block">
-        <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-muted" />
-        <input
-          type="text"
-          placeholder="Quick search or press ⌘K..."
-          readOnly
-          className="w-full rounded-md border border-outline-variant bg-surface-container py-1.5 pl-9 pr-8 text-xs text-text-primary placeholder:text-text-muted focus:outline-none"
-        />
-        <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-outline-variant bg-surface px-1.5 text-[10px] text-text-muted">
-          ⌘K
-        </kbd>
-      </div>
+          {/* Database Health Pill */}
+          <div
+            className={`hidden sm:flex items-center gap-1.5 font-mono text-[11px] px-2.5 py-1 rounded-full border ${
+              !isDbOffline && health.db === 'connected'
+                ? 'bg-tertiary-container/20 text-tertiary border-tertiary/30'
+                : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+            }`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                !isDbOffline && health.db === 'connected' ? 'bg-tertiary' : 'bg-amber-400'
+              }`}
+            />
+            <span>DB: {!isDbOffline && health.db === 'connected' ? 'Connected' : 'Offline Mode'}</span>
+          </div>
 
-      {/* Right User & Status */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 rounded-full border border-outline-variant bg-surface-container px-2.5 py-1 text-xs">
-          <span className="h-2 w-2 rounded-full bg-status-success animate-pulse" />
-          <span className="text-[11px] font-medium text-text-secondary">Bot Gateway Active</span>
+          {/* Current Guild Breadcrumb */}
+          <div className="hidden xl:flex items-center gap-2 text-xs text-outline">
+            <span className="material-symbols-outlined text-[16px]">dns</span>
+            <span className="text-on-surface font-semibold truncate max-w-[150px]">{currentGuild.name}</span>
+            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+            <span className="text-on-surface-variant font-mono text-[11px]">Operations Portal</span>
+          </div>
         </div>
 
-        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-outline-variant bg-surface-container text-text-secondary">
-          <User className="h-4 w-4" />
+        {/* Right Action Icons & Status */}
+        <div className="flex items-center gap-3">
+          {isDbOffline && (
+            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-300 text-[11px] border border-amber-500/30">
+              <span className="material-symbols-outlined text-[15px]">info</span>
+              <span>PostgreSQL Local Offline (Memory-Safe Fallback)</span>
+            </div>
+          )}
+
+          {/* Docs Link */}
+          <a
+            href="https://github.com/SantoshM5050/SMcore"
+            target="_blank"
+            rel="noreferrer"
+            className="px-2.5 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface flex items-center gap-1.5 text-xs transition-colors"
+          >
+            <span className="material-symbols-outlined text-[16px]">menu_book</span>
+            <span className="hidden lg:inline">Docs</span>
+          </a>
+
+          <div className="w-px h-5 bg-surface-container-highest mx-1 hidden sm:block" />
+
+          {/* User Profile Avatar */}
+          <div className="flex items-center gap-2 pl-1">
+            <div className="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-xs ring-1 ring-primary/40">
+              AV
+            </div>
+            <span className="text-xs font-semibold text-on-surface hidden md:inline">Alex Vance</span>
+          </div>
         </div>
       </div>
     </header>
