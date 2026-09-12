@@ -25,6 +25,9 @@ model Guild {
   escalationRules     WarningEscalationRule[]
   memberNotes         MemberNote[]
   auditLogs           AuditLog[]
+  ticketSettings      GuildTicketSettings?
+  ticketCategories    TicketCategory[]
+  tickets             Ticket[]
 
   @@index([ownerId])
   @@map("guilds")
@@ -243,5 +246,86 @@ model AuditLog {
   @@index([guildId, targetUserId])
   @@index([caseId])
   @@map("audit_logs")
+}
+
+model GuildTicketSettings {
+  id                        String   @id @default(cuid())
+  guildId                   String   @unique
+  guild                     Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  enabled                   Boolean  @default(true)
+  ticketCategoryChannelId   String?  // Discord Category Channel ID
+  ticketLogChannelId        String?  // Discord Channel ID
+  transcriptChannelId       String?  // Discord Channel ID
+  supportRoleIds            String[] @default([])
+  maxOpenTicketsPerUser     Int      @default(3)
+  cooldownSeconds           Int      @default(60)
+  autoCloseEnabled          Boolean  @default(false)
+  autoCloseHours            Int      @default(24)
+  allowUserClose            Boolean  @default(true)
+  allowReopen               Boolean  @default(true)
+  deleteAfterClose          Boolean  @default(false)
+  transcriptEnabled         Boolean  @default(true)
+
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  @@index([guildId])
+  @@map("guild_ticket_settings")
+}
+
+model TicketCategory {
+  id                  String   @id @default(cuid())
+  guildId             String
+  guild               Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  name                String
+  description         String?
+  emoji               String?
+  supportRoleId       String?
+  categoryChannelId   String?  // Optional override for Discord category channel
+  enabled             Boolean  @default(true)
+
+  tickets             Ticket[]
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([guildId, name])
+  @@index([guildId])
+  @@map("ticket_categories")
+}
+
+model Ticket {
+  id              String          @id @default(cuid())
+  guildId         String
+  guild           Guild           @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  channelId       String          // Discord Channel ID
+  ticketNumber    Int
+  categoryId      String?
+  category        TicketCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  creatorUserId   String          // Discord Snowflake ID
+  claimedByUserId String?         // Discord Snowflake ID
+  status          String          @default("OPEN") // OPEN, CLAIMED, CLOSED, REOPENED
+  subject         String?
+  closedByUserId  String?
+  closedAt        DateTime?
+  lastActivityAt  DateTime        @default(now())
+  participants    String[]        @default([])
+  transcriptUrl   String?
+  metadata        Json?
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([guildId, ticketNumber])
+  @@index([guildId])
+  @@index([guildId, status])
+  @@index([guildId, creatorUserId])
+  @@index([channelId])
+  @@index([categoryId])
+  @@map("tickets")
 }
 

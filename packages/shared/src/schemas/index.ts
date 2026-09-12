@@ -11,6 +11,8 @@ import {
   AuditEventType,
   AuditAction,
   AuditTargetType,
+  TicketStatus,
+  TicketAction,
 } from '../enums';
 
 export const SnowflakeSchema = z
@@ -314,4 +316,72 @@ export const AuditLogQuerySchema = z.object({
   to: z.coerce.date().optional(),
 });
 export type AuditLogQuery = z.infer<typeof AuditLogQuerySchema>;
+
+// Phase 6 Premium Ticketing System Schemas
+
+export const TicketStatusSchema = z.nativeEnum(TicketStatus);
+export const TicketActionSchema = z.nativeEnum(TicketAction);
+
+export const GuildTicketSettingsSchema = z.object({
+  guildId: SnowflakeSchema,
+  enabled: z.boolean().default(true),
+  ticketCategoryChannelId: SnowflakeSchema.nullable().optional(),
+  ticketLogChannelId: SnowflakeSchema.nullable().optional(),
+  transcriptChannelId: SnowflakeSchema.nullable().optional(),
+  supportRoleIds: z.array(SnowflakeSchema).default([]),
+  maxOpenTicketsPerUser: z.number().int().min(1).max(20).default(3),
+  cooldownSeconds: z.number().int().min(0).max(3600).default(60),
+  autoCloseEnabled: z.boolean().default(false),
+  autoCloseHours: z.number().int().min(1).max(720).default(24),
+  allowUserClose: z.boolean().default(true),
+  allowReopen: z.boolean().default(true),
+  deleteAfterClose: z.boolean().default(false),
+  transcriptEnabled: z.boolean().default(true),
+});
+export type GuildTicketSettings = z.infer<typeof GuildTicketSettingsSchema>;
+
+export const GuildTicketSettingsUpdateSchema = GuildTicketSettingsSchema.omit({
+  guildId: true,
+}).partial();
+export type GuildTicketSettingsUpdate = z.infer<typeof GuildTicketSettingsUpdateSchema>;
+
+export const TicketCategoryCreateSchema = z.object({
+  name: z.string().trim().min(1).max(50),
+  description: z.string().trim().max(200).optional(),
+  emoji: z.string().trim().max(32).optional(),
+  supportRoleId: SnowflakeSchema.optional(),
+  categoryChannelId: SnowflakeSchema.optional(),
+  enabled: z.boolean().optional().default(true),
+});
+export type TicketCategoryCreate = z.input<typeof TicketCategoryCreateSchema>;
+
+export const TicketCategoryUpdateSchema = TicketCategoryCreateSchema.partial();
+export type TicketCategoryUpdate = z.infer<typeof TicketCategoryUpdateSchema>;
+
+export const TicketCreateSchema = z.object({
+  categoryId: z.string().optional(),
+  subject: z.string().trim().max(250).optional(),
+});
+export type TicketCreate = z.infer<typeof TicketCreateSchema>;
+
+export const TicketAddUserSchema = z.object({
+  userId: SnowflakeSchema,
+});
+export type TicketAddUser = z.infer<typeof TicketAddUserSchema>;
+
+export const TicketRenameSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+});
+export type TicketRename = z.infer<typeof TicketRenameSchema>;
+
+export const TicketFilterQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  pageSize: z.coerce.number().int().positive().max(100).default(25),
+  status: TicketStatusSchema.optional(),
+  categoryId: z.string().optional(),
+  creatorUserId: SnowflakeSchema.optional(),
+  claimedByUserId: SnowflakeSchema.optional(),
+  search: z.string().trim().optional(),
+});
+export type TicketFilterQuery = z.infer<typeof TicketFilterQuerySchema>;
 

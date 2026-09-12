@@ -16,6 +16,7 @@ import {
   eventBus,
   ModerationEventPayload,
   SecurityEventPayload,
+  TicketEventPayload,
 } from '../events/eventBus';
 import { logger } from '../../utils/logger';
 
@@ -45,6 +46,10 @@ export class AuditLogService {
 
     eventBus.on('security.alert', async (payload: SecurityEventPayload) => {
       await this.handleSecurityEvent(payload).catch(() => null);
+    });
+
+    eventBus.on('ticket.event', async (payload: TicketEventPayload) => {
+      await this.handleTicketEvent(payload).catch(() => null);
     });
 
     this.initialized = true;
@@ -275,13 +280,33 @@ export class AuditLogService {
       guildId: payload.guildId,
       eventType,
       action,
-      actorUserId: 'SECURITY_ENGINE',
       targetUserId: payload.targetUserId,
       targetType: AuditTargetType.USER,
       reason: payload.reason,
       metadata: {
         riskLevel: payload.riskLevel,
+        securityEventType: payload.eventType,
         securityAction: payload.action,
+        ...payload.metadata,
+      },
+    });
+  }
+
+  private static async handleTicketEvent(
+    payload: TicketEventPayload
+  ): Promise<void> {
+    await this.createAuditLog({
+      guildId: payload.guildId,
+      eventType: payload.eventType,
+      action: payload.action,
+      actorUserId: payload.actorUserId,
+      targetUserId: payload.targetUserId,
+      targetType: AuditTargetType.TICKET,
+      channelId: payload.channelId,
+      reason: payload.reason,
+      metadata: {
+        ticketId: payload.ticketId,
+        ticketNumber: payload.ticketNumber,
         ...payload.metadata,
       },
     });

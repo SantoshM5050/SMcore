@@ -1,7 +1,8 @@
 import { Collection } from 'discord.js';
 import { moderationCommands, CommandHandler } from './moderationCommands';
+import { ticketCommand } from './ticketCommands';
 
-export const commandList = [...moderationCommands];
+export const commandList = [...moderationCommands, ticketCommand];
 
 export const commands = new Collection<string, CommandHandler>();
 
@@ -10,3 +11,4 @@ for (const cmd of commandList) {
 }
 
 export * from './moderationCommands';
+export * from './ticketCommands';

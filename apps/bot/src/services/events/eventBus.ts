@@ -44,11 +44,25 @@ export interface SecurityEventPayload {
   metadata?: Record<string, unknown>;
 }
 
+export interface TicketEventPayload {
+  guildId: string;
+  eventType: AuditEventType;
+  action: AuditAction;
+  actorUserId?: string;
+  targetUserId?: string;
+  channelId?: string;
+  ticketId?: string;
+  ticketNumber?: number;
+  reason?: string;
+  metadata?: Record<string, unknown>;
+}
+
 export interface SMCoreEvents {
   'audit.log': AuditLogCreate;
   'moderation.action': ModerationEventPayload;
   'automod.violation': AutoModEventPayload;
   'security.alert': SecurityEventPayload;
+  'ticket.event': TicketEventPayload;
 }
 
 export class SMCoreEventBus extends EventEmitter {
