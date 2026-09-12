@@ -1,256 +1,63 @@
-import http from 'node:http';
-import dns from 'node:dns';
-import { Events } from 'discord.js';
-import { botClient, resetBotClient } from './client';
 import { config } from './config';
-import { onReady } from './events/ready';
-import { onInteractionCreate } from './events/interactionCreate';
-import { onGuildCreate } from './events/guildCreate';
-import { onGuildDelete } from './events/guildDelete';
-import { onGuildMemberAdd } from './events/guildMemberAdd';
-import { onGuildMemberRemove } from './events/guildMemberRemove';
-import { onGuildMemberUpdate } from './events/guildMemberUpdate';
-import { onVoiceStateUpdate } from './events/voiceStateUpdate';
-import { onMessageCreate } from './events/messageCreate';
-import { onMessageDelete } from './events/messageDelete';
-import { onMessageUpdate } from './events/messageUpdate';
-import { onGuildBanAdd, onGuildBanRemove } from './events/guildBanEvents';
-import { onChannelCreate, onChannelDelete, onChannelUpdate } from './events/channelEvents';
-import { onRoleCreate, onRoleDelete, onRoleUpdate } from './events/roleEvents';
-import { onGuildUpdate } from './events/guildUpdate';
+import { createDiscordClient } from './discord/client';
+import { registerReadyEvent } from './events/ready';
+import { startHealthServer } from './services/health';
+import { logger } from './utils/logger';
 
-// Force DNS resolution to prefer IPv4 first (bypasses IPv6 connect timeouts on Render/Linux)
-if (dns && dns.setDefaultResultOrder) {
-  dns.setDefaultResultOrder('ipv4first');
-}
+async function main(): Promise<void> {
+  logger.info({ nodeEnv: config.NODE_ENV }, 'Starting SMCore Bot Service...');
 
-let lastLoginError: string | null = null;
-let isLoggingIn = false;
-let lastLoginAttemptTime = 0;
-let useMinimalIntents = false;
-const PORT = Number(process.env.PORT || process.env.BOT_PORT) || 3001;
+  // Start health server for uptime checks
+  const healthServer = startHealthServer(config.BOT_PORT);
 
-function attachClientListeners(client: typeof botClient) {
-  client.removeAllListeners();
-  client.once(Events.ClientReady, (c) => {
-    isLoggingIn = false;
-    lastLoginError = null;
-    onReady(c);
-  });
-  client.on(Events.InteractionCreate, onInteractionCreate);
-  client.on(Events.GuildCreate, onGuildCreate);
-  client.on(Events.GuildDelete, onGuildDelete);
-  client.on(Events.GuildMemberAdd, onGuildMemberAdd);
-  client.on(Events.GuildMemberRemove, onGuildMemberRemove);
-  client.on(Events.GuildMemberUpdate, onGuildMemberUpdate);
-  client.on(Events.VoiceStateUpdate, onVoiceStateUpdate);
-  client.on(Events.MessageCreate, onMessageCreate);
-  client.on(Events.MessageDelete, onMessageDelete);
-  client.on(Events.MessageUpdate, onMessageUpdate);
-  client.on(Events.GuildBanAdd, onGuildBanAdd);
-  client.on(Events.GuildBanRemove, onGuildBanRemove);
-  client.on(Events.ChannelCreate, onChannelCreate);
-  client.on(Events.ChannelDelete, onChannelDelete);
-  client.on(Events.ChannelUpdate, onChannelUpdate);
-  client.on(Events.GuildRoleCreate, onRoleCreate);
-  client.on(Events.GuildRoleDelete, onRoleDelete);
-  client.on(Events.GuildRoleUpdate, onRoleUpdate);
-  client.on(Events.GuildUpdate, onGuildUpdate);
+  // Initialize Discord client
+  const client = createDiscordClient();
+  registerReadyEvent(client);
 
-  client.on(Events.Error, (error: any) => {
-    console.error('🔴 Discord Client Error:', error);
-    lastLoginError = error.message || String(error);
-  });
-
-  client.on(Events.ShardDisconnect, (event: any, id: number) => {
-    const reason = event ? event.reason || `code ${event.code}` : 'Unknown';
-    console.warn(`⚠️ Discord Shard ${id} disconnected: ${reason}`);
-    lastLoginError = `Shard ${id} disconnected (${reason})`;
-    isLoggingIn = false;
-  });
-
-  client.on(Events.ShardReconnecting, (id: number) => {
-    console.log(`🔄 Discord Shard ${id} reconnecting...`);
-  });
-}
-
-function doLogin() {
-  const rawToken = process.env.DISCORD_BOT_TOKEN || config.token || '';
-  const token = rawToken.trim().replace(/^["']|["']$/g, '').trim();
-
-  if (!token || token === 'YOUR_DISCORD_BOT_TOKEN') {
-    lastLoginError = !token
-      ? 'DISCORD_BOT_TOKEN is missing or empty in environment'
-      : 'DISCORD_BOT_TOKEN is still set to placeholder YOUR_DISCORD_BOT_TOKEN in .env';
-    console.warn(`⚠️ Discord Bot login skipped: ${lastLoginError}. Set your real Discord Bot Token in .env to connect.`);
-    return;
-  }
-
-  if (botClient && botClient.isReady()) {
-    isLoggingIn = false;
-    lastLoginError = null;
-    return;
-  }
-
-  const currentStatus = botClient && botClient.ws ? botClient.ws.status : 5;
-  if (currentStatus === 0 || currentStatus === 1 || currentStatus === 2 || currentStatus === 4) {
-    console.log(`⏳ Discord Client status is ${currentStatus}, letting connection proceed...`);
-    return;
-  }
-
-  const now = Date.now();
-  if (now - lastLoginAttemptTime < 45000) {
-    console.log(`⏳ Login cooldown active (Gateway Status: ${currentStatus}). Waiting for cooldown...`);
-    return;
-  }
-
-  if (isLoggingIn) {
-    console.log(`⏳ Login attempt already in progress (Gateway Status: ${currentStatus})...`);
-    return;
-  }
-
-  isLoggingIn = true;
-  lastLoginAttemptTime = now;
-  console.log(`🔑 Initiating Discord Gateway login (Gateway Status: ${currentStatus}, minimalIntents: ${useMinimalIntents})...`);
-
-  const activeClient = resetBotClient(useMinimalIntents);
-  attachClientListeners(activeClient);
-
-  setTimeout(() => {
-    if (!activeClient.isReady()) {
-      isLoggingIn = false;
+  // Graceful shutdown handling
+  const shutdown = async (signal: string) => {
+    logger.info({ signal }, 'Shutting down SMCore Bot gracefully...');
+    healthServer.close();
+    try {
+      await client.destroy();
+      logger.info('Discord client disconnected successfully');
+    } catch (err) {
+      logger.error({ err }, 'Error disconnecting Discord client');
     }
-  }, 30000);
+    process.exit(0);
+  };
 
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+
+  process.on('unhandledRejection', (reason) => {
+    logger.error({ reason }, 'Unhandled Promise Rejection in bot runtime');
+  });
+
+  process.on('uncaughtException', (error) => {
+    logger.fatal({ err: error }, 'Uncaught Exception in bot runtime');
+    process.exit(1);
+  });
+
+  // Safe login
   try {
-    const loginPromise = activeClient.login(token);
-    loginPromise
-      .then(() => {
-        isLoggingIn = false;
-        lastLoginError = null;
-        console.log('✅ botClient.login() promise resolved successfully.');
-      })
-      .catch((err: any) => {
-        isLoggingIn = false;
-        const errStr = err.message || String(err);
-        lastLoginError = errStr;
-        console.error('❌ Failed to log in to Discord API:', errStr);
-
-        if (!useMinimalIntents && (errStr.includes('Disallowed') || errStr.includes('intent') || errStr.includes('4014'))) {
-          console.warn('⚠️ Privileged Intents rejected. Retrying login with minimal intents...');
-          useMinimalIntents = true;
-          lastLoginAttemptTime = 0;
-          setTimeout(doLogin, 5000);
-        }
-      });
-  } catch (syncErr: any) {
-    isLoggingIn = false;
-    lastLoginError = `Sync error: ${syncErr.message || String(syncErr)}`;
-    console.error('❌ Synchronous login error:', lastLoginError);
+    logger.info('Authenticating Discord client with Discord Gateway...');
+    await client.login(config.DISCORD_BOT_TOKEN);
+  } catch (error: any) {
+    if (error?.code === 'DisallowedIntents') {
+      logger.fatal(
+        'Privileged Gateway Intents not enabled in Discord Developer Portal! Please enable "Message Content" and "Server Members" intents in your application settings.'
+      );
+    } else {
+      logger.fatal({ err: error }, 'Failed to login to Discord');
+    }
+    process.exit(1);
   }
 }
 
-// Pure in-memory HTTP Health Check Server
-const server = http.createServer((req, res) => {
-  const method = req.method?.toUpperCase();
-
-  if (method === 'GET' || method === 'HEAD') {
-    res.writeHead(200, {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-    });
-
-    if (method === 'HEAD') {
-      res.end();
-      return;
-    }
-
-    const rawToken = (process.env.DISCORD_BOT_TOKEN || config.token || '').trim().replace(/^["']|["']$/g, '');
-    const isTokenConfigured = Boolean(rawToken && rawToken !== 'YOUR_DISCORD_BOT_TOKEN');
-    const isReady = botClient ? botClient.isReady() : false;
-    const wsStatus = botClient && botClient.ws ? botClient.ws.status : -1;
-
-    let discordReason = isReady ? 'Connected' : 'Not Connected';
-    if (!isReady) {
-      if (!isTokenConfigured) {
-        discordReason = !rawToken
-          ? 'DISCORD_BOT_TOKEN environment variable is missing'
-          : 'DISCORD_BOT_TOKEN is still set to placeholder YOUR_DISCORD_BOT_TOKEN in .env';
-      } else if (lastLoginError) {
-        discordReason = `Login status: ${lastLoginError}`;
-      } else {
-        discordReason = `Gateway status: ${wsStatus} (0=Ready, 1=Connecting, 2=Reconnecting, 5=Disconnected)`;
-      }
-    }
-
-    res.end(
-      JSON.stringify({
-        status: 'ok',
-        service: 'SMCore Bot',
-        discord: isReady,
-        discordReason,
-        tokenConfigured: isTokenConfigured,
-        tokenLength: isTokenConfigured ? rawToken.length : 0,
-        wsStatus,
-        lastError: lastLoginError,
-        uptime: Math.floor(process.uptime()),
-        timestamp: new Date().toISOString(),
-      })
-    );
-    return;
-  }
-
-  if (method === 'OPTIONS') {
-    res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-    });
-    res.end();
-    return;
-  }
-
-  res.writeHead(404, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ error: 'Not Found' }));
-});
-
-server.on('error', (err: any) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`❌ HTTP Health Server Error: Port ${PORT} is already in use.`);
-  } else {
-    console.error('❌ HTTP Health Server Error:', err);
-  }
-});
-
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 HTTP Health Server running on 0.0.0.0:${PORT}`);
-});
-
-process.on('unhandledRejection', (reason: any) => {
-  console.error('Unhandled Promise Rejection in Bot Process:', reason);
-});
-
-process.on('uncaughtException', (error: any) => {
-  console.error('Uncaught Exception in Bot Process:', error);
-});
-
-const gracefulShutdown = (signal: string) => {
-  console.log(`Received ${signal}. Shutting down gracefully...`);
-  server.close(() => {
-    console.log('HTTP health server closed.');
+if (require.main === module) {
+  main().catch((err) => {
+    logger.fatal({ err }, 'Fatal error starting SMCore bot');
+    process.exit(1);
   });
-  if (botClient) botClient.destroy();
-  process.exit(0);
-};
-
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-// Initial login attempt
-doLogin();
-
-// Heartbeat check every 60 seconds
-setInterval(() => {
-  if (botClient && !botClient.isReady()) {
-    doLogin();
-  }
-}, 60000);
+}

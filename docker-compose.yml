@@ -1,81 +1,47 @@
-version: '3.8'
-
 services:
-  nexus-postgres:
-    image: postgres:15-alpine
-    container_name: nexus-postgres
-    restart: always
+  postgres:
+    image: postgres:16-alpine
+    container_name: smcore-postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: nexus
+      POSTGRES_DB: smcore
+      POSTGRES_USER: smcore
+      POSTGRES_PASSWORD: smcore_dev_password
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U smcore -d smcore"]
+      interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - smcore-network
 
-  nexus-redis:
+  redis:
     image: redis:7-alpine
-    container_name: nexus-redis
-    restart: always
+    container_name: smcore-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
-
-  nexus-dashboard:
-    build:
-      context: .
-      dockerfile: Dockerfile.web
-    container_name: nexus-dashboard
-    restart: always
-    ports:
-      - "3000:3000"
-    environment:
-      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@nexus-postgres:5432/nexus?schema=public
-      - REDIS_URL=redis://nexus-redis:6379
-      - NODE_ENV=production
-      - NEXTAUTH_URL=http://localhost:3000
-      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
-      - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
-      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
-      - DISCORD_REDIRECT_URI=${DISCORD_REDIRECT_URI:-http://localhost:3000/api/auth/callback}
-      - SESSION_SECRET=${SESSION_SECRET:-super-secret-session-key-32-chars-long!}
-    depends_on:
-      nexus-postgres:
-        condition: service_healthy
-      nexus-redis:
-        condition: service_healthy
-
-  nexus-bot:
-    build:
-      context: .
-      dockerfile: Dockerfile.bot
-    container_name: nexus-bot
-    restart: always
-    environment:
-      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@nexus-postgres:5432/nexus?schema=public
-      - REDIS_URL=redis://nexus-redis:6379
-      - NODE_ENV=production
-      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
-      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
-      - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
-    depends_on:
-      nexus-postgres:
-        condition: service_healthy
-      nexus-redis:
-        condition: service_healthy
+    networks:
+      - smcore-network
 
 volumes:
   postgres_data:
+    driver: local
   redis_data:
+    driver: local
+
+networks:
+  smcore-network:
+    driver: bridge

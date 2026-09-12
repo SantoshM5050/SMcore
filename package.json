@@ -1,46 +1,33 @@
 {
-  "name": "smcore-discord-bot",
+  "name": "smcore",
   "version": "1.0.0",
   "private": true,
-  "description": "SMCore Discord Bot - Enterprise Server Management & Community Operations Platform",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/SantoshM5050/SMcore.git"
-  },
+  "description": "SMCore — Premium Discord Moderation & Community Management Platform",
   "workspaces": [
-    "packages/*",
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
-    "postinstall": "npm run build:db",
-    "dev:web": "npm run dev --workspace=apps/web",
     "dev:bot": "npm run dev --workspace=apps/bot",
-    "build:db": "npm run build --workspace=packages/database",
-    "build:web": "npm run build --workspace=apps/web",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev": "npm run dev:bot",
+    "build:packages": "npm run build --workspace=packages/shared && npm run build --workspace=packages/database",
     "build:bot": "npm run build --workspace=apps/bot",
-    "build:render:bot": "npm run build:db && npm run build:bot",
-    "start:web": "npm run start --workspace=apps/web",
-    "start:bot": "npm run start --workspace=apps/bot",
-    "start": "node scripts/start-all.js",
-    "build": "npm run build:db && npm run build:web && npm run build:bot",
-    "test": "node scripts/test-moderation.js",
-    "check:discord": "node scripts/verify-discord.js",
+    "build:web": "npm run build --workspace=apps/web",
+    "build": "npm run build:packages && npm run build:bot && npm run build:web",
+    "lint": "npm run lint --workspace=packages/shared && npm run lint --workspace=packages/database && npm run lint --workspace=apps/bot && npm run lint --workspace=apps/web",
+    "test": "npm run test --workspace=packages/shared && npm run test --workspace=packages/database && npm run test --workspace=apps/bot",
     "db:generate": "npm run generate --workspace=packages/database",
     "db:push": "npm run db:push --workspace=packages/database",
-    "db:seed": "npm run seed --workspace=packages/database",
-    "lint": "npm run lint --workspace=apps/web && npm run lint --workspace=apps/bot",
-    "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
+    "db:migrate": "npm run db:migrate --workspace=packages/database",
+    "db:studio": "npm run db:studio --workspace=packages/database"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
     "prettier": "^3.2.5",
-    "prisma": "^5.22.0",
     "typescript": "^5.3.3"
   },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "dependencies": {
-    "@prisma/client": "^5.22.0"
   }
 }

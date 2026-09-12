@@ -2,60 +2,58 @@
 module.exports = {
   darkMode: ['class'],
   content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './pages/**/*.{ts,tsx}',
+    './components/**/*.{ts,tsx}',
+    './app/**/*.{ts,tsx}',
+    './src/**/*.{ts,tsx}',
   ],
   theme: {
+    container: {
+      center: true,
+      padding: '2rem',
+      screens: {
+        '2xl': '1400px',
+      },
+    },
     extend: {
       colors: {
-        background: '#090a0f',
-        foreground: '#f3f4f6',
-        card: {
-          DEFAULT: '#11131c',
-          foreground: '#f3f4f6',
-        },
-        popover: {
-          DEFAULT: '#161925',
-          foreground: '#f3f4f6',
-        },
         primary: {
-          DEFAULT: '#5865F2',
-          hover: '#4752C4',
-          foreground: '#ffffff',
+          DEFAULT: '#c0c1ff',
+          foreground: '#1e1f25',
+          container: '#41427b',
         },
-        secondary: {
-          DEFAULT: '#1e2230',
-          foreground: '#9ca3af',
+        background: '#121318',
+        surface: {
+          DEFAULT: '#1e1f25',
+          container: '#292a2f',
+          high: '#34343a',
+          highest: '#3f4046',
         },
-        muted: {
-          DEFAULT: '#1a1d2b',
-          foreground: '#6b7280',
+        text: {
+          primary: '#e3e2e8',
+          secondary: '#c5c5d3',
+          muted: '#8e8ea0',
         },
-        accent: {
-          DEFAULT: '#262a3d',
-          foreground: '#ffffff',
+        outline: {
+          DEFAULT: '#46464f',
+          variant: '#2d2e34',
         },
-        destructive: {
-          DEFAULT: '#ed4245',
-          foreground: '#ffffff',
+        status: {
+          success: '#34d399',
+          warning: '#fbbf24',
+          danger: '#f87171',
+          info: '#60a5fa',
         },
-        success: {
-          DEFAULT: '#57f287',
-          foreground: '#000000',
-        },
-        warning: {
-          DEFAULT: '#fee75c',
-          foreground: '#000000',
-        },
-        border: '#232738',
-        input: '#1a1d2b',
-        ring: '#5865F2',
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+        display: ['Plus Jakarta Sans', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       borderRadius: {
-        lg: '0.625rem',
-        md: '0.5rem',
-        sm: '0.375rem',
+        lg: '12px',
+        md: '8px',
+        sm: '4px',
       },
     },
   },

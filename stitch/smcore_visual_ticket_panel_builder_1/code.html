@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><title>SMCore - Discord Security &amp; Moderation Intelligence</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "error-container": "#93000a", "surface-dim": "#121318", "inverse-primary": "#494bd6", "on-error": "#690005", "surface-container": "#1e1f25", "on-primary": "#1000a9", "surface-container-high": "#292a2f", "surface-bright": "#38393f", "surface": "#121318", "primary-container": "#8083ff", "surface-container-lowest": "#0d0e13", "on-error-container": "#ffdad6", "primary-fixed-dim": "#c0c1ff", "on-tertiary": "#003824", "on-secondary": "#131e8c", "primary-fixed": "#e1e0ff", "secondary-fixed": "#e0e0ff", "tertiary-fixed-dim": "#4edea3", "outline-variant": "#464554", "tertiary": "#4edea3", "primary": "#c0c1ff", "on-primary-container": "#0d0096", "surface-container-low": "#1a1b21", "on-secondary-container": "#a8afff", "secondary-fixed-dim": "#bdc2ff", "tertiary-fixed": "#6ffbbe", "on-surface": "#e3e1e9", "surface-container-highest": "#34343a", "inverse-on-surface": "#2f3036", "on-tertiary-fixed-variant": "#005236", "error": "#ffb4ab", "on-primary-fixed": "#07006c", "on-tertiary-fixed": "#002113", "background": "#121318", "secondary": "#bdc2ff", "on-surface-variant": "#c7c4d7", "surface-tint": "#c0c1ff", "on-primary-fixed-variant": "#2f2ebe", "secondary-container": "#2f3aa3", "on-background": "#e3e1e9", "on-tertiary-container": "#000703", "surface-variant": "#34343a", "tertiary-container": "#00885d", "on-secondary-fixed": "#000767", "inverse-surface": "#e3e1e9", "on-secondary-fixed-variant": "#2f3aa3", "outline": "#908fa0" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "space-xs": "0.25rem", "space-sm": "0.5rem", "margin-tablet": "1.5rem", "space-md": "0.75rem", "gutter-desktop": "1.5rem", "gutter": "1rem", "space-xl": "1.75rem", "margin": "1rem", "margin-desktop": "2rem", "space-lg": "1.25rem" }, "fontFamily": { "body-lg": ["Inter"], "label-sm": ["Inter"], "headline-lg-mobile": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "code-sm": ["JetBrains Mono"], "headline-md": ["Plus Jakarta Sans"], "headline-xl-mobile": ["Plus Jakarta Sans"], "body-md": ["Inter"], "code-xs": ["JetBrains Mono"], "body-sm": ["Inter"], "label-md": ["Inter"], "headline-xl": ["Plus Jakarta Sans"] }, "fontSize": { "body-lg": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "-0.01em", "fontWeight": "400" }], "label-sm": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0.04em", "fontWeight": "600" }], "headline-lg-mobile": ["1.25rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.015em", "fontWeight": "600" }], "headline-lg": ["1.5rem", { "lineHeight": "2rem", "letterSpacing": "-0.02em", "fontWeight": "600" }], "code-sm": ["0.75rem", { "lineHeight": "1rem", "letterSpacing": "-0.01em", "fontWeight": "400" }], "headline-md": ["1.125rem", { "lineHeight": "1.5rem", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-xl-mobile": ["1.75rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "700" }], "body-md": ["0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "-0.005em", "fontWeight": "400" }], "code-xs": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0em", "fontWeight": "500" }], "body-sm": ["0.75rem", { "lineHeight": "1.125rem", "letterSpacing": "0em", "fontWeight": "400" }], "label-md": ["0.8125rem", { "lineHeight": "1rem", "letterSpacing": "0.01em", "fontWeight": "500" }], "headline-xl": ["2.25rem", { "lineHeight": "2.75rem", "letterSpacing": "-0.025em", "fontWeight": "700" }] } } } };</script></head><body class="bg-background font-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container"><aside class="fixed left-0 top-0 h-screen w-72 bg-surface-container-lowest flex flex-col z-50 select-none shadow-[0_0_24px_rgba(0,0,0,0.6)]"><div class="h-16 px-space-md flex items-center justify-between bg-surface-container-lowest/90"><div class="flex items-center gap-space-sm"><img alt="SMCore Brand Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UDAouqS7TKG3Rtn59f9plqe10dg3BJ-8MuGo4ChUtcMJW-z9atkql1SAkzLcdH0a5k64wvI-iXrXwQO3wM_mkS-GfnugM16qQFiJFGFNfUeGfgicu1-x7_4fiG0G-bhKZ3Ylrah8CdkMQ_Mjfv9pbQha5CC1AgG2TukHsfdqWwCWCXwZ4jqgn7mI9-0jYzSw-zKrcAdYu4NCqXr2KSk2GAbrep_-BJz0YS1a5jzm2qHp4xZKMW7OSY350"/><div class="flex flex-col"><span class="font-headline-md text-headline-md tracking-tight text-on-surface font-bold">SMCore</span><span class="font-code-xs text-code-xs text-outline tracking-wider uppercase">SecOps v4.8</span></div></div><div class="flex items-center gap-space-xs"><button class="w-7 h-7 flex items-center justify-center rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Toggle Rail Mode" type="button"><span class="material-symbols-outlined text-[16px]">dock_to_right</span></button></div></div><div class="px-space-md py-space-xs"><button class="w-full flex items-center justify-between p-space-sm rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors" type="button"><div class="flex items-center gap-space-sm overflow-hidden"><div class="w-8 h-8 rounded-lg bg-secondary-container text-on-secondary-container flex items-center justify-center font-headline-md text-headline-md font-bold shrink-0">A</div><div class="flex flex-col text-left truncate"><span class="font-label-md text-label-md text-on-surface truncate font-semibold">Apex Network</span><span class="font-code-xs text-code-xs text-tertiary flex items-center gap-1"><span class="inline-block w-1.5 h-1.5 rounded-full bg-tertiary"></span>148.2k members</span></div></div><span class="material-symbols-outlined text-outline-variant text-[18px]">unfold_more</span></button></div><div class="px-space-md py-space-xs"><div class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-xl bg-surface-container-low text-outline"><span class="material-symbols-outlined text-[16px]">search</span><input class="bg-transparent w-full text-on-surface placeholder:text-outline-variant font-body-sm text-body-sm focus:outline-none" placeholder="Quick switch..." type="text"/><kbd class="font-code-xs text-code-xs px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant">⌘K</kbd></div></div><nav class="flex-1 overflow-y-auto px-space-md py-space-xs space-y-space-md" data-active-classes="bg-primary-container text-on-primary-container font-semibold shadow-[0_0_12px_rgba(128,131,255,0.2)]"><div class="space-y-0.5"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">Overview</div><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="overview" href="#"><span class="material-symbols-outlined text-[18px]">dashboard</span><span>Overview</span></a></div><div class="space-y-0.5"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">Moderation</div><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="command-center" href="#"><span class="material-symbols-outlined text-[18px]">terminal</span><span>Command Center</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="cases-and-punishments" href="#"><span class="material-symbols-outlined text-[18px]">gavel</span><span>Cases &amp; Punishments</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="warnings-and-escalation" href="#"><span class="material-symbols-outlined text-[18px]">warning</span><span>Warnings &amp; Escalation</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="bans-and-timeouts" href="#"><span class="material-symbols-outlined text-[18px]">block</span><span>Bans &amp; Timeouts</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="members" href="#"><span class="material-symbols-outlined text-[18px]">group</span><span>Members</span></a></div><div class="space-y-0.5"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">AutoMod &amp; Security</div><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="automod-engine" href="#"><span class="material-symbols-outlined text-[18px]">smart_toy</span><span>AutoMod Engine</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="anti-raid-and-quarantine" href="#"><span class="material-symbols-outlined text-[18px]">shield</span><span>Anti-Raid &amp; Quarantine</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="anti-spam-and-links" href="#"><span class="material-symbols-outlined text-[18px]">link_off</span><span>Anti-Spam &amp; Links</span></a></div><div class="space-y-0.5"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">Tickets</div><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="ticket-command-center" href="#"><span class="material-symbols-outlined text-[18px]">confirmation_number</span><span>Ticket Command Center</span></a><a aria-current="page" class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg transition-all bg-primary-container text-on-primary-container font-semibold shadow-[0_0_12px_rgba(128,131,255,0.2)]" data-path="visual-panel-builder" href="#"><span class="material-symbols-outlined text-[18px]">build_circle</span><span>Visual Panel Builder</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="ticket-queue-and-detail" href="#"><span class="material-symbols-outlined text-[18px]">inbox</span><span>Ticket Queue &amp; Detail</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="custom-forms" href="#"><span class="material-symbols-outlined text-[18px]">dynamic_form</span><span>Custom Forms</span></a></div><div class="space-y-0.5"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">Logging &amp; Audit</div><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="event-configuration" href="#"><span class="material-symbols-outlined text-[18px]">tune</span><span>Event Configuration</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="forum-logging-hub" href="#"><span class="material-symbols-outlined text-[18px]">forum</span><span>Forum Logging Hub</span></a></div><div class="space-y-0.5"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">Staff &amp; Access</div><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="staff-roles-and-rbac-matrix" href="#"><span class="material-symbols-outlined text-[18px]">badge</span><span>Staff Roles &amp; RBAC Matrix</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="audit-trail" href="#"><span class="material-symbols-outlined text-[18px]">history_edu</span><span>Audit Trail</span></a></div><div class="space-y-0.5"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">Analytics &amp; Config</div><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="intelligence-and-trends" href="#"><span class="material-symbols-outlined text-[18px]">monitoring</span><span>Intelligence &amp; Trends</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="general-and-integrations" href="#"><span class="material-symbols-outlined text-[18px]">settings_ethernet</span><span>General &amp; Integrations</span></a></div></nav><div class="p-space-sm bg-surface-container-lowest/95"><div class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors"><div class="flex items-center gap-space-sm overflow-hidden"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-tertiary/40" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVS70ruVOPzOh-osQyCT3T74d2vtOpN0gxAZ7QlrMK4Uh4gS7JyMqsZ51x5b9Kfh3x09Wpj071zgQ8t2jrWhxnHWzV-CEFoPNmZt4H6zRn677QfILwtiXTtWS20XUxVCyBaLZSugC5IFt2Moam4LcH0dRbvioKhTh8pYRtp9x2DKobDPgcQ_kBQ24XMCl8ipvPx5H1Ayrv8bSFVW-hSTYtM2PayhHcgvi6a8vVRZGsdthetnBg7tYS"/><div class="flex flex-col truncate"><span class="font-label-md text-label-md text-on-surface truncate font-semibold">Alex Vance</span><span class="font-code-xs text-code-xs text-outline truncate">Lead SecOps</span></div></div><div class="flex items-center gap-1"><button class="w-7 h-7 flex items-center justify-center rounded-lg text-outline-variant hover:text-on-surface hover:bg-surface-container-high transition-colors relative" title="Notifications" type="button"><span class="material-symbols-outlined text-[18px]">notifications</span><span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-error ring-2 ring-surface-container-low"></span></button><button class="w-7 h-7 flex items-center justify-center rounded-lg text-outline-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Preferences" type="button"><span class="material-symbols-outlined text-[18px]">more_vert</span></button></div></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface/85 backdrop-blur-xl z-40 shadow-[0_1px_12px_rgba(0,0,0,0.35)]"><div class="h-16 w-full px-gutter-desktop flex items-center justify-between"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs font-code-xs text-code-xs px-2.5 py-1 rounded-full bg-tertiary-container/30 text-tertiary border-0"><span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span><span>Bot Status: Online</span><span class="text-outline-variant">•</span><span>24ms ping</span><span class="text-outline-variant">•</span><span>v4.8.2</span></div><div class="hidden xl:flex items-center gap-space-xs font-body-sm text-body-sm text-outline"><span class="material-symbols-outlined text-[16px]">dns</span><span class="text-on-surface font-medium">Apex Network</span><span class="material-symbols-outlined text-[14px]">chevron_right</span><span class="text-on-surface-variant font-code-sm text-code-sm">Operations Portal</span></div></div><div class="flex items-center gap-space-md"><button class="flex items-center gap-space-sm px-space-md py-1.5 rounded-xl bg-surface-container text-outline hover:text-on-surface hover:bg-surface-container-high transition-all" type="button"><span class="material-symbols-outlined text-[18px]">search</span><span class="font-body-sm text-body-sm hidden sm:inline">⌘K Search everything...</span><kbd class="font-code-xs text-code-xs px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant hidden md:inline">Ctrl+K</kbd></button><div class="flex items-center gap-space-xs"><button class="px-space-sm py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface flex items-center gap-1.5 transition-colors" title="Incident Banner Controller" type="button"><span class="material-symbols-outlined text-[18px] text-tertiary">shield_with_heart</span><span class="font-label-sm text-label-sm uppercase hidden lg:inline">Status Alerts</span></button><a class="px-space-sm py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface flex items-center gap-1.5 transition-colors font-body-sm text-body-sm" href="#"><span class="material-symbols-outlined text-[18px]">menu_book</span><span class="hidden lg:inline">Docs</span></a><div class="w-px h-5 bg-surface-container-highest mx-1 hidden sm:block"></div><div class="flex items-center gap-space-sm pl-1"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-1 ring-primary/40" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVS70ruVOPzOh-osQyCT3T74d2vtOpN0gxAZ7QlrMK4Uh4gS7JyMqsZ51x5b9Kfh3x09Wpj071zgQ8t2jrWhxnHWzV-CEFoPNmZt4H6zRn677QfILwtiXTtWS20XUxVCyBaLZSugC5IFt2Moam4LcH0dRbvioKhTh8pYRtp9x2DKobDPgcQ_kBQ24XMCl8ipvPx5H1Ayrv8bSFVW-hSTYtM2PayhHcgvi6a8vVRZGsdthetnBg7tYS"/><span class="font-label-md text-label-md text-on-surface font-medium hidden md:inline">Alex Vance</span></div></div></div></div></header><main class="relative w-full pt-16 bg-surface"><div class="flex flex-col w-full">
+<!-- Command Action Bar -->
+<header class="w-full bg-surface-container-low px-gutter-desktop py-space-md shadow-sm">
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-space-md">
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center gap-space-xs font-code-xs text-code-xs text-outline">
+<span>Tickets</span>
+<span class="material-symbols-outlined text-[13px] text-outline-variant">chevron_right</span>
+<span>Panels</span>
+<span class="material-symbols-outlined text-[13px] text-outline-variant">chevron_right</span>
+<span class="text-primary font-medium">Edit: 'Support &amp; Billing Center'</span>
+</div>
+<div class="flex items-center gap-space-sm mt-1">
+<h1 class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">Ticket Panel Builder</h1>
+<span class="font-code-xs text-code-xs px-2 py-0.5 rounded bg-primary-container/20 text-primary font-semibold">STAGE: ACTIVE DRAFT</span>
+</div>
+</div>
+<div class="flex items-center flex-wrap gap-space-sm">
+<div class="flex items-center gap-1.5 px-space-sm py-1.5 rounded-lg bg-surface-container font-code-xs text-code-xs text-outline">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span>Draft Saved</span>
+<span class="text-outline-variant">•</span>
+<span class="text-on-surface-variant font-mono">2 mins ago</span>
+</div>
+<button class="px-space-md py-1.5 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md flex items-center gap-1.5 shadow-sm" type="button">
+<span class="material-symbols-outlined text-[16px] text-outline">visibility</span>
+<span>Preview Mode</span>
+</button>
+<button class="px-space-md py-1.5 rounded-lg bg-error-container/20 text-error hover:bg-error-container/30 transition-colors font-label-md text-label-md flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">delete_sweep</span>
+<span>Discard</span>
+</button>
+<button class="px-space-lg py-1.5 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold shadow-[0_0_16px_rgba(128,131,255,0.35)] hover:brightness-110 active:scale-[0.98] transition-all flex items-center gap-2" type="button">
+<span class="material-symbols-outlined text-[18px]">rocket_launch</span>
+<span>Publish Panel to Discord</span>
+</button>
+</div>
+</div>
+</header>
+<!-- 3-Column Studio Workspace -->
+<div class="w-full px-gutter-desktop py-space-lg">
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg items-start">
+<!-- COLUMN 1: Panel Appearance & Payload Configuration -->
+<section class="xl:col-span-4 flex flex-col gap-space-md">
+<!-- Accordion 1: Meta -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-sm">
+<div class="flex items-center justify-between pb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">tune</span>
+<h2 class="font-headline-md text-headline-md text-on-surface font-semibold">Panel Destination</h2>
+</div>
+<span class="font-code-xs text-code-xs text-outline bg-surface-container px-2 py-0.5 rounded">CORE-01</span>
+</div>
+<div class="space-y-space-sm pt-space-xs">
+<div>
+<label class="block font-label-sm text-label-sm text-outline mb-1 uppercase tracking-wider" for="panel-name-input">Internal Panel Identifier</label>
+<input class="w-full px-space-sm py-1.5 rounded-lg bg-surface-container text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-1 focus:ring-primary" id="panel-name-input" type="text" value="General Support &amp; Verification Hub"/>
+</div>
+<div class="grid grid-cols-2 gap-space-sm">
+<div>
+<label class="block font-label-sm text-label-sm text-outline mb-1 uppercase tracking-wider" for="target-channel-select">Target Channel</label>
+<div class="relative">
+<select class="w-full appearance-none px-space-sm py-1.5 rounded-lg bg-surface-container text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-1 focus:ring-primary pr-8" id="target-channel-select">
+<option>#tickets-portal</option>
+<option>#support-lounge</option>
+<option>#verification-gate</option>
+</select>
+<span class="material-symbols-outlined text-[16px] text-outline absolute right-2.5 top-2 pointer-events-none">tag</span>
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-outline mb-1 uppercase tracking-wider" for="embed-category-select">Embed Category</label>
+<div class="relative">
+<select class="w-full appearance-none px-space-sm py-1.5 rounded-lg bg-surface-container text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-1 focus:ring-primary pr-8" id="embed-category-select">
+<option>Support Inquiries</option>
+<option>Billing Priority</option>
+<option>Escalated Security</option>
+</select>
+<span class="material-symbols-outlined text-[16px] text-outline absolute right-2.5 top-2 pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Accordion 2: Embed Builder -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-sm space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[18px]">palette</span>
+<h2 class="font-headline-md text-headline-md text-on-surface font-semibold">Embed Content &amp; Visuals</h2>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">unfold_less</span>
+</div>
+<div class="space-y-space-sm">
+<div>
+<label class="block font-label-sm text-label-sm text-outline mb-1 uppercase tracking-wider" for="embed-title-input">Embed Title</label>
+<div class="flex gap-2">
+<input class="flex-1 px-space-sm py-1.5 rounded-lg bg-surface-container text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-1 focus:ring-primary" id="embed-title-input" type="text" value="🎫 Apex Support &amp; Assistance"/>
+<button class="px-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant text-[14px]" title="Insert Variable" type="button">{v}</button>
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-outline mb-1 uppercase tracking-wider" for="embed-description-input">Markdown Description</label>
+<textarea class="w-full p-space-sm rounded-lg bg-surface-container text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-1 focus:ring-primary leading-relaxed resize-none" id="embed-description-input" rows="3">Need assistance with your account, billing, or technical issues? Click the button below to open a private ticket with our verified staff team.</textarea>
+</div>
+<!-- Color Palette & Banner -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm pt-space-xs">
+<div class="bg-surface-container p-space-sm rounded-lg">
+<span class="block font-label-sm text-label-sm text-outline mb-1.5 uppercase tracking-wider">Embed Accent</span>
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-[#6366f1] shrink-0 shadow-[0_0_8px_rgba(99,102,241,0.5)]"></div>
+<input class="w-full bg-surface-container-high px-2 py-1 rounded text-on-surface font-code-xs text-code-xs uppercase focus:outline-none" type="text" value="#6366f1"/>
+</div>
+</div>
+<div class="bg-surface-container p-space-sm rounded-lg">
+<span class="block font-label-sm text-label-sm text-outline mb-1.5 uppercase tracking-wider">Preset Themes</span>
+<div class="flex items-center gap-1.5 pt-0.5">
+<button class="w-5 h-5 rounded bg-[#6366f1] ring-2 ring-primary-fixed ring-offset-1 ring-offset-surface-container" title="Indigo" type="button"></button>
+<button class="w-5 h-5 rounded bg-[#4edea3] hover:opacity-80 transition-opacity" title="Emerald" type="button"></button>
+<button class="w-5 h-5 rounded bg-[#ffb4ab] hover:opacity-80 transition-opacity" title="Rose" type="button"></button>
+<button class="w-5 h-5 rounded bg-[#ffb74d] hover:opacity-80 transition-opacity" title="Amber" type="button"></button>
+<button class="w-5 h-5 rounded bg-[#292a2f] hover:opacity-80 transition-opacity" title="Neutral Slate" type="button"></button>
+</div>
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-outline mb-1 uppercase tracking-wider" for="banner-url-input">Hero Banner URL (Optional)</label>
+<div class="flex items-center gap-2">
+<input class="flex-1 px-space-sm py-1.5 rounded-lg bg-surface-container text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-1 focus:ring-primary" id="banner-url-input" type="text" value="https://cdn.apex.gg/assets/support-splash-v2.webp"/>
+<div class="w-8 h-8 rounded-lg bg-surface-container-high overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="Futuristic neon vector cybersecurity mesh grid pattern with indigo and mint volumetric lighting, sharp abstract digital geometry representing secure network nodes in dark obsidian theme" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzhsV3oUBC9C1SG7qMgtj5W80Lz5l9EjuKAVhx29UHiSnwAEzKjRJ2Y35z_dWrCAv1WlmZSucrAYy7-kx2NxcmGD7n2zyZyH1-Fll7TlGhR0KiNt6bvfuI31VTDwdcZXFN1vRKKy6X8nY11LsGa0Ax3sDMBSlqRRKD5yRWGiSPcTSFwSZIgL2eMFeB4G-J2UGypn7peB1_oV16fVD5qyX0yAEKTf6mOYCNaKyJaZfQhb9FmRBmd5mu"/>
+</div>
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-outline mb-1 uppercase tracking-wider" for="footer-note-input">Footer Metadata Note</label>
+<input class="w-full px-space-sm py-1.5 rounded-lg bg-surface-container text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-1 focus:ring-primary" id="footer-note-input" type="text" value="SMCore Ticketing System • Response time &lt; 5 mins"/>
+</div>
+</div>
+</div>
+<!-- Accordion 3: Button Triggers & Routes -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-sm space-y-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[18px]">smart_button</span>
+<h2 class="font-headline-md text-headline-md text-on-surface font-semibold">Action Row Buttons (3/5)</h2>
+</div>
+<span class="font-code-xs text-code-xs text-outline">DRAG TO REORDER</span>
+</div>
+<!-- Action Item 1 -->
+<div class="p-space-sm rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline-variant cursor-grab">drag_indicator</span>
+<span class="w-2.5 h-2.5 rounded-full bg-[#5865f2]"></span>
+<span class="font-body-sm text-body-sm font-semibold text-on-surface">🎫 Open Support Ticket</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="font-code-xs text-code-xs px-1.5 py-0.5 rounded bg-surface-container-highest text-secondary font-mono">BTN_PRIMARY</span>
+<button class="text-outline hover:text-on-surface p-1" type="button"><span class="material-symbols-outlined text-[15px]">edit</span></button>
+</div>
+</div>
+<div class="flex items-center justify-between text-outline text-[11px] px-6">
+<span>Target: <strong class="text-on-surface">General Support</strong></span>
+<span>Assignee: <span class="text-secondary font-medium">@Support Team</span></span>
+</div>
+</div>
+<!-- Action Item 2 -->
+<div class="p-space-sm rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline-variant cursor-grab">drag_indicator</span>
+<span class="w-2.5 h-2.5 rounded-full bg-tertiary"></span>
+<span class="font-body-sm text-body-sm font-semibold text-on-surface">💳 Billing &amp; Purchases</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="font-code-xs text-code-xs px-1.5 py-0.5 rounded bg-tertiary-container/30 text-tertiary font-mono">BTN_SUCCESS</span>
+<button class="text-outline hover:text-on-surface p-1" type="button"><span class="material-symbols-outlined text-[15px]">edit</span></button>
+</div>
+</div>
+<div class="flex items-center justify-between text-outline text-[11px] px-6">
+<span>Target: <strong class="text-on-surface">Billing Inquiries</strong></span>
+<span>Assignee: <span class="text-tertiary font-medium">@Billing Ops</span></span>
+</div>
+</div>
+<!-- Action Item 3 -->
+<div class="p-space-sm rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline-variant cursor-grab">drag_indicator</span>
+<span class="w-2.5 h-2.5 rounded-full bg-error"></span>
+<span class="font-body-sm text-body-sm font-semibold text-on-surface">🛡️ Report Violation</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="font-code-xs text-code-xs px-1.5 py-0.5 rounded bg-error-container/40 text-error font-mono">BTN_DANGER</span>
+<button class="text-outline hover:text-on-surface p-1" type="button"><span class="material-symbols-outlined text-[15px]">edit</span></button>
+</div>
+</div>
+<div class="flex items-center justify-between text-outline text-[11px] px-6">
+<span>Target: <strong class="text-on-surface">Urgent Reports</strong></span>
+<span>Assignee: <span class="text-error font-medium">@Moderator</span></span>
+</div>
+</div>
+<button class="w-full py-2 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors text-primary font-label-md text-label-md font-medium flex items-center justify-center gap-2" type="button">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>Add Button / Dropdown Select Option</span>
+</button>
+</div>
+</section>
+<!-- COLUMN 2: Center Live Discord-Style Interactive Embed Simulation -->
+<section class="xl:col-span-5 flex flex-col gap-space-md">
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-sm">
+<div class="flex items-center justify-between pb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[18px]">devices</span>
+<h2 class="font-headline-md text-headline-md text-on-surface font-semibold">Live Discord Render Preview</h2>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary animate-ping"></span>
+<span class="font-code-xs text-code-xs text-tertiary">SYNC OK</span>
+</div>
+</div>
+<!-- Virtual Discord Client Sandbox -->
+<div class="w-full rounded-xl bg-[#1e1f25] p-space-md text-on-surface font-sans shadow-inner select-none">
+<!-- Message Header -->
+<div class="flex items-start gap-3">
+<img alt="SMCore Bot Avatar" class="w-10 h-10 rounded-full shrink-0 bg-surface-container-highest" src="https://lh3.googleusercontent.com/aida/AEtjO1UDAouqS7TKG3Rtn59f9plqe10dg3BJ-8MuGo4ChUtcMJW-z9atkql1SAkzLcdH0a5k64wvI-iXrXwQO3wM_mkS-GfnugM16qQFiJFGFNfUeGfgicu1-x7_4fiG0G-bhKZ3Ylrah8CdkMQ_Mjfv9pbQha5CC1AgG2TukHsfdqWwCWCXwZ4jqgn7mI9-0jYzSw-zKrcAdYu4NCqXr2KSk2GAbrep_-BJz0YS1a5jzm2qHp4xZKMW7OSY350"/>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-md text-[14px] font-bold text-on-surface leading-none hover:underline cursor-pointer">SMCore Sentinel</span>
+<span class="bg-[#5865f2] text-white text-[9px] font-extrabold uppercase px-1 py-0.5 rounded tracking-wider leading-none">BOT</span>
+<span class="font-code-xs text-[11px] text-outline-variant leading-none">Today at 3:45 PM</span>
+</div>
+<!-- Discord Embed Body -->
+<div class="mt-2.5 max-w-lg rounded bg-[#2b2d31] p-space-md shadow-md relative overflow-hidden">
+<!-- Custom Colored Edge Line -->
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-[#6366f1]"></div>
+<div class="pl-1 space-y-3">
+<!-- Embed Author / Header -->
+<div class="flex items-center gap-1.5 text-outline text-[12px] font-medium">
+<span class="material-symbols-outlined text-[15px] text-primary">verified</span>
+<span>Apex Network Support Infrastructure</span>
+</div>
+<!-- Embed Title -->
+<h3 class="font-headline-md text-[15px] text-white font-bold leading-snug hover:underline cursor-pointer">
+                      🎫 Apex Support &amp; Assistance
+                    </h3>
+<!-- Embed Description -->
+<p class="font-body-sm text-[13px] text-[#dbdee1] leading-relaxed">
+                      Need assistance with your account, billing, or technical issues? Click the appropriate button below to initialize a confidential, end-to-end audited support ticket with our verified staff team.
+                    </p>
+<!-- Embed Fields -->
+<div class="grid grid-cols-2 gap-2 pt-1">
+<div class="bg-[#232428] p-2 rounded">
+<span class="block text-[11px] text-[#949ba4] font-semibold uppercase">Operating Hours</span>
+<span class="text-[12px] text-[#dbdee1] font-mono">24/7 Mon–Sun</span>
+</div>
+<div class="bg-[#232428] p-2 rounded">
+<span class="block text-[11px] text-[#949ba4] font-semibold uppercase">Avg Resolution</span>
+<span class="text-[12px] text-tertiary font-mono">12 minutes</span>
+</div>
+</div>
+<!-- Embed Graphic Placeholder Banner -->
+<div class="w-full h-32 rounded overflow-hidden mt-1 relative bg-surface-container-highest">
+<img class="w-full h-full object-cover" data-alt="High tech minimal deep navy blue server rack corridor with glowing ultraviolet and cyan status LEDs, crisp studio presentation representing high availability enterprise infrastructure" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzCuyZ3QT7Cd-1GIAJZotMdNMVaSX8Syn2hQIwV_TqqpX2YAonYCFOThZhe7ddW7pVC5DkG7WWojo8dAFiVut8dGLooew4FMxqsW536fzTn1HcvZr0ooFYT9gEuQTR1xGBbbt4Guip89dKNmNAzavwtn5p9qh3G327mMzze6Tk-Fcujov7MpumIjK_iCUr5EXwUJL7mP-hDlr8cuWUfNgBzN66Tm1idR2GSE-q8BigTjj4_T0PchzP"/>
+<div class="absolute bottom-1 right-1 bg-surface-container-lowest/80 text-[10px] font-mono px-1.5 py-0.5 rounded text-outline">1200 × 400</div>
+</div>
+<!-- Embed Footer -->
+<div class="flex items-center gap-2 pt-1 text-[11px] text-[#949ba4]">
+<span class="material-symbols-outlined text-[14px] text-primary">lock</span>
+<span>SMCore Ticketing System • Response time &lt; 5 mins</span>
+</div>
+</div>
+</div>
+<!-- Action Row Discord Components -->
+<div class="mt-3 flex flex-wrap gap-2 max-w-lg">
+<button class="px-3.5 py-2 rounded bg-[#5865f2] hover:bg-[#4752c4] text-white text-[13px] font-medium transition-colors flex items-center gap-1.5 shadow-sm active:scale-[0.98]" type="button">
+<span>🎫</span>
+<span>Open Support Ticket</span>
+</button>
+<button class="px-3.5 py-2 rounded bg-[#248046] hover:bg-[#1a6334] text-white text-[13px] font-medium transition-colors flex items-center gap-1.5 shadow-sm active:scale-[0.98]" type="button">
+<span>💳</span>
+<span>Billing &amp; Purchases</span>
+</button>
+<button class="px-3.5 py-2 rounded bg-[#da373c] hover:bg-[#a12828] text-white text-[13px] font-medium transition-colors flex items-center gap-1.5 shadow-sm active:scale-[0.98]" type="button">
+<span>🛡️</span>
+<span>Report Violation</span>
+</button>
+</div>
+<div class="mt-2 text-[11px] text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">info</span>
+<span>Only members with verified phone status can open 'Report Violation'</span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between mt-space-sm px-space-xs">
+<span class="font-code-xs text-code-xs text-outline">Renderer Engine: V4.8 Discord Protocol</span>
+<span class="font-label-sm text-label-sm text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">refresh</span> Real-time Synced
+            </span>
+</div>
+</div>
+<!-- Telemetry & Dispatch Stats Card -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-sm">
+<h4 class="font-label-md text-label-md text-on-surface font-semibold mb-space-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[18px]">query_stats</span>
+            Historical Panel Performance (Past 30 Days)
+          </h4>
+<div class="grid grid-cols-3 gap-space-sm">
+<div class="p-space-sm rounded-lg bg-surface-container">
+<span class="block font-code-xs text-code-xs text-outline">Impressions</span>
+<span class="font-headline-md text-headline-md text-on-surface font-bold">42,890</span>
+<span class="font-code-xs text-code-xs text-tertiary flex items-center gap-0.5 mt-0.5">
+<span class="material-symbols-outlined text-[12px]">trending_up</span> +14%
+              </span>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container">
+<span class="block font-code-xs text-code-xs text-outline">Tickets Initialized</span>
+<span class="font-headline-md text-headline-md text-primary font-bold">1,402</span>
+<span class="font-code-xs text-code-xs text-on-surface-variant mt-0.5">3.2% conversion</span>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container">
+<span class="block font-code-xs text-code-xs text-outline">Avg First Response</span>
+<span class="font-headline-md text-headline-md text-tertiary font-bold">3m 48s</span>
+<span class="font-code-xs text-code-xs text-tertiary mt-0.5">Target &lt; 5m</span>
+</div>
+</div>
+</div>
+</section>
+<!-- COLUMN 3: Ticket Workflow & Routing Rules -->
+<section class="xl:col-span-3 flex flex-col gap-space-md">
+<!-- Workflow Card -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-sm space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">account_tree</span>
+<h2 class="font-headline-md text-headline-md text-on-surface font-semibold">Workflow &amp; Routing</h2>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">rule</span>
+</div>
+<!-- Channel Naming Pattern -->
+<div>
+<label class="block font-label-sm text-label-sm text-outline mb-1 uppercase tracking-wider" for="naming-pattern-input">Ticket Naming Formula</label>
+<div class="flex items-center gap-1 bg-surface-container px-space-sm py-1.5 rounded-lg">
+<span class="text-outline font-code-sm text-code-sm">#</span>
+<input class="bg-transparent w-full text-on-surface font-code-sm text-code-sm focus:outline-none" id="naming-pattern-input" type="text" value="ticket-{username}-{count}"/>
+</div>
+<div class="flex flex-wrap gap-1 mt-1.5">
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-outline text-[10px] font-mono cursor-pointer hover:text-on-surface">{username}</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-outline text-[10px] font-mono cursor-pointer hover:text-on-surface">{count}</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-outline text-[10px] font-mono cursor-pointer hover:text-on-surface">{category}</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-outline text-[10px] font-mono cursor-pointer hover:text-on-surface">{date}</span>
+</div>
+</div>
+<!-- Max Concurrent Tickets -->
+<div>
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Concurrent Limit / User</span>
+<span class="font-code-xs text-code-xs text-primary font-mono">1 Active</span>
+</div>
+<div class="grid grid-cols-4 gap-1 p-1 bg-surface-container rounded-lg">
+<button class="py-1 rounded font-code-xs text-code-xs font-semibold bg-surface-container-high text-on-surface shadow-sm" type="button">1</button>
+<button class="py-1 rounded font-code-xs text-code-xs text-outline hover:text-on-surface" type="button">2</button>
+<button class="py-1 rounded font-code-xs text-code-xs text-outline hover:text-on-surface" type="button">3</button>
+<button class="py-1 rounded font-code-xs text-code-xs text-outline hover:text-on-surface" type="button">∞</button>
+</div>
+</div>
+<!-- High-End Switches -->
+<div class="space-y-space-sm pt-space-xs">
+<!-- Toggle 1 -->
+<div class="p-space-sm rounded-lg bg-surface-container flex items-start justify-between gap-space-sm">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Staff Ticket Claiming</span>
+<span class="font-body-sm text-body-sm text-outline leading-tight">Enables personnel to take exclusive ownership locks.</span>
+</div>
+<button aria-checked="true" class="w-9 h-5 rounded-full bg-primary-container relative shrink-0 transition-colors p-0.5 focus:outline-none" role="switch" type="button">
+<span class="block w-4 h-4 rounded-full bg-on-primary-container translate-x-4 transition-transform"></span>
+</button>
+</div>
+<!-- Toggle 2 -->
+<div class="p-space-sm rounded-lg bg-surface-container flex items-start justify-between gap-space-sm">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Two-Way HTML Transcripts</span>
+<span class="font-body-sm text-body-sm text-outline leading-tight">Direct messages encrypted transcripts upon closure.</span>
+</div>
+<button aria-checked="true" class="w-9 h-5 rounded-full bg-primary-container relative shrink-0 transition-colors p-0.5 focus:outline-none" role="switch" type="button">
+<span class="block w-4 h-4 rounded-full bg-on-primary-container translate-x-4 transition-transform"></span>
+</button>
+</div>
+</div>
+<!-- Custom Intake Form Attachment -->
+<div>
+<label class="block font-label-sm text-label-sm text-outline mb-1 uppercase tracking-wider" for="form-attachment-select">Required Modal / Intake Form</label>
+<div class="relative">
+<select class="w-full appearance-none px-space-sm py-1.5 rounded-lg bg-surface-container text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-1 focus:ring-primary pr-8" id="form-attachment-select">
+<option>Attach: Purchase Support Questionnaire</option>
+<option>Attach: Bug Reproduction Schema</option>
+<option>Attach: General Verification Prompt</option>
+<option>None (Direct Channel Creation)</option>
+</select>
+<span class="material-symbols-outlined text-[16px] text-outline absolute right-2.5 top-2 pointer-events-none">dynamic_form</span>
+</div>
+</div>
+<!-- Slider: Inactivity Auto-Close -->
+<div>
+<div class="flex items-center justify-between mb-1">
+<label class="font-label-sm text-label-sm text-outline uppercase tracking-wider" for="inactivity-slider">Inactivity Auto-Close</label>
+<span class="font-code-xs text-code-xs text-tertiary font-mono">24 Hours</span>
+</div>
+<input class="w-full accent-primary bg-surface-container h-1.5 rounded-lg cursor-pointer" id="inactivity-slider" max="72" min="1" type="range" value="24"/>
+<div class="flex justify-between font-code-xs text-[10px] text-outline mt-1">
+<span>1h (Aggressive)</span>
+<span>24h</span>
+<span>72h (Lax)</span>
+</div>
+</div>
+<!-- RBAC Access Matrix / Roles -->
+<div>
+<span class="block font-label-sm text-label-sm text-outline mb-1.5 uppercase tracking-wider">Staff Role Authorization</span>
+<div class="flex flex-wrap gap-1.5">
+<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary font-code-xs text-code-xs border-0">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                @Admin
+                <span class="material-symbols-outlined text-[13px] hover:text-on-surface cursor-pointer">close</span>
+</span>
+<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-secondary/10 text-secondary font-code-xs text-code-xs border-0">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                @Senior Mod
+                <span class="material-symbols-outlined text-[13px] hover:text-on-surface cursor-pointer">close</span>
+</span>
+<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-tertiary/10 text-tertiary font-code-xs text-code-xs border-0">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                @Support Tier 2
+                <span class="material-symbols-outlined text-[13px] hover:text-on-surface cursor-pointer">close</span>
+</span>
+<button class="px-2 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-outline hover:text-on-surface font-code-xs text-code-xs flex items-center gap-0.5" type="button">
+<span class="material-symbols-outlined text-[13px]">add</span> Add Role
+              </button>
+</div>
+</div>
+</div>
+<!-- Security Guardrail Badge -->
+<div class="p-space-sm rounded-xl bg-surface-container-low shadow-sm flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[24px]">verified_user</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Anti-Spam Isolation</span>
+<span class="font-code-xs text-code-xs text-outline">Rate limited to 1 ticket request per 120 seconds.</span>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div></main></div></body></html>

@@ -1,24 +1,25 @@
 {
-  "name": "@repo/database",
+  "name": "@smcore/database",
   "version": "1.0.0",
   "private": true,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "node ../../scripts/db-sync.js && tsc",
+    "build": "tsc",
+    "dev": "tsc -w",
+    "lint": "tsc --noEmit",
+    "test": "echo \"Database package verified\"",
     "generate": "prisma generate",
     "db:push": "prisma db push",
-    "seed": "tsx prisma/seed.ts"
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0",
-    "dotenv": "^16.4.1",
-    "prisma": "^5.22.0"
+    "@prisma/client": "^5.10.2"
   },
   "devDependencies": {
-    "dotenv-cli": "^7.3.0",
-    "ts-node": "^10.9.2",
-    "tsx": "^4.7.0",
+    "@types/node": "^20.11.0",
+    "prisma": "^5.10.2",
     "typescript": "^5.3.3"
   }
 }

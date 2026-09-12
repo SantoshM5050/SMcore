@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><title>SMCore - Discord Security &amp; Moderation Intelligence</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "error-container": "#93000a", "surface-dim": "#121318", "inverse-primary": "#494bd6", "on-error": "#690005", "surface-container": "#1e1f25", "on-primary": "#1000a9", "surface-container-high": "#292a2f", "surface-bright": "#38393f", "surface": "#121318", "primary-container": "#8083ff", "surface-container-lowest": "#0d0e13", "on-error-container": "#ffdad6", "primary-fixed-dim": "#c0c1ff", "on-tertiary": "#003824", "on-secondary": "#131e8c", "primary-fixed": "#e1e0ff", "secondary-fixed": "#e0e0ff", "tertiary-fixed-dim": "#4edea3", "outline-variant": "#464554", "tertiary": "#4edea3", "primary": "#c0c1ff", "on-primary-container": "#0d0096", "surface-container-low": "#1a1b21", "on-secondary-container": "#a8afff", "secondary-fixed-dim": "#bdc2ff", "tertiary-fixed": "#6ffbbe", "on-surface": "#e3e1e9", "surface-container-highest": "#34343a", "inverse-on-surface": "#2f3036", "on-tertiary-fixed-variant": "#005236", "error": "#ffb4ab", "on-primary-fixed": "#07006c", "on-tertiary-fixed": "#002113", "background": "#121318", "secondary": "#bdc2ff", "on-surface-variant": "#c7c4d7", "surface-tint": "#c0c1ff", "on-primary-fixed-variant": "#2f2ebe", "secondary-container": "#2f3aa3", "on-background": "#e3e1e9", "on-tertiary-container": "#000703", "surface-variant": "#34343a", "tertiary-container": "#00885d", "on-secondary-fixed": "#000767", "inverse-surface": "#e3e1e9", "on-secondary-fixed-variant": "#2f3aa3", "outline": "#908fa0" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "space-xs": "0.25rem", "space-sm": "0.5rem", "margin-tablet": "1.5rem", "space-md": "0.75rem", "gutter-desktop": "1.5rem", "gutter": "1rem", "space-xl": "1.75rem", "margin": "1rem", "margin-desktop": "2rem", "space-lg": "1.25rem" }, "fontFamily": { "body-lg": ["Inter"], "label-sm": ["Inter"], "headline-lg-mobile": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "code-sm": ["JetBrains Mono"], "headline-md": ["Plus Jakarta Sans"], "headline-xl-mobile": ["Plus Jakarta Sans"], "body-md": ["Inter"], "code-xs": ["JetBrains Mono"], "body-sm": ["Inter"], "label-md": ["Inter"], "headline-xl": ["Plus Jakarta Sans"] }, "fontSize": { "body-lg": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "-0.01em", "fontWeight": "400" }], "label-sm": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0.04em", "fontWeight": "600" }], "headline-lg-mobile": ["1.25rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.015em", "fontWeight": "600" }], "headline-lg": ["1.5rem", { "lineHeight": "2rem", "letterSpacing": "-0.02em", "fontWeight": "600" }], "code-sm": ["0.75rem", { "lineHeight": "1rem", "letterSpacing": "-0.01em", "fontWeight": "400" }], "headline-md": ["1.125rem", { "lineHeight": "1.5rem", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-xl-mobile": ["1.75rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "700" }], "body-md": ["0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "-0.005em", "fontWeight": "400" }], "code-xs": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0em", "fontWeight": "500" }], "body-sm": ["0.75rem", { "lineHeight": "1.125rem", "letterSpacing": "0em", "fontWeight": "400" }], "label-md": ["0.8125rem", { "lineHeight": "1rem", "letterSpacing": "0.01em", "fontWeight": "500" }], "headline-xl": ["2.25rem", { "lineHeight": "2.75rem", "letterSpacing": "-0.025em", "fontWeight": "700" }] } } } };</script></head><body class="bg-background font-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container"><aside class="fixed left-0 top-0 h-screen w-72 bg-surface-container-lowest flex flex-col z-50 select-none shadow-[0_0_24px_rgba(0,0,0,0.6)]"><div class="h-16 px-space-md flex items-center justify-between bg-surface-container-lowest/90"><div class="flex items-center gap-space-sm"><img alt="SMCore Brand Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UDAouqS7TKG3Rtn59f9plqe10dg3BJ-8MuGo4ChUtcMJW-z9atkql1SAkzLcdH0a5k64wvI-iXrXwQO3wM_mkS-GfnugM16qQFiJFGFNfUeGfgicu1-x7_4fiG0G-bhKZ3Ylrah8CdkMQ_Mjfv9pbQha5CC1AgG2TukHsfdqWwCWCXwZ4jqgn7mI9-0jYzSw-zKrcAdYu4NCqXr2KSk2GAbrep_-BJz0YS1a5jzm2qHp4xZKMW7OSY350"/><div class="flex flex-col"><span class="font-headline-md text-headline-md tracking-tight text-on-surface font-bold">SMCore</span><span class="font-code-xs text-code-xs text-outline tracking-wider uppercase">SecOps v4.8</span></div></div><div class="flex items-center gap-space-xs"><button class="w-7 h-7 flex items-center justify-center rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Toggle Rail Mode" type="button"><span class="material-symbols-outlined text-[16px]">dock_to_right</span></button></div></div><div class="px-space-md py-space-xs"><button class="w-full flex items-center justify-between p-space-sm rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors" type="button"><div class="flex items-center gap-space-sm overflow-hidden"><div class="w-8 h-8 rounded-lg bg-secondary-container text-on-secondary-container flex items-center justify-center font-headline-md text-headline-md font-bold shrink-0">A</div><div class="flex flex-col text-left truncate"><span class="font-label-md text-label-md text-on-surface truncate font-semibold">Apex Network</span><span class="font-code-xs text-code-xs text-tertiary flex items-center gap-1"><span class="inline-block w-1.5 h-1.5 rounded-full bg-tertiary"></span>148.2k members</span></div></div><span class="material-symbols-outlined text-outline-variant text-[18px]">unfold_more</span></button></div><div class="px-space-md py-space-xs"><div class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-xl bg-surface-container-low text-outline"><span class="material-symbols-outlined text-[16px]">search</span><input class="bg-transparent w-full text-on-surface placeholder:text-outline-variant font-body-sm text-body-sm focus:outline-none" placeholder="Quick switch..." type="text"/><kbd class="font-code-xs text-code-xs px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant">⌘K</kbd></div></div><nav class="flex-1 overflow-y-auto px-space-md py-space-xs space-y-space-md" data-active-classes="bg-primary-container text-on-primary-container font-semibold shadow-[0_0_12px_rgba(128,131,255,0.2)]"><div class="space-y-0.5"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">Overview</div><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="overview" href="#"><span class="material-symbols-outlined text-[18px]">dashboard</span><span>Overview</span></a></div><div class="space-y-0.5"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">Moderation</div><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="command-center" href="#"><span class="material-symbols-outlined text-[18px]">terminal</span><span>Command Center</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="cases-and-punishments" href="#"><span class="material-symbols-outlined text-[18px]">gavel</span><span>Cases &amp; Punishments</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="warnings-and-escalation" href="#"><span class="material-symbols-outlined text-[18px]">warning</span><span>Warnings &amp; Escalation</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="bans-and-timeouts" href="#"><span class="material-symbols-outlined text-[18px]">block</span><span>Bans &amp; Timeouts</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="members" href="#"><span class="material-symbols-outlined text-[18px]">group</span><span>Members</span></a></div><div class="space-y-0.5"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">AutoMod &amp; Security</div><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="automod-engine" href="#"><span class="material-symbols-outlined text-[18px]">smart_toy</span><span>AutoMod Engine</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="anti-raid-and-quarantine" href="#"><span class="material-symbols-outlined text-[18px]">shield</span><span>Anti-Raid &amp; Quarantine</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="anti-spam-and-links" href="#"><span class="material-symbols-outlined text-[18px]">link_off</span><span>Anti-Spam &amp; Links</span></a></div><div class="space-y-0.5"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">Tickets</div><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="ticket-command-center" href="#"><span class="material-symbols-outlined text-[18px]">confirmation_number</span><span>Ticket Command Center</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="visual-panel-builder" href="#"><span class="material-symbols-outlined text-[18px]">build_circle</span><span>Visual Panel Builder</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="ticket-queue-and-detail" href="#"><span class="material-symbols-outlined text-[18px]">inbox</span><span>Ticket Queue &amp; Detail</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="custom-forms" href="#"><span class="material-symbols-outlined text-[18px]">dynamic_form</span><span>Custom Forms</span></a></div><div class="space-y-0.5"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">Logging &amp; Audit</div><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="event-configuration" href="#"><span class="material-symbols-outlined text-[18px]">tune</span><span>Event Configuration</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="forum-logging-hub" href="#"><span class="material-symbols-outlined text-[18px]">forum</span><span>Forum Logging Hub</span></a></div><div class="space-y-0.5"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">Staff &amp; Access</div><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="staff-roles-and-rbac-matrix" href="#"><span class="material-symbols-outlined text-[18px]">badge</span><span>Staff Roles &amp; RBAC Matrix</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="audit-trail" href="#"><span class="material-symbols-outlined text-[18px]">history_edu</span><span>Audit Trail</span></a></div><div class="space-y-0.5"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">Analytics &amp; Config</div><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="intelligence-and-trends" href="#"><span class="material-symbols-outlined text-[18px]">monitoring</span><span>Intelligence &amp; Trends</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="general-and-integrations" href="#"><span class="material-symbols-outlined text-[18px]">settings_ethernet</span><span>General &amp; Integrations</span></a></div></nav><div class="p-space-sm bg-surface-container-lowest/95"><div class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors"><div class="flex items-center gap-space-sm overflow-hidden"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-tertiary/40" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVS70ruVOPzOh-osQyCT3T74d2vtOpN0gxAZ7QlrMK4Uh4gS7JyMqsZ51x5b9Kfh3x09Wpj071zgQ8t2jrWhxnHWzV-CEFoPNmZt4H6zRn677QfILwtiXTtWS20XUxVCyBaLZSugC5IFt2Moam4LcH0dRbvioKhTh8pYRtp9x2DKobDPgcQ_kBQ24XMCl8ipvPx5H1Ayrv8bSFVW-hSTYtM2PayhHcgvi6a8vVRZGsdthetnBg7tYS"/><div class="flex flex-col truncate"><span class="font-label-md text-label-md text-on-surface truncate font-semibold">Alex Vance</span><span class="font-code-xs text-code-xs text-outline truncate">Lead SecOps</span></div></div><div class="flex items-center gap-1"><button class="w-7 h-7 flex items-center justify-center rounded-lg text-outline-variant hover:text-on-surface hover:bg-surface-container-high transition-colors relative" title="Notifications" type="button"><span class="material-symbols-outlined text-[18px]">notifications</span><span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-error ring-2 ring-surface-container-low"></span></button><button class="w-7 h-7 flex items-center justify-center rounded-lg text-outline-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Preferences" type="button"><span class="material-symbols-outlined text-[18px]">more_vert</span></button></div></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface/85 backdrop-blur-xl z-40 shadow-[0_1px_12px_rgba(0,0,0,0.35)]"><div class="h-16 w-full px-gutter-desktop flex items-center justify-between"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs font-code-xs text-code-xs px-2.5 py-1 rounded-full bg-tertiary-container/30 text-tertiary border-0"><span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span><span>Bot Status: Online</span><span class="text-outline-variant">•</span><span>24ms ping</span><span class="text-outline-variant">•</span><span>v4.8.2</span></div><div class="hidden xl:flex items-center gap-space-xs font-body-sm text-body-sm text-outline"><span class="material-symbols-outlined text-[16px]">dns</span><span class="text-on-surface font-medium">Apex Network</span><span class="material-symbols-outlined text-[14px]">chevron_right</span><span class="text-on-surface-variant font-code-sm text-code-sm">Operations Portal</span></div></div><div class="flex items-center gap-space-md"><button class="flex items-center gap-space-sm px-space-md py-1.5 rounded-xl bg-surface-container text-outline hover:text-on-surface hover:bg-surface-container-high transition-all" type="button"><span class="material-symbols-outlined text-[18px]">search</span><span class="font-body-sm text-body-sm hidden sm:inline">⌘K Search everything...</span><kbd class="font-code-xs text-code-xs px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant hidden md:inline">Ctrl+K</kbd></button><div class="flex items-center gap-space-xs"><button class="px-space-sm py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface flex items-center gap-1.5 transition-colors" title="Incident Banner Controller" type="button"><span class="material-symbols-outlined text-[18px] text-tertiary">shield_with_heart</span><span class="font-label-sm text-label-sm uppercase hidden lg:inline">Status Alerts</span></button><a class="px-space-sm py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface flex items-center gap-1.5 transition-colors font-body-sm text-body-sm" href="#"><span class="material-symbols-outlined text-[18px]">menu_book</span><span class="hidden lg:inline">Docs</span></a><div class="w-px h-5 bg-surface-container-highest mx-1 hidden sm:block"></div><div class="flex items-center gap-space-sm pl-1"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-1 ring-primary/40" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVS70ruVOPzOh-osQyCT3T74d2vtOpN0gxAZ7QlrMK4Uh4gS7JyMqsZ51x5b9Kfh3x09Wpj071zgQ8t2jrWhxnHWzV-CEFoPNmZt4H6zRn677QfILwtiXTtWS20XUxVCyBaLZSugC5IFt2Moam4LcH0dRbvioKhTh8pYRtp9x2DKobDPgcQ_kBQ24XMCl8ipvPx5H1Ayrv8bSFVW-hSTYtM2PayhHcgvi6a8vVRZGsdthetnBg7tYS"/><span class="font-label-md text-label-md text-on-surface font-medium hidden md:inline">Alex Vance</span></div></div></div></div></header><main class="relative w-full pt-16 bg-surface"><div class="flex flex-col w-full">
+<!-- Command Header & Breadcrumb -->
+<div class="px-gutter-desktop py-space-md flex flex-col md:flex-row md:items-center justify-between gap-space-md bg-surface-container-lowest/60">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-space-xs font-code-xs text-code-xs text-outline">
+<span>MODERATION</span>
+<span class="text-outline-variant">/</span>
+<span class="text-primary font-medium">CASES &amp; PUNISHMENTS</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-code-xs text-secondary-fixed-dim">LIVE DISPATCH</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<h1 class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">Moderation Command Center</h1>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-tertiary-container/20 text-tertiary font-code-xs text-code-xs font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-ping"></span>
+          Telemetry 0.9s sync
+        </span>
+</div>
+</div>
+<!-- Live Quick Action Launcher -->
+<div class="flex flex-wrap items-center gap-1.5 bg-surface-container-low p-1.5 rounded-xl shadow-sm">
+<button class="flex items-center gap-1.5 px-space-sm py-1 rounded bg-error/15 hover:bg-error/25 text-error font-label-md text-label-md transition-colors" onclick="openActionModal('Issue Ban', 'error')" type="button">
+<span class="material-symbols-outlined text-[16px]">gavel</span>
+<span>Issue Ban</span>
+<kbd class="font-code-xs text-code-xs px-1 rounded bg-error/30 text-on-surface">B</kbd>
+</button>
+<button class="flex items-center gap-1.5 px-space-sm py-1 rounded bg-secondary-container/30 hover:bg-secondary-container/50 text-secondary-fixed font-label-md text-label-md transition-colors" onclick="openActionModal('Timeout User', 'warning')" type="button">
+<span class="material-symbols-outlined text-[16px]">timer</span>
+<span>Timeout</span>
+<kbd class="font-code-xs text-code-xs px-1 rounded bg-surface-container text-on-surface-variant">T</kbd>
+</button>
+<button class="flex items-center gap-1.5 px-space-sm py-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-md text-label-md transition-colors" onclick="openActionModal('Issue Warning', 'warn')" type="button">
+<span class="material-symbols-outlined text-[16px] text-tertiary">warning</span>
+<span>Warn</span>
+<kbd class="font-code-xs text-code-xs px-1 rounded bg-surface-container-lowest text-outline">W</kbd>
+</button>
+<button class="flex items-center gap-1.5 px-space-sm py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors" onclick="openActionModal('Kick Member', 'default')" type="button">
+<span class="material-symbols-outlined text-[16px]">door_open</span>
+<span>Kick</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-sm py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors" onclick="openActionModal('Purge Messages', 'default')" type="button">
+<span class="material-symbols-outlined text-[16px]">mop</span>
+<span>Purge</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-sm py-1 rounded bg-error-container/40 hover:bg-error-container/70 text-on-error-container font-label-md text-label-md transition-colors" onclick="openActionModal('Channel Lockdown', 'error')" type="button">
+<span class="material-symbols-outlined text-[16px]">lock</span>
+<span>Lockdown</span>
+</button>
+</div>
+</div>
+<!-- Operational Metrics Ticker Strip -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-space-sm px-gutter-desktop py-space-sm bg-surface">
+<div class="p-space-sm rounded-xl bg-surface-container-low flex items-center justify-between shadow-sm">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">24H Punishments</span>
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface">148</span>
+</div>
+<div class="w-16 h-8 text-tertiary flex items-end">
+<svg class="w-full h-full" fill="none" viewbox="0 0 64 24">
+<path d="M0 20 L10 16 L20 18 L32 8 L44 13 L54 6 L64 2" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path>
+<path d="M0 20 L10 16 L20 18 L32 8 L44 13 L54 6 L64 2 L64 24 L0 24 Z" fill="currentColor" fill-opacity="0.12"></path>
+</svg>
+</div>
+</div>
+<div class="p-space-sm rounded-xl bg-surface-container-low flex items-center justify-between shadow-sm">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Active Timeouts</span>
+<span class="font-headline-lg text-headline-lg font-bold text-secondary">37</span>
+</div>
+<span class="font-code-xs text-code-xs text-secondary-fixed bg-secondary-container/40 px-2 py-1 rounded font-medium">+12% vs last week</span>
+</div>
+<div class="p-space-sm rounded-xl bg-surface-container-low flex items-center justify-between shadow-sm">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Automod Block Rate</span>
+<span class="font-headline-lg text-headline-lg font-bold text-tertiary">99.4%</span>
+</div>
+<div class="flex items-center gap-1 font-code-xs text-code-xs text-tertiary">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span>Optimal</span>
+</div>
+</div>
+<div class="p-space-sm rounded-xl bg-surface-container-low flex items-center justify-between shadow-sm">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Avg Response Latency</span>
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface">1.8s</span>
+</div>
+<span class="font-code-xs text-code-xs text-outline bg-surface-container px-2 py-1 rounded">p99: 4.1s</span>
+</div>
+</div>
+<!-- Search and Filter Command Deck -->
+<div class="px-gutter-desktop py-space-sm bg-surface">
+<div class="p-space-sm rounded-xl bg-surface-container-low flex flex-col xl:flex-row gap-space-sm items-stretch xl:items-center justify-between shadow-sm">
+<!-- Search Input with Snowflake Support -->
+<div class="relative flex-1">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input class="w-full pl-9 pr-24 py-2 bg-surface-container-lowest text-on-surface placeholder:text-outline-variant font-body-sm text-body-sm rounded-lg focus:outline-none focus:bg-surface-container-high transition-all" id="searchInput" placeholder="Search by username, Discord Snowflake ID (e.g. 8492019482...), Case #, or violation keyword..." type="text"/>
+<div class="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+<kbd class="font-code-xs text-code-xs px-1.5 py-0.5 rounded bg-surface-container text-outline">⌘F</kbd>
+</div>
+</div>
+<!-- Segmented Select Filters -->
+<div class="flex flex-wrap items-center gap-space-xs">
+<!-- Action Type Filter -->
+<div class="flex items-center bg-surface-container-lowest rounded-lg p-1">
+<span class="material-symbols-outlined text-[16px] text-outline ml-1.5 mr-1">category</span>
+<select class="bg-transparent text-on-surface font-body-sm text-body-sm py-1 pr-6 pl-1 focus:outline-none cursor-pointer">
+<option class="bg-surface-container text-on-surface" value="all">All Actions</option>
+<option class="bg-surface-container text-on-surface" value="ban">Ban (Perm/Temp)</option>
+<option class="bg-surface-container text-on-surface" value="timeout">Timeout</option>
+<option class="bg-surface-container text-on-surface" value="warn">Warning</option>
+<option class="bg-surface-container text-on-surface" value="kick">Kick</option>
+</select>
+</div>
+<!-- Moderator Filter -->
+<div class="flex items-center bg-surface-container-lowest rounded-lg p-1">
+<span class="material-symbols-outlined text-[16px] text-outline ml-1.5 mr-1">badge</span>
+<select class="bg-transparent text-on-surface font-body-sm text-body-sm py-1 pr-6 pl-1 focus:outline-none cursor-pointer">
+<option class="bg-surface-container text-on-surface" value="all">All Staff &amp; AI</option>
+<option class="bg-surface-container text-on-surface" value="sarah">@SarahT (Admin)</option>
+<option class="bg-surface-container text-on-surface" value="marcus">@Marcus (Sr Mod)</option>
+<option class="bg-surface-container text-on-surface" value="alex">@AlexVance (SecOps)</option>
+<option class="bg-surface-container text-on-surface" value="automod">SMCore AutoMod</option>
+</select>
+</div>
+<!-- Status Filter -->
+<div class="flex items-center bg-surface-container-lowest rounded-lg p-1">
+<span class="material-symbols-outlined text-[16px] text-outline ml-1.5 mr-1">filter_list</span>
+<select class="bg-transparent text-on-surface font-body-sm text-body-sm py-1 pr-6 pl-1 focus:outline-none cursor-pointer">
+<option class="bg-surface-container text-on-surface" value="active">Status: Active</option>
+<option class="bg-surface-container text-on-surface" value="expired">Status: Expired</option>
+<option class="bg-surface-container text-on-surface" value="appealed">Status: Appealed</option>
+<option class="bg-surface-container text-on-surface" value="revoked">Status: Revoked</option>
+</select>
+</div>
+<!-- Date Range -->
+<button class="flex items-center gap-1.5 px-space-sm py-2 rounded-lg bg-surface-container-lowest text-on-surface-variant hover:text-on-surface font-body-sm text-body-sm" type="button">
+<span class="material-symbols-outlined text-[16px]">calendar_today</span>
+<span>Last 7 Days</span>
+</button>
+<button class="p-2 rounded-lg bg-surface-container-lowest text-outline hover:text-on-surface transition-colors" onclick="toggleEmptyState()" title="Toggle Demo State (Data/Empty)" type="button">
+<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Primary Workspace: Cases Table + Interactive Slide-over Drawer -->
+<div class="px-gutter-desktop py-space-sm flex-1 flex gap-gutter-desktop items-start relative pb-12">
+<!-- Cases Table Container -->
+<div class="w-full xl:w-[68%] 2xl:w-[72%] transition-all duration-300 flex flex-col rounded-xl bg-surface-container-low shadow-sm overflow-hidden" id="casesTablePanel">
+<!-- Table Header Status Bar -->
+<div class="px-space-md py-2.5 bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-md text-label-md font-semibold text-on-surface">Active Infractions Repository</span>
+<span class="font-code-xs text-code-xs px-2 py-0.5 rounded-full bg-surface-container-high text-primary">Showing 6 of 1,842 cases</span>
+</div>
+<div class="flex items-center gap-space-xs font-code-xs text-code-xs text-outline">
+<span>Sort:</span>
+<button class="text-on-surface font-medium hover:text-primary flex items-center gap-0.5" type="button">
+            Most Recent
+            <span class="material-symbols-outlined text-[14px]">expand_more</span>
+</button>
+</div>
+</div>
+<!-- Data Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-lowest/80 text-outline font-label-sm text-label-sm uppercase tracking-wider">
+<th class="py-2.5 px-space-sm w-20">Case ID</th>
+<th class="py-2.5 px-space-sm min-w-[200px]">Target User</th>
+<th class="py-2.5 px-space-sm w-36">Action</th>
+<th class="py-2.5 px-space-sm min-w-[240px]">Reason &amp; Scope</th>
+<th class="py-2.5 px-space-sm min-w-[150px]">Enforcer</th>
+<th class="py-2.5 px-space-sm w-32">Remaining</th>
+<th class="py-2.5 px-space-sm w-28">Logged</th>
+<th class="py-2.5 px-space-sm text-right w-24">Dispatch</th>
+</tr>
+</thead>
+<tbody class="divide-y-0 font-body-sm text-body-sm" id="casesTableBody">
+<!-- Row #1042 (Active Selection) -->
+<tr class="cursor-pointer bg-surface-container-high/60 hover:bg-surface-container-high transition-colors group" onclick="selectCase(1042)">
+<td class="py-2.5 px-space-sm">
+<div class="flex items-center gap-1">
+<span class="font-code-sm text-code-sm font-semibold text-primary">#1042</span>
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-on-surface" onclick="event.stopPropagation(); copyText('#1042')" title="Copy ID" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-2.5 px-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<img class="w-8 h-8 rounded-full object-cover shrink-0" data-alt="A dark cyberpunk styled Discord user profile avatar portrait with neon violet headphones and glitched digital visor, dark tactical aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqb35ITVIk5b3E8JA-qUfnGi9JpyA3lsAqFPBA_F6mI6Es5m8kBmuF8xfP0amUbkU_i8hZUKVn0_6DuHjAVaZSYfkT3Y3WNb93IRSvUOESCgOMGJYrOrOS4LVeZwitYrecm_4shaOLmxVrnOqiYT7xl9tLqst6-LcJNwtx79tZQRA0t-Lf026ZZ-Zxnua61mVok_F_RDtzs2hBwOgNhdqTVRd_Ofa3_23JjyX6zQbJdVUX6P4UGRyZ"/>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-on-surface font-semibold truncate">ghost_rider</span>
+<span class="font-code-xs text-code-xs text-outline truncate">98127391823791283</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-space-sm">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/40 text-secondary-fixed font-code-xs text-code-xs font-semibold">
+<span class="material-symbols-outlined text-[13px]">timer</span>
+                  TIMEOUT 24H
+                </span>
+</td>
+<td class="py-2.5 px-space-sm">
+<p class="text-on-surface-variant truncate max-w-xs">Targeted harassment and rule #4 violation in #voice-chat-2</p>
+</td>
+<td class="py-2.5 px-space-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-on-surface font-medium truncate">@AlexVance</span>
+</div>
+</td>
+<td class="py-2.5 px-space-sm">
+<span class="font-code-xs text-code-xs text-tertiary bg-tertiary-container/20 px-1.5 py-0.5 rounded">18h remaining</span>
+</td>
+<td class="py-2.5 px-space-sm text-outline font-code-xs text-code-xs whitespace-nowrap">
+                24 mins ago
+              </td>
+<td class="py-2.5 px-space-sm text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="w-7 h-7 flex items-center justify-center rounded bg-surface-container text-outline hover:text-on-surface hover:bg-surface-bright" onclick="event.stopPropagation(); selectCase(1042)" title="Inspect" type="button">
+<span class="material-symbols-outlined text-[16px]">dock_to_left</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded bg-error-container/30 text-error hover:bg-error-container/60" onclick="event.stopPropagation(); promptRevoke(1042)" title="Revoke" type="button">
+<span class="material-symbols-outlined text-[16px]">undo</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row #1041 -->
+<tr class="cursor-pointer hover:bg-surface-container transition-colors group" onclick="selectCase(1041)">
+<td class="py-2.5 px-space-sm">
+<div class="flex items-center gap-1">
+<span class="font-code-sm text-code-sm font-medium text-on-surface">#1041</span>
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-on-surface" onclick="event.stopPropagation(); copyText('#1041')" title="Copy ID" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-2.5 px-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<img class="w-8 h-8 rounded-full object-cover shrink-0" data-alt="A gritty anime-inspired tactical hacker profile icon with purple rim lighting and dark military helmet, modern discord avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgzdinEfrFCAYF3J8kElFUTikbB3hNXqJJceBcA4_kk2QdxDgByR2MGA5_K31z35f4oMEZcdgtvXWN9RtwWpvFROyNDFavY_FEJuMU9d2WGgsas3NiYZqAn3ReUp0jY1dhuYUQyeoebfuUNLibTIfcEURGns2hGGIr6dIlwK8ulQRsYK8YXKd5eaFQ68Yn6T-CbBiIMp_hinqRLMOOUVUcxcDpfWApKve86G7Ba7Hww1RSHLrZl4jO"/>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-on-surface font-semibold truncate">Vortex_Null</span>
+<span class="font-code-xs text-code-xs text-outline truncate">82937109283719284</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-space-sm">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-error-container/40 text-on-error-container font-code-xs text-code-xs font-semibold">
+<span class="material-symbols-outlined text-[13px]">block</span>
+                  TEMP BAN 7D
+                </span>
+</td>
+<td class="py-2.5 px-space-sm">
+<p class="text-on-surface-variant truncate max-w-xs">Coordinated phishing link propagation in #trading</p>
+</td>
+<td class="py-2.5 px-space-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="text-on-surface font-medium truncate">SMCore AutoMod</span>
+</div>
+</td>
+<td class="py-2.5 px-space-sm">
+<span class="font-code-xs text-code-xs text-on-surface-variant bg-surface-container px-1.5 py-0.5 rounded">6d remaining</span>
+</td>
+<td class="py-2.5 px-space-sm text-outline font-code-xs text-code-xs whitespace-nowrap">
+                2 hours ago
+              </td>
+<td class="py-2.5 px-space-sm text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="w-7 h-7 flex items-center justify-center rounded bg-surface-container text-outline hover:text-on-surface hover:bg-surface-bright" onclick="event.stopPropagation(); selectCase(1041)" title="Inspect" type="button">
+<span class="material-symbols-outlined text-[16px]">dock_to_left</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded bg-error-container/30 text-error hover:bg-error-container/60" onclick="event.stopPropagation(); promptRevoke(1041)" title="Revoke" type="button">
+<span class="material-symbols-outlined text-[16px]">undo</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row #1040 -->
+<tr class="cursor-pointer hover:bg-surface-container transition-colors group" onclick="selectCase(1040)">
+<td class="py-2.5 px-space-sm">
+<div class="flex items-center gap-1">
+<span class="font-code-sm text-code-sm font-medium text-on-surface">#1040</span>
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-on-surface" onclick="event.stopPropagation(); copyText('#1040')" title="Copy ID" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-2.5 px-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-label-md shrink-0">
+                    KR
+                  </div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-on-surface font-semibold truncate">KronoRaid</span>
+<span class="font-code-xs text-code-xs text-outline truncate">19482739481928374</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-space-sm">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-error text-on-error font-code-xs text-code-xs font-bold">
+<span class="material-symbols-outlined text-[13px]">gavel</span>
+                  PERM BAN
+                </span>
+</td>
+<td class="py-2.5 px-space-sm">
+<p class="text-on-surface-variant truncate max-w-xs">Mass token raid orchestration and malicious webhook spoofing</p>
+</td>
+<td class="py-2.5 px-space-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="text-on-surface font-medium truncate">@SarahT (Admin)</span>
+</div>
+</td>
+<td class="py-2.5 px-space-sm">
+<span class="font-code-xs text-code-xs text-error font-semibold bg-error-container/20 px-1.5 py-0.5 rounded">Permanent</span>
+</td>
+<td class="py-2.5 px-space-sm text-outline font-code-xs text-code-xs whitespace-nowrap">
+                3 hours ago
+              </td>
+<td class="py-2.5 px-space-sm text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="w-7 h-7 flex items-center justify-center rounded bg-surface-container text-outline hover:text-on-surface hover:bg-surface-bright" onclick="event.stopPropagation(); selectCase(1040)" title="Inspect" type="button">
+<span class="material-symbols-outlined text-[16px]">dock_to_left</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded bg-error-container/30 text-error hover:bg-error-container/60" onclick="event.stopPropagation(); promptRevoke(1040)" title="Revoke" type="button">
+<span class="material-symbols-outlined text-[16px]">undo</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row #1039 -->
+<tr class="cursor-pointer hover:bg-surface-container transition-colors group" onclick="selectCase(1039)">
+<td class="py-2.5 px-space-sm">
+<div class="flex items-center gap-1">
+<span class="font-code-sm text-code-sm font-medium text-on-surface">#1039</span>
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-on-surface" onclick="event.stopPropagation(); copyText('#1039')" title="Copy ID" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-2.5 px-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<img class="w-8 h-8 rounded-full object-cover shrink-0" data-alt="A minimalist low-poly geometric 3D avatar with dark slate facets and subtle amber rim light reflection, professional gamer avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCux88Tc-VreUbvBWgRPppsMhF_ryZq74Zuiy63JYyNvoKiUNIVkEF0M3v8lvHERh34EojowxRYnuaWJaiXR6bwWcJcsL_98DClayYwL_ysObtRYhdzrP_cKVSBi60Zg-n1nHIZcoFSPddyat8vvTAsYdYHxGjErNtriJh-QntGE9xAsLANIG_b-HLLjupA1nBUJANLpo2PVWavX2xbJw2apHkwD21jArpGGafof4yPKlZ3rsIUgxNt"/>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-on-surface font-semibold truncate">z_Specter</span>
+<span class="font-code-xs text-code-xs text-outline truncate">48291048291847192</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-space-sm">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-highest text-tertiary-fixed font-code-xs text-code-xs font-semibold">
+<span class="material-symbols-outlined text-[13px]">warning</span>
+                  WARN (2/3)
+                </span>
+</td>
+<td class="py-2.5 px-space-sm">
+<p class="text-on-surface-variant truncate max-w-xs">Self-promotion and unsolicited DM advertisements</p>
+</td>
+<td class="py-2.5 px-space-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary-fixed-dim"></span>
+<span class="text-on-surface font-medium truncate">@Marcus (Sr Mod)</span>
+</div>
+</td>
+<td class="py-2.5 px-space-sm">
+<span class="font-code-xs text-code-xs text-outline bg-surface-container px-1.5 py-0.5 rounded">30d retention</span>
+</td>
+<td class="py-2.5 px-space-sm text-outline font-code-xs text-code-xs whitespace-nowrap">
+                5 hours ago
+              </td>
+<td class="py-2.5 px-space-sm text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="w-7 h-7 flex items-center justify-center rounded bg-surface-container text-outline hover:text-on-surface hover:bg-surface-bright" onclick="event.stopPropagation(); selectCase(1039)" title="Inspect" type="button">
+<span class="material-symbols-outlined text-[16px]">dock_to_left</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded bg-error-container/30 text-error hover:bg-error-container/60" onclick="event.stopPropagation(); promptRevoke(1039)" title="Revoke" type="button">
+<span class="material-symbols-outlined text-[16px]">undo</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row #1038 -->
+<tr class="cursor-pointer hover:bg-surface-container transition-colors group" onclick="selectCase(1038)">
+<td class="py-2.5 px-space-sm">
+<div class="flex items-center gap-1">
+<span class="font-code-sm text-code-sm font-medium text-on-surface">#1038</span>
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-on-surface" onclick="event.stopPropagation(); copyText('#1038')" title="Copy ID" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-2.5 px-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-8 h-8 rounded-full bg-surface-bright text-on-surface flex items-center justify-center font-bold text-label-md shrink-0">
+                    DJ
+                  </div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-on-surface font-semibold truncate">DeltaJack</span>
+<span class="font-code-xs text-code-xs text-outline truncate">59283719482910482</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-space-sm">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-code-xs text-code-xs font-semibold">
+<span class="material-symbols-outlined text-[13px]">door_open</span>
+                  KICK
+                </span>
+</td>
+<td class="py-2.5 px-space-sm">
+<p class="text-on-surface-variant truncate max-w-xs">Failure to verify within 48h gate check period</p>
+</td>
+<td class="py-2.5 px-space-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="text-on-surface font-medium truncate">SMCore AutoMod</span>
+</div>
+</td>
+<td class="py-2.5 px-space-sm">
+<span class="font-code-xs text-code-xs text-outline bg-surface-container px-1.5 py-0.5 rounded">Executed</span>
+</td>
+<td class="py-2.5 px-space-sm text-outline font-code-xs text-code-xs whitespace-nowrap">
+                Yesterday at 14:22
+              </td>
+<td class="py-2.5 px-space-sm text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="w-7 h-7 flex items-center justify-center rounded bg-surface-container text-outline hover:text-on-surface hover:bg-surface-bright" onclick="event.stopPropagation(); selectCase(1038)" title="Inspect" type="button">
+<span class="material-symbols-outlined text-[16px]">dock_to_left</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded bg-error-container/30 text-error hover:bg-error-container/60" onclick="event.stopPropagation(); promptRevoke(1038)" title="Revoke" type="button">
+<span class="material-symbols-outlined text-[16px]">undo</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row #1037 -->
+<tr class="cursor-pointer hover:bg-surface-container transition-colors group" onclick="selectCase(1037)">
+<td class="py-2.5 px-space-sm">
+<div class="flex items-center gap-1">
+<span class="font-code-sm text-code-sm font-medium text-on-surface">#1037</span>
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-on-surface" onclick="event.stopPropagation(); copyText('#1037')" title="Copy ID" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-2.5 px-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<img class="w-8 h-8 rounded-full object-cover shrink-0" data-alt="High tech abstract neon green cyber mask avatar icon with dark matte carbon fiber textures, Discord gamer style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3TSWjqrcrHquVbvCTLiFZF_K03oIPQisT-kw4wzS0Gr5dSBBu4NkGJsFfKyXoBpfpDk4r3DFA5-UTofdWds1phDe_2LuJ6zb05bPT9MNkHBt8LMWxZ7J-29RZGvTzcUFFsF_YI_W3bUxiqXwBgayRWh1C126uwxbhHaU00w8smDrmDe-1TmyKTh35PhUXKyXQd0piU2DdnQt92kyxVWSMxyoIqeKafaQiR6fAJHsVaWVQfaquKdaP"/>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-on-surface font-semibold truncate">ne0n_byte</span>
+<span class="font-code-xs text-code-xs text-outline truncate">39482910482910482</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-space-sm">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/40 text-secondary-fixed font-code-xs text-code-xs font-semibold">
+<span class="material-symbols-outlined text-[13px]">timer</span>
+                  TIMEOUT 1H
+                </span>
+</td>
+<td class="py-2.5 px-space-sm">
+<p class="text-on-surface-variant truncate max-w-xs">Excessive character spam and emoji flood in #memes</p>
+</td>
+<td class="py-2.5 px-space-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-on-surface font-medium truncate">@AlexVance</span>
+</div>
+</td>
+<td class="py-2.5 px-space-sm">
+<span class="font-code-xs text-code-xs text-outline bg-surface-container px-1.5 py-0.5 rounded">Expired</span>
+</td>
+<td class="py-2.5 px-space-sm text-outline font-code-xs text-code-xs whitespace-nowrap">
+                Yesterday at 09:15
+              </td>
+<td class="py-2.5 px-space-sm text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="w-7 h-7 flex items-center justify-center rounded bg-surface-container text-outline hover:text-on-surface hover:bg-surface-bright" onclick="event.stopPropagation(); selectCase(1037)" title="Inspect" type="button">
+<span class="material-symbols-outlined text-[16px]">dock_to_left</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded bg-error-container/30 text-error hover:bg-error-container/60" onclick="event.stopPropagation(); promptRevoke(1037)" title="Revoke" type="button">
+<span class="material-symbols-outlined text-[16px]">undo</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Empty State Container (Hidden by default, triggered via toggle switch) -->
+<div class="hidden flex-col items-center justify-center p-12 text-center bg-surface-container-low" id="casesEmptyState">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-outline mb-space-sm">
+<span class="material-symbols-outlined text-[28px]">search_off</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-on-surface font-bold">No Infraction Records Found</h4>
+<p class="font-body-md text-body-md text-outline max-w-sm mt-1">No active moderation cases match your currently selected filters or Snowflake query.</p>
+<button class="mt-space-md px-space-md py-1.5 rounded-lg bg-surface-container text-primary hover:bg-surface-container-high font-label-md text-label-md font-semibold" onclick="resetFilters()" type="button">
+          Reset Active Filters
+        </button>
+</div>
+<!-- Compact Technical Pagination Bar -->
+<div class="px-space-md py-2 bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-space-xs font-code-xs text-code-xs text-outline">
+<span>Row display:</span>
+<select class="bg-surface-container-lowest text-on-surface px-1.5 py-0.5 rounded font-code-xs text-code-xs focus:outline-none">
+<option>25 per page</option>
+<option>50 per page</option>
+<option>100 per page</option>
+</select>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-code-xs text-code-xs text-outline mr-2">Page 1 of 74</span>
+<button class="w-7 h-7 flex items-center justify-center rounded bg-surface-container-lowest text-outline opacity-40 cursor-not-allowed" type="button">
+<span class="material-symbols-outlined text-[16px]">chevron_left</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded bg-surface-container-lowest text-on-surface hover:bg-surface-bright" type="button">
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Slide-over Case Detail Drawer (Docked Inspection Pane) -->
+<div class="w-full xl:w-[32%] 2xl:w-[28%] bg-surface-container-low rounded-xl shadow-xl flex flex-col overflow-hidden transition-all duration-300" id="caseDetailDrawer">
+<!-- Drawer Header -->
+<div class="px-space-md py-space-sm bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-md text-headline-md font-bold text-on-surface">Case #1042</span>
+<span class="font-code-xs text-code-xs px-2 py-0.5 rounded-full bg-secondary-container/50 text-secondary-fixed font-bold">
+            ACTIVE TIMEOUT
+          </span>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container-high" onclick="copyText('https://smcore.network/cases/1042')" title="Copy Link" type="button">
+<span class="material-symbols-outlined text-[18px]">share</span>
+</button>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container-high" onclick="closeDrawer()" title="Close Pane" type="button">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+</div>
+<!-- Drawer Scrollable Content -->
+<div class="p-space-md space-y-space-md overflow-y-auto max-h-[calc(100vh-250px)]">
+<!-- Target Profile Card -->
+<div class="p-space-sm rounded-xl bg-surface-container flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Target Subject</span>
+<span class="font-code-xs text-code-xs text-tertiary flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+              Present on Server
+            </span>
+</div>
+<div class="flex items-center gap-space-sm mt-1">
+<img class="w-12 h-12 rounded-full object-cover shrink-0" data-alt="Cyberpunk styled discord profile portrait with glowing violet highlights on black background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNaWumMAR2PfshPPhRQzZW3tqGadySX7CZp42FmdAOrsXbAbrErNaj42Yaxot25g0fSvgOxECTK9SD8ngIvfzxlJe9-Ig0RHwxPwMJ9DY9XfoSjqGeAFsicDLHKL7h5LeqX3dhzPhBWHHQGQglOjO7CRvepLDKIwKeEbawBN7by3Z6pDHXDIFPpGhP5jDvFAx9MHCR95UMeZN5UM8PPUgCCvNmDossn4mpAHltAsh93Y-a-vaWKyUW"/>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-md text-headline-md font-bold text-on-surface truncate">ghost_rider</span>
+<span class="font-code-xs text-code-xs text-outline">#0001</span>
+</div>
+<span class="font-code-xs text-code-xs text-primary font-medium select-all">98127391823791283</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-2 mt-2 pt-2 bg-surface-container-lowest/50 p-2 rounded-lg">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline">Member For</span>
+<span class="font-code-xs text-code-xs font-semibold text-on-surface">4 mos (Joined Jun 2024)</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline">Infraction Score</span>
+<span class="font-code-xs text-code-xs font-semibold text-error">Tier 2 Risk (3 Cases)</span>
+</div>
+</div>
+<div class="flex items-center justify-between mt-1 text-outline font-code-xs text-code-xs">
+<span>Prior Record:</span>
+<span class="text-on-surface-variant font-medium">2 Warnings • 1 Timeout</span>
+</div>
+</div>
+<!-- Infraction Specification Grid -->
+<div class="space-y-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Infraction Scope</span>
+<div class="p-space-sm rounded-xl bg-surface-container space-y-2">
+<div class="flex justify-between items-start">
+<span class="text-outline font-body-sm text-body-sm">Primary Offense</span>
+<span class="text-on-surface font-semibold font-body-sm text-body-sm text-right">Rule 3 (Harassment)</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-outline font-body-sm text-body-sm">Channel Context</span>
+<span class="font-code-xs text-code-xs text-primary bg-surface-container-lowest px-2 py-0.5 rounded">#voice-chat-2</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-outline font-body-sm text-body-sm">Enforcing Staff</span>
+<div class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-on-surface font-medium font-body-sm text-body-sm">@AlexVance (SecOps)</span>
+</div>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-outline font-body-sm text-body-sm">Timestamp</span>
+<span class="font-code-xs text-code-xs text-on-surface-variant">Oct 24, 2024 • 19:42:04 UTC</span>
+</div>
+</div>
+</div>
+<!-- Evidence & Context Snippet -->
+<div class="space-y-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Captured Evidence Payload</span>
+<span class="font-code-xs text-code-xs text-tertiary">3 purged logs</span>
+</div>
+<div class="p-space-sm rounded-xl bg-surface-container-lowest space-y-2">
+<div class="text-outline font-code-xs text-code-xs flex justify-between">
+<span>Deleted Message ID: 12938472910481928</span>
+<span>19:41:58 UTC</span>
+</div>
+<p class="font-code-xs text-code-xs text-on-surface bg-surface-container p-2 rounded leading-relaxed select-all">
+              "You all need to get off this voice channel right now or I'm mass pinging everyone in the lobby. Stop ignoring me @here @everyone..."
+            </p>
+<div class="flex items-center gap-1.5 text-error font-code-xs text-code-xs">
+<span class="material-symbols-outlined text-[14px]">report</span>
+<span>System flagged: Mass ping velocity exceeded limit (4 mentions/sec)</span>
+</div>
+</div>
+</div>
+<!-- Action Dispatchers -->
+<div class="pt-2 flex flex-col gap-2">
+<button class="w-full flex items-center justify-center gap-2 py-2 px-space-md rounded-lg bg-error-container/30 hover:bg-error-container/60 text-error font-label-md text-label-md font-semibold transition-colors" onclick="promptRevoke(1042)" type="button">
+<span class="material-symbols-outlined text-[18px]">undo</span>
+<span>Revoke Punishment Early</span>
+</button>
+<div class="grid grid-cols-2 gap-2">
+<button class="flex items-center justify-center gap-1.5 py-2 px-space-sm rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors" onclick="openNotesModal(1042)" type="button">
+<span class="material-symbols-outlined text-[16px]">edit_note</span>
+<span>Append Note</span>
+</button>
+<button class="flex items-center justify-center gap-1.5 py-2 px-space-sm rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">open_in_new</span>
+<span>Audit Profile</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Reversible Modal Overlay: Revoke Confirmation -->
+<div class="fixed inset-0 bg-surface-container-lowest/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" id="revokeModal">
+<div class="w-full max-w-md bg-surface-container rounded-xl p-space-lg shadow-2xl flex flex-col gap-space-md">
+<div class="flex items-start gap-space-sm">
+<div class="w-10 h-10 rounded-full bg-error/20 text-error flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[24px]">warning</span>
+</div>
+<div class="flex flex-col">
+<h3 class="font-headline-md text-headline-md font-bold text-on-surface">Confirm Punishment Revocation</h3>
+<p class="font-body-sm text-body-sm text-outline mt-1">
+            You are about to undo the active sanction for <span class="text-primary font-medium font-code-xs" id="revokeCaseLabel">Case #1042</span>. The Discord timeout will immediately be cleared via Gateway API.
+          </p>
+</div>
+</div>
+<div class="space-y-1">
+<label class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Mandatory Revocation Audit Reason</label>
+<textarea class="w-full p-2 rounded-lg bg-surface-container-lowest text-on-surface font-body-sm text-body-sm placeholder:text-outline-variant focus:outline-none" placeholder="Explain reason for early discharge (e.g., False positive, mod discretion, accepted appeal)..." rows="2"></textarea>
+</div>
+<div class="flex items-center justify-end gap-2 pt-2">
+<button class="px-space-md py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-md text-label-md" onclick="closeRevokeModal()" type="button">
+          Cancel
+        </button>
+<button class="px-space-md py-1.5 rounded-lg bg-error text-on-error hover:bg-error/90 font-label-md text-label-md font-semibold flex items-center gap-1" onclick="confirmRevoke()" type="button">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span>Confirm &amp; Dispatch API</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Reversible Modal Overlay: Universal Action Launcher -->
+<div class="fixed inset-0 bg-surface-container-lowest/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" id="actionModal">
+<div class="w-full max-w-lg bg-surface-container rounded-xl p-space-lg shadow-2xl flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[22px]">terminal</span>
+<h3 class="font-headline-md text-headline-md font-bold text-on-surface" id="actionModalTitle">Execute Moderation Action</h3>
+</div>
+<button class="text-outline hover:text-on-surface" onclick="closeActionModal()" type="button">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<div class="space-y-space-sm">
+<div>
+<label class="font-label-sm text-label-sm text-outline uppercase tracking-wider block mb-1">Target User ID or @Mention</label>
+<input class="w-full p-2 bg-surface-container-lowest rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none" placeholder="e.g. 98127391823791283 or @username" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<div>
+<label class="font-label-sm text-label-sm text-outline uppercase tracking-wider block mb-1">Duration / Expiration</label>
+<select class="w-full p-2 bg-surface-container-lowest rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none">
+<option>1 Hour</option>
+<option>24 Hours</option>
+<option>7 Days</option>
+<option>Permanent</option>
+</select>
+</div>
+<div>
+<label class="font-label-sm text-label-sm text-outline uppercase tracking-wider block mb-1">Prune Recent Messages</label>
+<select class="w-full p-2 bg-surface-container-lowest rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none">
+<option>Don't delete</option>
+<option>Last 24 Hours</option>
+<option>Last 7 Days</option>
+</select>
+</div>
+</div>
+<div>
+<label class="font-label-sm text-label-sm text-outline uppercase tracking-wider block mb-1">Infraction Reason &amp; Discord Audit Note</label>
+<textarea class="w-full p-2 bg-surface-container-lowest rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none" placeholder="Provide specific server rule violation and evidence links..." rows="3"></textarea>
+</div>
+</div>
+<div class="flex items-center justify-between pt-2">
+<div class="flex items-center gap-1.5 text-outline font-code-xs text-code-xs">
+<span class="material-symbols-outlined text-[16px] text-tertiary">lock</span>
+<span>SecOps Cryptographically Signed</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-space-md py-1.5 rounded-lg bg-surface-container-high text-on-surface font-label-md text-label-md" onclick="closeActionModal()" type="button">
+            Cancel
+          </button>
+<button class="px-space-md py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold" onclick="executeAction()" type="button">
+            Execute Command
+          </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Toast Notification Feedback -->
+<div class="fixed bottom-6 right-6 px-space-md py-2.5 rounded-xl bg-surface-bright text-on-surface font-label-md text-label-md shadow-2xl flex items-center gap-2 transform translate-y-24 opacity-0 transition-all duration-300 z-50" id="commandToast">
+<span class="material-symbols-outlined text-[18px] text-tertiary" id="toastIcon">check_circle</span>
+<span id="toastMessage">Action completed successfully</span>
+</div>
+</div>
+<script>
+  let activeCaseId = 1042;
+  let isEmpty = false;
+
+  function selectCase(id) {
+    activeCaseId = id;
+    const drawer = document.getElementById('caseDetailDrawer');
+    const tablePanel = document.getElementById('casesTablePanel');
+    
+    // Ensure drawer is open and update data
+    drawer.classList.remove('hidden');
+    tablePanel.classList.remove('xl:w-full');
+    tablePanel.classList.add('xl:w-[68%]', '2xl:w-[72%]');
+
+    showToast(`Loaded Case #${id} details`);
+  }
+
+  function closeDrawer() {
+    const drawer = document.getElementById('caseDetailDrawer');
+    const tablePanel = document.getElementById('casesTablePanel');
+    drawer.classList.add('hidden');
+    tablePanel.classList.remove('xl:w-[68%]', '2xl:w-[72%]');
+    tablePanel.classList.add('xl:w-full');
+  }
+
+  function toggleEmptyState() {
+    isEmpty = !isEmpty;
+    const table = document.getElementById('casesTableBody');
+    const empty = document.getElementById('casesEmptyState');
+    if (isEmpty) {
+      table.parentElement.classList.add('hidden');
+      empty.classList.remove('hidden');
+      empty.classList.add('flex');
+    } else {
+      table.parentElement.classList.remove('hidden');
+      empty.classList.add('hidden');
+      empty.classList.remove('flex');
+    }
+  }
+
+  function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    toggleEmptyState();
+    showToast('Filters reset to default view');
+  }
+
+  function promptRevoke(caseId) {
+    document.getElementById('revokeCaseLabel').innerText = `Case #${caseId}`;
+    document.getElementById('revokeModal').classList.remove('hidden');
+  }
+
+  function closeRevokeModal() {
+    document.getElementById('revokeModal').classList.add('hidden');
+  }
+
+  function confirmRevoke() {
+    closeRevokeModal();
+    showToast(`Case #${activeCaseId} revoked. Gateway dispatch complete.`);
+  }
+
+  function openActionModal(actionTitle, type) {
+    document.getElementById('actionModalTitle').innerText = actionTitle;
+    document.getElementById('actionModal').classList.remove('hidden');
+  }
+
+  function closeActionModal() {
+    document.getElementById('actionModal').classList.add('hidden');
+  }
+
+  function executeAction() {
+    closeActionModal();
+    showToast('Moderation action committed to Gateway');
+  }
+
+  function openNotesModal(caseId) {
+    showToast(`Opening note editor for Case #${caseId}`);
+  }
+
+  function copyText(text) {
+    navigator.clipboard?.writeText(text);
+    showToast(`Copied "${text}" to clipboard`);
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('commandToast');
+    const msgEl = document.getElementById('toastMessage');
+    msgEl.innerText = msg;
+    toast.classList.remove('translate-y-24', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+    setTimeout(() => {
+      toast.classList.add('translate-y-24', 'opacity-0');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }, 2800);
+  }
+
+  // Keyboard shortcut binds
+  window.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'b' || e.key === 'B') {
+      openActionModal('Issue Ban', 'error');
+    } else if (e.key === 't' || e.key === 'T') {
+      openActionModal('Timeout User', 'warning');
+    } else if (e.key === 'w' || e.key === 'W') {
+      openActionModal('Issue Warning', 'warn');
+    } else if (e.key === 'Escape') {
+      closeRevokeModal();
+      closeActionModal();
+    }
+  });
+</script></main></div></body></html>

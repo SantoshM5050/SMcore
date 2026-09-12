@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><title>SMCore - Community Suite &amp; Operations</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "error-container": "#93000a", "surface-dim": "#121318", "inverse-primary": "#494bd6", "on-error": "#690005", "surface-container": "#1e1f25", "on-primary": "#1000a9", "surface-container-high": "#292a2f", "surface-bright": "#38393f", "surface": "#121318", "primary-container": "#8083ff", "surface-container-lowest": "#0d0e13", "on-error-container": "#ffdad6", "primary-fixed-dim": "#c0c1ff", "on-tertiary": "#003824", "on-secondary": "#131e8c", "primary-fixed": "#e1e0ff", "secondary-fixed": "#e0e0ff", "tertiary-fixed-dim": "#4edea3", "outline-variant": "#464554", "tertiary": "#4edea3", "primary": "#c0c1ff", "on-primary-container": "#0d0096", "surface-container-low": "#1a1b21", "on-secondary-container": "#a8afff", "secondary-fixed-dim": "#bdc2ff", "tertiary-fixed": "#6ffbbe", "on-surface": "#e3e1e9", "surface-container-highest": "#34343a", "inverse-on-surface": "#2f3036", "on-tertiary-fixed-variant": "#005236", "error": "#ffb4ab", "on-primary-fixed": "#07006c", "on-tertiary-fixed": "#002113", "background": "#121318", "secondary": "#bdc2ff", "on-surface-variant": "#c7c4d7", "surface-tint": "#c0c1ff", "on-primary-fixed-variant": "#2f2ebe", "secondary-container": "#2f3aa3", "on-background": "#e3e1e9", "on-tertiary-container": "#000703", "surface-variant": "#34343a", "tertiary-container": "#00885d", "on-secondary-fixed": "#000767", "inverse-surface": "#e3e1e9", "on-secondary-fixed-variant": "#2f3aa3", "outline": "#908fa0" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "space-xs": "0.25rem", "space-sm": "0.5rem", "margin-tablet": "1.5rem", "space-md": "0.75rem", "gutter-desktop": "1.5rem", "gutter": "1rem", "space-xl": "1.75rem", "margin": "1rem", "margin-desktop": "2rem", "space-lg": "1.25rem" }, "fontFamily": { "body-lg": ["Inter"], "label-sm": ["Inter"], "headline-lg-mobile": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "code-sm": ["JetBrains Mono"], "headline-md": ["Plus Jakarta Sans"], "headline-xl-mobile": ["Plus Jakarta Sans"], "body-md": ["Inter"], "code-xs": ["JetBrains Mono"], "body-sm": ["Inter"], "label-md": ["Inter"], "headline-xl": ["Plus Jakarta Sans"] }, "fontSize": { "body-lg": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "-0.01em", "fontWeight": "400" }], "label-sm": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0.04em", "fontWeight": "600" }], "headline-lg-mobile": ["1.25rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.015em", "fontWeight": "600" }], "headline-lg": ["1.5rem", { "lineHeight": "2rem", "letterSpacing": "-0.02em", "fontWeight": "600" }], "code-sm": ["0.75rem", { "lineHeight": "1rem", "letterSpacing": "-0.01em", "fontWeight": "400" }], "headline-md": ["1.125rem", { "lineHeight": "1.5rem", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-xl-mobile": ["1.75rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "700" }], "body-md": ["0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "-0.005em", "fontWeight": "400" }], "code-xs": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0em", "fontWeight": "500" }], "body-sm": ["0.75rem", { "lineHeight": "1.125rem", "letterSpacing": "0em", "fontWeight": "400" }], "label-md": ["0.8125rem", { "lineHeight": "1rem", "letterSpacing": "0.01em", "fontWeight": "500" }], "headline-xl": ["2.25rem", { "lineHeight": "2.75rem", "letterSpacing": "-0.025em", "fontWeight": "700" }] } } } };</script></head><body class="bg-background font-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container"><aside class="fixed left-0 top-0 h-screen w-72 bg-surface-container-lowest flex flex-col z-50 select-none shadow-[0_0_24px_rgba(0,0,0,0.6)]"><div class="h-16 px-space-md flex items-center justify-between bg-surface-container-lowest/90"><div class="flex items-center gap-space-sm"><img alt="SMCore Brand Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UDAouqS7TKG3Rtn59f9plqe10dg3BJ-8MuGo4ChUtcMJW-z9atkql1SAkzLcdH0a5k64wvI-iXrXwQO3wM_mkS-GfnugM16qQFiJFGFNfUeGfgicu1-x7_4fiG0G-bhKZ3Ylrah8CdkMQ_Mjfv9pbQha5CC1AgG2TukHsfdqWwCWCXwZ4jqgn7mI9-0jYzSw-zKrcAdYu4NCqXr2KSk2GAbrep_-BJz0YS1a5jzm2qHp4xZKMW7OSY350"/><div class="flex flex-col"><span class="font-headline-md text-headline-md tracking-tight text-on-surface font-bold">SMCore</span><span class="font-code-xs text-code-xs text-outline tracking-wider uppercase">Community Suite v4.8</span></div></div><div class="flex items-center gap-space-xs"><button class="w-7 h-7 flex items-center justify-center rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Toggle Rail Mode" type="button"><span class="material-symbols-outlined text-[16px]">dock_to_right</span></button></div></div><div class="px-space-md py-space-xs"><button class="w-full flex items-center justify-between p-space-sm rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors" type="button"><div class="flex items-center gap-space-sm overflow-hidden"><div class="w-8 h-8 rounded-lg bg-secondary-container text-on-secondary-container flex items-center justify-center font-headline-md text-headline-md font-bold shrink-0">A</div><div class="flex flex-col text-left truncate"><span class="font-label-md text-label-md text-on-surface truncate font-semibold">Apex Network</span><span class="font-code-xs text-code-xs text-tertiary flex items-center gap-1"><span class="inline-block w-1.5 h-1.5 rounded-full bg-tertiary"></span>148.2k members</span></div></div><span class="material-symbols-outlined text-outline-variant text-[18px]">unfold_more</span></button></div><div class="px-space-md py-space-xs"><div class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-xl bg-surface-container-low text-outline"><span class="material-symbols-outlined text-[16px]">search</span><input class="bg-transparent w-full text-on-surface placeholder:text-outline-variant font-body-sm text-body-sm focus:outline-none" placeholder="Quick switch..." type="text"/><kbd class="font-code-xs text-code-xs px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant">⌘K</kbd></div></div><nav class="flex-1 overflow-y-auto px-space-md py-space-xs space-y-space-md" data-active-classes="bg-primary-container text-on-primary-container font-semibold shadow-[0_0_12px_rgba(128,131,255,0.2)]"><div class="space-y-0.5"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">Overview</div><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="overview" href="#">Overview</a></div><div class="space-y-0.5"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">Moderation</div><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="command-center" href="#">Command Center</a><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="cases" href="#">Cases</a><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="warnings-and-escalation" href="#">Warnings &amp; Escalation</a><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="bans-and-timeouts" href="#">Bans &amp; Timeouts</a><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="members" href="#">Members</a></div><div class="space-y-0.5"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">AutoMod &amp; Security</div><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="automod-rules" href="#">AutoMod Rules</a><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="anti-spam-and-links" href="#">Anti-Spam &amp; Links</a><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="anti-raid-and-quarantine" href="#">Anti-Raid &amp; Quarantine</a></div><div class="space-y-0.5 p-1 rounded-xl bg-surface-container-low/60"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-primary font-semibold flex items-center justify-between"><span>Ticketing</span><span class="font-code-xs text-[10px] uppercase tracking-normal px-1.5 py-0.5 rounded bg-primary-container/20 text-primary font-bold">PRO</span></div><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="ticket-command-center" href="#">Ticket Command Center</a><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="visual-panel-builder" href="#">Visual Panel Builder</a><a aria-current="page" class="block px-space-sm py-1.5 rounded-lg transition-all bg-primary-container text-on-primary-container font-semibold shadow-[0_0_12px_rgba(128,131,255,0.2)]" data-path="active-ticket-workspace" href="#">Active Ticket Workspace</a><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="custom-forms" href="#">Custom Forms</a><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="transcripts-repository" href="#">Transcripts Repository</a><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="workflow-automations" href="#">Workflow Automations</a><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="categories-and-routing" href="#">Categories &amp; Routing</a></div><div class="space-y-0.5"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">Logging &amp; Audit</div><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="event-configuration" href="#">Event Configuration</a><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="forum-logging-hub" href="#">Forum Logging Hub</a><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="audit-trail" href="#">Audit Trail</a></div><div class="space-y-0.5"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">Staff &amp; Access</div><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="staff-roles-and-permissions" href="#">Staff Roles &amp; Permissions</a><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="staff-performance" href="#">Staff Performance</a></div><div class="space-y-0.5"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">Settings</div><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="general" href="#">General</a><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="integrations" href="#">Integrations</a><a class="block px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-sm text-body-sm transition-all" data-path="appeals-portal" href="#">Appeals Portal</a></div></nav><div class="p-space-sm bg-surface-container-lowest/95"><div class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors"><div class="flex items-center gap-space-sm overflow-hidden"><img alt="Alex Vance Profile" class="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-tertiary/40" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVS70ruVOPzOh-osQyCT3T74d2vtOpN0gxAZ7QlrMK4Uh4gS7JyMqsZ51x5b9Kfh3x09Wpj071zgQ8t2jrWhxnHWzV-CEFoPNmZt4H6zRn677QfILwtiXTtWS20XUxVCyBaLZSugC5IFt2Moam4LcH0dRbvioKhTh8pYRtp9x2DKobDPgcQ_kBQ24XMCl8ipvPx5H1Ayrv8bSFVW-hSTYtM2PayhHcgvi6a8vVRZGsdthetnBg7tYS"/><div class="flex flex-col truncate"><span class="font-label-md text-label-md text-on-surface truncate font-semibold">Alex Vance</span><span class="font-code-xs text-code-xs text-outline truncate">Server Administrator</span></div></div><div class="flex items-center gap-1"><button class="w-7 h-7 flex items-center justify-center rounded-lg text-outline-variant hover:text-on-surface hover:bg-surface-container-high transition-colors relative" title="Notifications" type="button"><span class="material-symbols-outlined text-[18px]">notifications</span><span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-error ring-2 ring-surface-container-low"></span></button><button class="w-7 h-7 flex items-center justify-center rounded-lg text-outline-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Preferences" type="button"><span class="material-symbols-outlined text-[18px]">more_vert</span></button></div></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface/85 backdrop-blur-xl z-40 shadow-[0_1px_12px_rgba(0,0,0,0.35)]"><div class="h-16 w-full px-gutter-desktop flex items-center justify-between"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs font-code-xs text-code-xs px-2.5 py-1 rounded-full bg-tertiary-container/30 text-tertiary border-0"><span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span><span>Bot Status: Online • 24ms ping • v4.8.2</span></div><div class="hidden xl:flex items-center gap-space-xs font-body-sm text-body-sm text-outline"><span class="material-symbols-outlined text-[16px]">dns</span><span class="text-on-surface font-medium">Apex Network</span><span class="material-symbols-outlined text-[14px]">chevron_right</span><span class="text-on-surface-variant font-code-sm text-code-sm">Community Portal</span></div></div><div class="flex items-center gap-space-md"><button class="flex items-center gap-space-sm px-space-md py-1.5 rounded-xl bg-surface-container text-outline hover:text-on-surface hover:bg-surface-container-high transition-all" type="button"><span class="material-symbols-outlined text-[18px]">search</span><span class="font-body-sm text-body-sm hidden sm:inline">⌘K Search everything...</span><kbd class="font-code-xs text-code-xs px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant hidden md:inline">Ctrl+K</kbd></button><div class="flex items-center gap-space-xs"><button class="px-space-sm py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface flex items-center gap-1.5 transition-colors" title="Incident Banner Controller" type="button"><span class="material-symbols-outlined text-[18px] text-tertiary">shield_with_heart</span><span class="font-label-sm text-label-sm uppercase hidden lg:inline">Live Status</span></button><a class="px-space-sm py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface flex items-center gap-1.5 transition-colors font-body-sm text-body-sm" href="#"><span class="material-symbols-outlined text-[18px]">menu_book</span><span class="hidden lg:inline">Docs</span></a><div class="w-px h-5 bg-surface-container-highest mx-1 hidden sm:block"></div><div class="flex items-center gap-space-sm pl-1"><img alt="Alex Vance" class="w-8 h-8 rounded-full object-cover ring-1 ring-primary/40" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVS70ruVOPzOh-osQyCT3T74d2vtOpN0gxAZ7QlrMK4Uh4gS7JyMqsZ51x5b9Kfh3x09Wpj071zgQ8t2jrWhxnHWzV-CEFoPNmZt4H6zRn677QfILwtiXTtWS20XUxVCyBaLZSugC5IFt2Moam4LcH0dRbvioKhTh8pYRtp9x2DKobDPgcQ_kBQ24XMCl8ipvPx5H1Ayrv8bSFVW-hSTYtM2PayhHcgvi6a8vVRZGsdthetnBg7tYS"/><span class="font-label-md text-label-md text-on-surface font-medium hidden md:inline">Alex Vance • Server Administrator</span></div></div></div></div></header><main class="relative w-full pt-16 bg-surface"><div class="flex flex-col w-full">
+<div class="w-full bg-surface-container-low px-gutter-desktop py-space-md shadow-sm">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs font-code-xs text-code-xs text-outline">
+<span class="hover:text-on-surface cursor-pointer transition-colors">Tickets</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="hover:text-on-surface cursor-pointer transition-colors">Open Tickets</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary font-medium">#support-1042</span>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm pt-0.5">
+<h1 class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">#support-1042</h1>
+<div class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-tertiary/15 text-tertiary font-label-sm text-label-sm shadow-[0_0_10px_rgba(78,222,163,0.25)]">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
+<span>OPEN</span>
+</div>
+<div class="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-error-container/40 text-error font-label-sm text-label-sm shadow-[0_0_8px_rgba(255,180,171,0.15)]">
+<span class="material-symbols-outlined text-[13px]">priority_high</span>
+<span>HIGH PRIORITY</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-code-xs text-code-xs">
+<span class="material-symbols-outlined text-[14px] text-secondary">payments</span>
+<span>Billing &amp; Purchases</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container-high text-outline font-code-xs text-code-xs">
+<span class="material-symbols-outlined text-[14px]">tag</span>
+<span>#ticket-frosty_dev-1042</span>
+</div>
+</div>
+</div>
+<div class="flex flex-wrap items-center gap-space-xs">
+<div class="flex items-center gap-1.5 px-space-sm py-1.5 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+<span class="text-outline">Claimed by</span>
+<span class="font-semibold text-secondary">@SarahT</span>
+</div>
+<button class="flex items-center gap-1.5 px-space-sm py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+<span>Transfer</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-sm py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-[16px]">person_add</span>
+<span>Add User</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-sm py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-[16px]">receipt_long</span>
+<span>Export HTML</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-md py-1.5 rounded-lg bg-error-container/80 hover:bg-error-container text-on-error-container font-label-md text-label-md transition-all shadow-[0_0_12px_rgba(147,0,10,0.35)]" id="closeTicketBtn" type="button">
+<span class="material-symbols-outlined text-[16px]">lock</span>
+<span class="font-semibold">Close Ticket</span>
+</button>
+</div>
+</div>
+</div>
+<div class="w-full px-gutter-desktop py-space-lg grid grid-cols-1 xl:grid-cols-12 gap-space-lg">
+<div class="xl:col-span-8 flex flex-col gap-space-md">
+<div class="w-full p-space-sm rounded-xl bg-surface-container-low flex items-center justify-between gap-space-sm shadow-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-8 h-8 rounded-lg bg-primary-container/20 text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-on-surface font-semibold truncate">Auto-Intake Complete</span>
+<span class="font-body-sm text-body-sm text-outline truncate">Created via 'Billing &amp; Purchases' panel. User completed intake form 'VIP Store Checkout'.</span>
+</div>
+</div>
+<span class="font-code-xs text-code-xs px-2 py-0.5 rounded bg-surface-container text-tertiary shrink-0">Webhook 200 OK</span>
+</div>
+<div class="w-full rounded-xl bg-surface-container-low overflow-hidden shadow-sm">
+<button class="w-full px-space-md py-space-sm flex items-center justify-between bg-surface-container hover:bg-surface-container-high transition-colors" id="toggleIntakeBtn" type="button">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[18px]">assignment</span>
+<span class="font-label-md text-label-md text-on-surface font-bold tracking-tight uppercase">Intake Form Submission Data</span>
+<span class="font-code-xs text-code-xs text-outline px-1.5 py-0.5 rounded bg-surface-container-low">3 fields verified</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[20px] transition-transform duration-200" id="intakeChevron">expand_less</span>
+</button>
+<div class="p-space-md bg-surface-container-lowest grid grid-cols-1 md:grid-cols-3 gap-space-md" id="intakeContent">
+<div class="flex flex-col p-space-sm rounded-lg bg-surface-container-low shadow-sm">
+<span class="font-code-xs text-code-xs text-outline uppercase tracking-wider mb-1">Discord User ID</span>
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-primary font-semibold select-all">4892810928</span>
+<button class="text-outline-variant hover:text-on-surface transition-colors" onclick="navigator.clipboard.writeText('4892810928')" title="Copy User ID" type="button">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+</button>
+</div>
+</div>
+<div class="flex flex-col p-space-sm rounded-lg bg-surface-container-low shadow-sm">
+<span class="font-code-xs text-code-xs text-outline uppercase tracking-wider mb-1">Transaction / Invoice ID</span>
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-tertiary font-semibold select-all">INV-APEX-98218</span>
+<button class="text-outline-variant hover:text-on-surface transition-colors" onclick="navigator.clipboard.writeText('INV-APEX-98218')" title="Copy Invoice" type="button">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+</button>
+</div>
+</div>
+<div class="flex flex-col p-space-sm rounded-lg bg-surface-container-low shadow-sm md:col-span-1">
+<span class="font-code-xs text-code-xs text-outline uppercase tracking-wider mb-1">Store Gateway</span>
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface font-medium">Tebex Global Checkout</span>
+<span class="material-symbols-outlined text-[16px] text-tertiary">cloud_done</span>
+</div>
+</div>
+<div class="md:col-span-3 p-space-sm rounded-lg bg-surface-container-low flex flex-col gap-1">
+<span class="font-code-xs text-code-xs text-outline uppercase tracking-wider">Reported Issue Description</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant font-mono bg-surface-container-lowest p-space-sm rounded">
+              "Bought Apex Tier 3 VIP on Tebex 30 mins ago. Role was not assigned in Discord automatically."
+            </p>
+</div>
+</div>
+</div>
+<div class="w-full rounded-xl bg-surface-container-low p-space-lg flex flex-col gap-space-lg shadow-sm">
+<div class="flex items-center gap-space-md">
+<div class="h-px bg-surface-container-highest flex-1"></div>
+<span class="font-code-xs text-code-xs uppercase tracking-widest text-outline px-2 bg-surface-container rounded">Today, 4:10 PM UTC</span>
+<div class="h-px bg-surface-container-highest flex-1"></div>
+</div>
+<div class="flex items-start gap-space-md p-space-sm rounded-xl bg-surface-container/60 shadow-sm">
+<div class="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">smart_toy</span>
+</div>
+<div class="flex flex-col min-w-0 flex-1">
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md text-primary font-bold">SMCore System</span>
+<span class="font-code-xs text-code-xs px-1.5 py-0.2 rounded bg-primary-container/20 text-primary uppercase text-[10px]">BOT</span>
+<span class="font-code-xs text-code-xs text-outline">4:10 PM</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+              Ticket <span class="text-primary font-code-sm text-code-sm">#support-1042</span> opened by <span class="font-medium text-on-surface">@frosty_dev</span>. Pinging <span class="text-secondary font-medium">@Support Team</span>.
+            </p>
+</div>
+</div>
+<div class="flex items-start gap-space-md">
+<img class="w-9 h-9 rounded-full object-cover shrink-0 shadow-md" data-alt="Cyberpunk gamer avatar portrait of user frosty_dev with neon cyan highlights and holographic visor in a dark sleek tech setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlCRuJie4Bc_G6sLLaJLPe4Yk4BEUI0tMvg_deOPMC_gaj0-ZfNxoPVyTCWEM158hJQZlHwUO4Vog5YARdxVElKREbG_C_g6ceBgI9quxWFRd85SdGare2gdsFeTj4Gp-JxpQWpXGMyWQy0jVDWVCb_MK-vqpl14DPleqGpsJ1_gKhVAFF0gXQBt7VvYTrxJ5mhgWyFQW6_nWxkA2qXhgRSbq9wnkXdyZXsHk52v-X2o8BZZEY4NxU"/>
+<div class="flex flex-col min-w-0 flex-1">
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md text-on-surface font-bold">frosty_dev</span>
+<span class="font-code-xs text-code-xs text-outline">4:11 PM</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface mt-1 leading-relaxed">
+              Hey team, my order went through on Stripe (receipt attached) but I haven't received the Discord role or VIP lounge access yet. Can someone sync my account?
+            </p>
+<div class="mt-space-sm p-space-sm rounded-xl bg-surface-container-highest max-w-sm flex items-center justify-between gap-space-sm shadow-sm hover:bg-surface-bright cursor-pointer transition-colors">
+<div class="flex items-center gap-space-sm overflow-hidden">
+<div class="w-8 h-8 rounded-lg bg-error-container/30 text-error flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+</div>
+<div class="flex flex-col truncate">
+<span class="font-label-md text-label-md text-on-surface font-medium truncate">receipt_apex_vip.pdf</span>
+<span class="font-code-xs text-code-xs text-outline">142 KB • PDF Document</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant hover:text-on-surface text-[18px] mr-1">download</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-space-sm px-space-md py-1 rounded-lg bg-surface-container/50">
+<span class="material-symbols-outlined text-secondary text-[16px]">how_to_reg</span>
+<span class="font-body-sm text-body-sm text-outline">
+<span class="text-secondary font-semibold">@SarahT</span> claimed this ticket at <span class="font-code-xs text-code-xs">4:13 PM</span>
+</span>
+</div>
+<div class="flex items-start gap-space-md">
+<img class="w-9 h-9 rounded-full object-cover shrink-0 shadow-md" data-alt="Professional esports team supervisor portrait of SarahT wearing low-profile studio headphones in front of multiple system monitors in a deep indigo illuminated operations bunker" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJRBbfF01h6MgGMsD-ZZbY5GGFBf4U5pmo1K9_AcRLr3VQfD6vuJi0bbF93NFsddThc1Dc0cir5ci4zAlAR1V9Sz_BsV458tEwJa1G8sLdn4apwnyC7XfOcOqkLKrGTPq5qZTaxICwlK9RmrJxS2vQQI34YQPALqq0vOVBpF653m2z12E5bY7X2hH53aipJv1jcDLAxX89kiz053fBHhc-brxFmdqPuwdR2BMJkihgTUXghT3E56gy"/>
+<div class="flex flex-col min-w-0 flex-1">
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md text-secondary font-bold">SarahT</span>
+<span class="font-code-xs text-code-xs px-1.5 py-0.5 rounded bg-secondary-container/40 text-secondary-fixed font-bold uppercase text-[10px]">MODERATOR</span>
+<span class="font-code-xs text-code-xs text-outline">4:14 PM</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface mt-1 leading-relaxed">
+              Hello <span class="text-primary font-medium">@frosty_dev</span>! Thanks for reaching out. Checking your Stripe transaction <code class="font-code-xs text-code-xs bg-surface-container-highest px-1.5 py-0.5 rounded text-tertiary">INV-APEX-98218</code> in our Tebex webhook logs now. One moment while I verify.
+            </p>
+</div>
+</div>
+<div class="flex items-start gap-space-md">
+<img class="w-9 h-9 rounded-full object-cover shrink-0 shadow-md" data-alt="Professional esports team supervisor portrait of SarahT wearing low-profile studio headphones in front of multiple system monitors in a deep indigo illuminated operations bunker" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvdxpkZWp91AtdZcOpuKeR_Rp-PDSFMyAr7DpDXsqpJknWIPru1Fcill3eC8daPzci7i2T3f6G26EFuYW8DkFibm7vvj7Fv5e0-9t3EpdCOL1-1d6boWP8Fn57DR6l-BTWzSITdDFZGm-GvFQVMLbHWwL___dFu1TPzo2rEJkhUkK3SoJR5Y9dE9whDY9ntUrZvJ7epeJzwDTQCahL2WAVZhhryDFHEBgFuQ630Y1hzFCODRIW5UAb"/>
+<div class="flex flex-col min-w-0 flex-1">
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md text-secondary font-bold">SarahT</span>
+<span class="font-code-xs text-code-xs px-1.5 py-0.5 rounded bg-secondary-container/40 text-secondary-fixed font-bold uppercase text-[10px]">MODERATOR</span>
+<span class="font-code-xs text-code-xs text-outline">4:17 PM</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface mt-1 leading-relaxed">
+              Found the sync delay — your Discord ID was missing the last digit on checkout. I have manually bound your license and synced your <span class="text-primary font-semibold">@Apex VIP</span> role. Could you check if your role and channel access are active now?
+            </p>
+</div>
+</div>
+<div class="flex items-start gap-space-md">
+<img class="w-9 h-9 rounded-full object-cover shrink-0 shadow-md" data-alt="Cyberpunk gamer avatar portrait of user frosty_dev with neon cyan highlights and holographic visor in a dark sleek tech setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbYTVOOFBZU3l4fIwcgTiI0qreRdJ8A3jOBWN0B7LBpZ6pPM6ckBgOrHS3t90NElahRnCNtg2KjJvHZXWa2x7rdCjvDgGESmKNtkmhSnEoKExXgrJt1CCz6MWzPmURXg21ecxbig3zKN1OIU0Xnev88cHG76nnU-Aj2-WHZOWiE1D5mUJ4fQVIk0SfgfcghpG53KccFAAtqf8t8f25NeAQIVJXHKFKVV9PIy36XpKVZDmtNTgFWD6h"/>
+<div class="flex flex-col min-w-0 flex-1">
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md text-on-surface font-bold">frosty_dev</span>
+<span class="font-code-xs text-code-xs text-outline">4:18 PM</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface mt-1 leading-relaxed">
+              Awesome! Yes, just got the role and can see the VIP channels now. Thank you so much for the quick help!
+            </p>
+<div class="flex items-center gap-1 mt-2">
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-code-xs text-code-xs flex items-center gap-1">
+<span>❤️</span><span>1</span>
+</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-code-xs text-code-xs flex items-center gap-1">
+<span>🚀</span><span>1</span>
+</span>
+</div>
+</div>
+</div>
+<div class="w-full p-space-md rounded-xl bg-amber-500/10 text-amber-200 shadow-md">
+<div class="flex items-start gap-space-sm">
+<div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[16px]">lock</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md text-amber-300 font-bold uppercase tracking-wider">Internal Staff Note</span>
+<span class="font-code-xs text-code-xs px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold">VISIBLE ONLY TO STAFF</span>
+</div>
+<span class="font-code-xs text-code-xs text-amber-300/60">4:19 PM</span>
+</div>
+<p class="font-body-sm text-body-sm text-amber-100 mt-1 font-mono">
+<strong>@SarahT:</strong> Verified via Tebex dashboard. Payment cleared, manual role applied. Safe to close.
+              </p>
+</div>
+</div>
+</div>
+</div>
+<div class="w-full rounded-xl bg-surface-container-low p-space-md shadow-md flex flex-col gap-space-sm">
+<div class="flex flex-wrap items-center justify-between gap-space-sm pb-1">
+<div class="flex items-center p-1 rounded-lg bg-surface-container-lowest">
+<button class="px-space-md py-1 rounded font-label-md text-label-md transition-all font-semibold bg-surface-container-high text-on-surface shadow-sm flex items-center gap-1.5" id="tabPublic" type="button">
+<span class="material-symbols-outlined text-[16px] text-primary">forum</span>
+<span>Public Reply</span>
+<span class="font-code-xs text-[10px] text-outline">Channel</span>
+</button>
+<button class="px-space-md py-1 rounded font-label-md text-label-md transition-all text-outline hover:text-on-surface flex items-center gap-1.5" id="tabInternal" type="button">
+<span class="material-symbols-outlined text-[16px] text-amber-400">lock</span>
+<span>Internal Staff Note</span>
+<span class="font-code-xs text-[10px] text-outline">Staff Only</span>
+</button>
+</div>
+<div class="flex items-center gap-space-xs">
+<div class="relative">
+<select class="bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-md text-label-md px-space-sm py-1.5 rounded-lg appearance-none pr-8 cursor-pointer focus:outline-none shadow-sm" id="cannedResponseSelect">
+<option value="">⚡ Quick Canned Responses...</option>
+<option value="Billing Resolution">Billing Resolution (Standard)</option>
+<option value="Need More Info">Need More Info / Invoice Proof</option>
+<option value="Closing Notice">Closing Notice (Auto-archive)</option>
+</select>
+<span class="material-symbols-outlined text-[18px] text-outline absolute right-2 top-2 pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+<div class="w-full rounded-xl bg-surface-container-lowest p-space-sm shadow-inner flex flex-col gap-2">
+<div class="flex items-center gap-1 pb-1 text-outline">
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container-high hover:text-on-surface" title="Bold" type="button"><span class="material-symbols-outlined text-[16px]">format_bold</span></button>
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container-high hover:text-on-surface" title="Italic" type="button"><span class="material-symbols-outlined text-[16px]">format_italic</span></button>
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container-high hover:text-on-surface" title="Code" type="button"><span class="material-symbols-outlined text-[16px]">code</span></button>
+<div class="w-px h-4 bg-surface-container-high mx-1"></div>
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container-high hover:text-on-surface" title="Mention" type="button"><span class="material-symbols-outlined text-[16px]">alternate_email</span></button>
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container-high hover:text-on-surface" title="Embed" type="button"><span class="material-symbols-outlined text-[16px]">layers</span></button>
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container-high hover:text-on-surface" title="Attachment" type="button"><span class="material-symbols-outlined text-[16px]">attach_file</span></button>
+</div>
+<textarea class="w-full bg-transparent text-on-surface font-body-md text-body-md placeholder:text-outline-variant focus:outline-none resize-none" id="composerInput" placeholder="Reply to #ticket-frosty_dev-1042 (Markdown &amp; Discord format supported)..." rows="3"></textarea>
+<div class="flex items-center justify-between pt-2">
+<div class="flex items-center gap-space-sm text-outline font-code-xs text-code-xs">
+<span>Press <kbd class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant">⌘ + Enter</kbd> to send</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-space-md py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-md text-label-md transition-colors" type="button">
+                Reply &amp; Close
+              </button>
+<button class="px-space-lg py-1.5 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold hover:bg-primary transition-all shadow-[0_0_12px_rgba(128,131,255,0.3)]" type="button">
+                Send Reply
+              </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="xl:col-span-4 flex flex-col gap-space-md">
+<div class="w-full rounded-xl bg-surface-container-low p-space-md shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface font-bold uppercase tracking-wider">Ticket Summary</span>
+<span class="material-symbols-outlined text-outline text-[18px]">tune</span>
+</div>
+<div class="flex items-start gap-space-sm p-space-sm rounded-xl bg-surface-container-lowest shadow-sm">
+<img class="w-10 h-10 rounded-full object-cover shrink-0 shadow-sm" data-alt="Cyberpunk gamer avatar portrait of user frosty_dev with neon cyan highlights and holographic visor in a dark sleek tech setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuZ47W1uVr4FJs3KcMOzWH-1p9DWcOo1l6-JYGhkeh9OZu6vK6dOfZC5c0j03xLhM5WCQWxEyHtT0ChreldflL_BYEkSKFvQT_YNe6cQfCwx3SiyxjKi9ssZ8klrg-0XHpo7kgu78eAa_Z8Txc9DJ88enjFCwu3sJlrCHJRh-Em0_Kxut0HYflP-tsZkM9TTPOkJ8KqzA1Encs5IMrFd3AcuMW5ud-vWmqao-d1CJ3sycEIDivQz-8"/>
+<div class="flex flex-col min-w-0 flex-1">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface font-bold truncate">frosty_dev</span>
+<span class="font-code-xs text-code-xs text-tertiary">Verified Customer</span>
+</div>
+<span class="font-body-sm text-body-sm text-outline">Member for 1 yr • 0 warnings</span>
+<div class="flex items-center gap-1.5 mt-1 font-code-xs text-code-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[13px] text-secondary">history</span>
+<span>2 previous tickets</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-space-xs font-body-sm text-body-sm">
+<div class="flex items-center justify-between py-1.5 px-space-xs rounded hover:bg-surface-container transition-colors">
+<span class="text-outline">Discord User ID</span>
+<div class="flex items-center gap-1.5">
+<span class="font-code-xs text-code-xs text-on-surface font-mono">4892810928</span>
+<button class="text-outline-variant hover:text-primary transition-colors" onclick="navigator.clipboard.writeText('4892810928')" type="button">
+<span class="material-symbols-outlined text-[15px]">copy_all</span>
+</button>
+</div>
+</div>
+<div class="flex items-center justify-between py-1.5 px-space-xs rounded hover:bg-surface-container transition-colors">
+<span class="text-outline">Joined Server</span>
+<span class="font-code-xs text-code-xs text-on-surface">Nov 12, 2023</span>
+</div>
+<div class="flex items-center justify-between py-1.5 px-space-xs rounded hover:bg-surface-container transition-colors">
+<span class="text-outline">Assigned Moderator</span>
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-label-md text-secondary font-semibold">@SarahT</span>
+<button class="font-code-xs text-code-xs text-primary hover:underline" type="button">Reassign</button>
+</div>
+</div>
+<div class="flex items-center justify-between py-1.5 px-space-xs rounded hover:bg-surface-container transition-colors">
+<span class="text-outline">Category</span>
+<div class="flex items-center gap-1.5">
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Billing</span>
+<button class="font-code-xs text-code-xs text-primary hover:underline" type="button">Change</button>
+</div>
+</div>
+<div class="flex items-center justify-between py-1.5 px-space-xs rounded hover:bg-surface-container transition-colors">
+<span class="text-outline">Priority</span>
+<div class="flex items-center gap-1.5">
+<span class="px-2 py-0.2 rounded bg-error-container/40 text-error font-code-xs text-code-xs font-bold uppercase">HIGH</span>
+<button class="font-code-xs text-code-xs text-primary hover:underline" type="button">Change</button>
+</div>
+</div>
+<div class="flex items-center justify-between py-1.5 px-space-xs rounded hover:bg-surface-container transition-colors">
+<span class="text-outline">First Response Time</span>
+<div class="flex items-center gap-1.5">
+<span class="font-code-xs text-code-xs text-tertiary font-bold">2m 14s</span>
+<span class="px-1.5 py-0.2 rounded bg-tertiary/10 text-tertiary font-code-xs text-[10px]">SLA MET</span>
+</div>
+</div>
+<div class="flex items-center justify-between py-1.5 px-space-xs rounded hover:bg-surface-container transition-colors">
+<span class="text-outline">Inactivity Timer</span>
+<div class="flex items-center gap-1 font-code-xs text-code-xs text-outline">
+<span class="material-symbols-outlined text-[14px]">timer</span>
+<span>Closes in 23h 48m</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-space-xs pt-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-code-xs text-code-xs text-outline uppercase tracking-wider font-semibold">Active Tags</span>
+<span class="font-code-xs text-code-xs text-primary cursor-pointer hover:underline">+ Add Tag</span>
+</div>
+<div class="flex flex-wrap gap-1.5">
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-secondary font-code-xs text-code-xs flex items-center gap-1">
+<span>billing-sync</span>
+<button class="hover:text-error transition-colors">×</button>
+</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-primary font-code-xs text-code-xs flex items-center gap-1">
+<span>tebex</span>
+<button class="hover:text-error transition-colors">×</button>
+</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-tertiary font-code-xs text-code-xs flex items-center gap-1">
+<span>resolved</span>
+<button class="hover:text-error transition-colors">×</button>
+</span>
+</div>
+</div>
+</div>
+<div class="w-full rounded-xl bg-surface-container-low p-space-md shadow-sm flex flex-col gap-space-sm">
+<span class="font-label-md text-label-md text-on-surface font-bold uppercase tracking-wider">Quick Workflow Actions</span>
+<div class="flex flex-col gap-2">
+<button class="w-full px-space-sm py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-between transition-colors group" id="forceSyncBtn" type="button">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px] group-hover:rotate-180 transition-transform duration-300">bolt</span>
+<span class="font-label-md text-label-md font-medium">Force Role Sync</span>
+</div>
+<span class="font-code-xs text-code-xs text-outline group-hover:text-on-surface">Trigger Webhook</span>
+</button>
+<button class="w-full px-space-sm py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-between transition-colors" type="button">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">history_edu</span>
+<span class="font-label-md text-label-md font-medium">View Member Mod History</span>
+</div>
+<span class="font-code-xs text-code-xs px-1.5 py-0.2 rounded bg-surface-container-highest text-outline">0 cases</span>
+</button>
+<button class="w-full px-space-sm py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-between transition-colors" type="button">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[18px]">group_add</span>
+<span class="font-label-md text-label-md font-medium">Add Collaborator</span>
+</div>
+<span class="font-code-xs text-code-xs text-secondary font-medium">@DavidK</span>
+</button>
+<button class="w-full px-space-sm py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-between transition-colors" type="button">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[18px]">lock_clock</span>
+<span class="font-label-md text-label-md font-medium">Lock &amp; Generate Transcript</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-outline">chevron_right</span>
+</button>
+</div>
+</div>
+<div class="w-full p-space-md rounded-xl bg-surface-container-lowest shadow-inner flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-xs text-outline font-code-xs text-code-xs">
+<span class="material-symbols-outlined text-[16px] text-tertiary">security</span>
+<span>End-to-End Encrypted Audit Trail</span>
+</div>
+<span class="font-code-xs text-code-xs text-outline-variant">SHA256: 9bfa4</span>
+</div>
+</div>
+</div>
+<div class="fixed inset-0 bg-surface-container-lowest/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4" id="closeModal">
+<div class="w-full max-w-md rounded-xl bg-surface-container-low p-space-lg shadow-2xl flex flex-col gap-space-md">
+<div class="flex items-center gap-space-sm text-error">
+<span class="material-symbols-outlined text-[24px]">lock_reset</span>
+<h2 class="font-headline-md text-headline-md text-on-surface font-bold">Close Ticket #support-1042?</h2>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">
+        This will lock the ticket channel, generate an archive transcript, and notify <strong class="text-on-surface">@frosty_dev</strong>.
+      </p>
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-label-md text-outline">Closure Reason</label>
+<select class="bg-surface-container-high text-on-surface font-body-sm text-body-sm p-space-sm rounded-lg focus:outline-none">
+<option>Issue Resolved - Role Manually Synced</option>
+<option>Duplicate Request</option>
+<option>User Abandoned / Inactive</option>
+<option>Spam / Void</option>
+</select>
+</div>
+<div class="flex items-center justify-end gap-space-sm pt-space-xs">
+<button class="px-space-md py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-md text-label-md transition-colors" id="cancelCloseBtn" type="button">
+          Cancel
+        </button>
+<button class="px-space-md py-1.5 rounded-lg bg-error-container hover:bg-error-container/80 text-on-error-container font-label-md text-label-md font-semibold transition-colors" id="confirmCloseBtn" type="button">
+          Confirm Close &amp; Archive
+        </button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function() {
+    const intakeBtn = document.getElementById('toggleIntakeBtn');
+    const intakeContent = document.getElementById('intakeContent');
+    const intakeChevron = document.getElementById('intakeChevron');
+
+    if (intakeBtn && intakeContent && intakeChevron) {
+      intakeBtn.addEventListener('click', () => {
+        const isHidden = intakeContent.classList.contains('hidden');
+        if (isHidden) {
+          intakeContent.classList.remove('hidden');
+          intakeChevron.style.transform = 'rotate(0deg)';
+        } else {
+          intakeContent.classList.add('hidden');
+          intakeChevron.style.transform = 'rotate(180deg)';
+        }
+      });
+    }
+
+    const tabPublic = document.getElementById('tabPublic');
+    const tabInternal = document.getElementById('tabInternal');
+    const composer = document.getElementById('composerInput');
+
+    if (tabPublic && tabInternal && composer) {
+      tabPublic.addEventListener('click', () => {
+        tabPublic.className = "px-space-md py-1 rounded font-label-md text-label-md transition-all font-semibold bg-surface-container-high text-on-surface shadow-sm flex items-center gap-1.5";
+        tabInternal.className = "px-space-md py-1 rounded font-label-md text-label-md transition-all text-outline hover:text-on-surface flex items-center gap-1.5";
+        composer.placeholder = "Reply to #ticket-frosty_dev-1042 (Markdown & Discord format supported)...";
+      });
+
+      tabInternal.addEventListener('click', () => {
+        tabInternal.className = "px-space-md py-1 rounded font-label-md text-label-md transition-all font-semibold bg-amber-500/20 text-amber-300 shadow-sm flex items-center gap-1.5";
+        tabPublic.className = "px-space-md py-1 rounded font-label-md text-label-md transition-all text-outline hover:text-on-surface flex items-center gap-1.5";
+        composer.placeholder = "Write internal note (Staff only • Will not ping or be visible to user)...";
+      });
+    }
+
+    const cannedSelect = document.getElementById('cannedResponseSelect');
+    if (cannedSelect && composer) {
+      cannedSelect.addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (val === "Billing Resolution") {
+          composer.value = "We have validated your transaction in the Tebex payment gateway and updated your Discord privileges accordingly. Your @Apex VIP role has been bound to your account ID.";
+        } else if (val === "Need More Info") {
+          composer.value = "Could you please provide the full email address used during checkout along with your transaction receipt screenshot?";
+        } else if (val === "Closing Notice") {
+          composer.value = "Glad we could get this resolved for you! I will now proceed to close this ticket. Feel free to open a new one if you need anything else.";
+        }
+      });
+    }
+
+    const closeBtn = document.getElementById('closeTicketBtn');
+    const modal = document.getElementById('closeModal');
+    const cancelClose = document.getElementById('cancelCloseBtn');
+    const confirmClose = document.getElementById('confirmCloseBtn');
+
+    if (closeBtn && modal && cancelClose && confirmClose) {
+      closeBtn.addEventListener('click', () => modal.classList.remove('hidden'));
+      cancelClose.addEventListener('click', () => modal.classList.add('hidden'));
+      confirmClose.addEventListener('click', () => {
+        modal.classList.add('hidden');
+        alert("Ticket #support-1042 closed and transcript saved to audit repository.");
+      });
+    }
+
+    const forceSyncBtn = document.getElementById('forceSyncBtn');
+    if (forceSyncBtn) {
+      forceSyncBtn.addEventListener('click', () => {
+        const originalText = forceSyncBtn.innerHTML;
+        forceSyncBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px] text-tertiary">sync</span><span class="font-label-md text-label-md">Syncing Tebex API...</span>';
+        setTimeout(() => {
+          forceSyncBtn.innerHTML = '<span class="material-symbols-outlined text-[18px] text-tertiary">check_circle</span><span class="font-label-md text-label-md text-tertiary">Sync Completed</span>';
+          setTimeout(() => {
+            forceSyncBtn.innerHTML = originalText;
+          }, 2000);
+        }, 1200);
+      });
+    }
+  })();
+</script></main></div></body></html>
