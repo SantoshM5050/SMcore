@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const botToken = process.env.DISCORD_BOT_TOKEN;
+  const rawBotToken = process.env.DISCORD_BOT_TOKEN || '';
+  const botToken = rawBotToken.trim().replace(/^["']|["']$/g, '');
 
-  if (!botToken) {
+  if (!botToken || botToken === 'YOUR_DISCORD_BOT_TOKEN') {
     return NextResponse.json({
       online: false,
-      status: 'DISCORD_BOT_TOKEN missing',
+      status: 'DISCORD_BOT_TOKEN is not configured in .env',
       ping: null,
     });
   }

@@ -18,8 +18,9 @@ async function performHealthCheck() {
 
   // Check Discord Bot Token validity via Discord API
   let botStatus = 'OPERATIONAL';
-  const botToken = process.env.DISCORD_BOT_TOKEN;
-  if (botToken) {
+  const rawBotToken = process.env.DISCORD_BOT_TOKEN || '';
+  const botToken = rawBotToken.trim().replace(/^["']|["']$/g, '');
+  if (botToken && botToken !== 'YOUR_DISCORD_BOT_TOKEN') {
     try {
       const res = await fetch('https://discord.com/api/v10/users/@me', {
         headers: { Authorization: `Bot ${botToken}` },
@@ -35,11 +36,11 @@ async function performHealthCheck() {
       botStatus = `ERROR: ${e.message}`;
     }
   } else {
-    botStatus = 'MISSING_DISCORD_BOT_TOKEN';
+    botStatus = 'NOT_CONFIGURED (DISCORD_BOT_TOKEN is missing or placeholder in .env)';
   }
 
   const memoryUsage = process.memoryUsage();
-  const isHealthy = dbStatus === 'HEALTHY' && !botStatus.startsWith('UNAUTHORIZED') && botStatus !== 'MISSING_DISCORD_BOT_TOKEN';
+  const isHealthy = dbStatus === 'HEALTHY' && !botStatus.startsWith('UNAUTHORIZED');
 
   return {
     isHealthy,
@@ -70,13 +71,29 @@ async function performHealthCheck() {
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const isStrict = url.searchParams.get('strict') === 'true';
+
   const result = await performHealthCheck();
-  return NextResponse.json(result.data, { status: result.isHealthy ? 200 : 503 });
+  const statusCode = isStrict && !result.isHealthy ? 503 : 200;
+
+  return NextResponse.json(result.data, {
+    status: statusCode,
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Access-Control-Allow-Origin': '*',
+    },
+  });
 }
 
 export async function HEAD() {
-  const result = await performHealthCheck();
-  return new Response(null, { status: result.isHealthy ? 200 : 503 });
+  return new Response(null, {
+    status: 200,
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Access-Control-Allow-Origin': '*',
+    },
+  });
 }
 

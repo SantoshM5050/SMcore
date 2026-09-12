@@ -78,9 +78,11 @@ function doLogin() {
   const rawToken = process.env.DISCORD_BOT_TOKEN || config.token || '';
   const token = rawToken.trim().replace(/^["']|["']$/g, '').trim();
 
-  if (!token) {
-    lastLoginError = 'DISCORD_BOT_TOKEN is missing or empty in process.env';
-    console.warn('⚠️ Bot started without token. Skipping login until DISCORD_BOT_TOKEN is set.');
+  if (!token || token === 'YOUR_DISCORD_BOT_TOKEN') {
+    lastLoginError = !token
+      ? 'DISCORD_BOT_TOKEN is missing or empty in environment'
+      : 'DISCORD_BOT_TOKEN is still set to placeholder YOUR_DISCORD_BOT_TOKEN in .env';
+    console.warn(`⚠️ Discord Bot login skipped: ${lastLoginError}. Set your real Discord Bot Token in .env to connect.`);
     return;
   }
 
@@ -163,14 +165,17 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    const token = (process.env.DISCORD_BOT_TOKEN || config.token || '').trim();
+    const rawToken = (process.env.DISCORD_BOT_TOKEN || config.token || '').trim().replace(/^["']|["']$/g, '');
+    const isTokenConfigured = Boolean(rawToken && rawToken !== 'YOUR_DISCORD_BOT_TOKEN');
     const isReady = botClient ? botClient.isReady() : false;
     const wsStatus = botClient && botClient.ws ? botClient.ws.status : -1;
 
     let discordReason = isReady ? 'Connected' : 'Not Connected';
     if (!isReady) {
-      if (!token) {
-        discordReason = 'DISCORD_BOT_TOKEN environment variable is missing in Render settings';
+      if (!isTokenConfigured) {
+        discordReason = !rawToken
+          ? 'DISCORD_BOT_TOKEN environment variable is missing'
+          : 'DISCORD_BOT_TOKEN is still set to placeholder YOUR_DISCORD_BOT_TOKEN in .env';
       } else if (lastLoginError) {
         discordReason = `Login status: ${lastLoginError}`;
       } else {
@@ -184,8 +189,8 @@ const server = http.createServer((req, res) => {
         service: 'SMCore Bot',
         discord: isReady,
         discordReason,
-        tokenConfigured: Boolean(token),
-        tokenLength: token.length,
+        tokenConfigured: isTokenConfigured,
+        tokenLength: isTokenConfigured ? rawToken.length : 0,
         wsStatus,
         lastError: lastLoginError,
         uptime: Math.floor(process.uptime()),

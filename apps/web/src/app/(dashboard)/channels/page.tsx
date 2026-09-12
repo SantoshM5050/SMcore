@@ -26,27 +26,50 @@ export default function ChannelsPage() {
   const [commandLogsChannelId, setCommandLogsChannelId] = useState<string>('');
 
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  useEffect(() => {
+  const fetchChannels = () => {
+    if (!guildId) return;
     setLoading(true);
     fetch(`/api/guilds/${guildId}/channels`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.discordChannels) setChannels(data.discordChannels);
-        if (data.config) {
-          setLogsChannelId(data.config.logsChannelId || '');
-          setModLogChannelId(data.config.modLogChannelId || '');
-          setVoiceLogsChannelId(data.config.voiceLogsChannelId || '');
-          setMessageLogsChannelId(data.config.messageLogsChannelId || '');
-          setGeneralLogsChannelId(data.config.generalLogsChannelId || '');
-          setAlertLogsChannelId(data.config.alertLogsChannelId || '');
-          setCommandLogsChannelId(data.config.commandLogsChannelId || '');
+        const chs = Array.isArray(data)
+          ? data
+          : data && Array.isArray(data.discordChannels)
+          ? data.discordChannels
+          : data && Array.isArray(data.channels)
+          ? data.channels
+          : [];
+        setChannels(chs);
+
+        const cfg = data.config || (!Array.isArray(data) ? data : null);
+        if (cfg) {
+          setLogsChannelId(cfg.logsChannelId || '');
+          setModLogChannelId(cfg.modLogChannelId || '');
+          setVoiceLogsChannelId(cfg.voiceLogsChannelId || '');
+          setMessageLogsChannelId(cfg.messageLogsChannelId || '');
+          setGeneralLogsChannelId(cfg.generalLogsChannelId || '');
+          setAlertLogsChannelId(cfg.alertLogsChannelId || '');
+          setCommandLogsChannelId(cfg.commandLogsChannelId || '');
         }
       })
       .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        setSyncing(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchChannels();
   }, [guildId]);
+
+  const handleSync = () => {
+    setSyncing(true);
+    fetchChannels();
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,11 +96,28 @@ export default function ChannelsPage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">Channel & Logging Integration</h1>
-        <p className="text-sm text-gray-400 mt-1">
-          Bind Discord text channels for server audit trails and dedicated multi-stream logs.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">Channel & Logging Integration</h1>
+          <p className="text-sm text-gray-400 mt-1">
+            Bind Discord text channels for server audit trails and dedicated multi-stream logs.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-secondary/80 border border-border text-emerald-400">
+            {channels.length} Channels Synced
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleSync}
+            disabled={syncing || loading}
+            className="text-xs font-bold gap-1.5"
+          >
+            {syncing ? 'Syncing...' : '🔄 Sync from Discord'}
+          </Button>
+        </div>
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">

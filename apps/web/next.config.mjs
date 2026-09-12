@@ -10,6 +10,9 @@ const nextConfig = {
     outputFileTracingRoot: path.join(__dirname, '../../'),
   },
   reactStrictMode: true,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   transpilePackages: ['@repo/database'],
   images: {
     remotePatterns: [

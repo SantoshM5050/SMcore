@@ -33,8 +33,9 @@ const navGroups = [
   {
     title: 'LOGGING & AUDITING',
     items: [
+      { name: 'Analytics & Trends', href: '/analytics', icon: FileText },
       { name: 'Log Routing & Forum', href: '/logs', icon: Radio },
-      { name: 'Audit Trail', href: '/audit-logs', icon: FileText },
+      { name: 'Audit Trail', href: '/audit-logs', icon: ScrollText },
     ],
   },
   {
