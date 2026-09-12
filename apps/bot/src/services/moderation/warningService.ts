@@ -83,6 +83,25 @@ export class WarningService {
       logger.warn({ err, guildId, targetUserId }, 'Warning recorded in-memory or database failed');
     }
 
+    // Emit warning created audit log
+    try {
+      const { eventBus } = await import('../events/eventBus');
+      const { AuditAction, AuditEventType, AuditTargetType } = await import('@smcore/shared');
+      eventBus.emitAsync('audit.log', {
+        guildId,
+        eventType: AuditEventType.WARNING_CREATED,
+        action: AuditAction.WARN,
+        actorUserId: moderatorUserId,
+        targetUserId,
+        targetType: AuditTargetType.USER,
+        caseId: modCase.id !== 'transient' ? modCase.id : undefined,
+        reason,
+        metadata: { warningId, activeWarningCount, caseNumber: modCase.caseNumber },
+      });
+    } catch {
+      // Non-blocking
+    }
+
     return {
       warningId,
       caseNumber: modCase.caseNumber,
@@ -122,6 +141,21 @@ export class WarningService {
         where: { id: warningId, guildId },
         data: { status: WarningStatus.REVOKED },
       });
+
+      try {
+        const { eventBus } = await import('../events/eventBus');
+        const { AuditAction, AuditEventType } = await import('@smcore/shared');
+        eventBus.emitAsync('audit.log', {
+          guildId,
+          eventType: AuditEventType.WARNING_REVOKED,
+          action: AuditAction.REMOVE_WARNING,
+          reason: `Warning ${warningId} revoked`,
+          metadata: { warningId },
+        });
+      } catch {
+        // Non-blocking
+      }
+
       return true;
     } catch (err) {
       logger.warn({ err, guildId, warningId }, 'Failed to revoke warning in database');
@@ -142,6 +176,23 @@ export class WarningService {
         },
         data: { status: WarningStatus.REVOKED },
       });
+
+      try {
+        const { eventBus } = await import('../events/eventBus');
+        const { AuditAction, AuditEventType, AuditTargetType } = await import('@smcore/shared');
+        eventBus.emitAsync('audit.log', {
+          guildId,
+          eventType: AuditEventType.WARNING_REVOKED,
+          action: AuditAction.CLEAR_WARNINGS,
+          targetUserId,
+          targetType: AuditTargetType.USER,
+          reason: `Cleared all active warnings for user`,
+          metadata: { clearedCount: result.count },
+        });
+      } catch {
+        // Non-blocking
+      }
+
       return result.count;
     } catch (err) {
       logger.warn({ err, guildId, targetUserId }, 'Failed to clear warnings in database');

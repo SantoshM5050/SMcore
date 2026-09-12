@@ -97,6 +97,51 @@ export class CaseService {
         'Created moderation case'
       );
 
+      // Asynchronously emit audit events
+      try {
+        const { eventBus } = await import('../events/eventBus');
+        const { AuditAction, AuditEventType } = await import('@smcore/shared');
+
+        let auditAction = AuditAction.SYSTEM;
+        switch (params.type) {
+          case ModerationAction.BAN: auditAction = AuditAction.BAN; break;
+          case ModerationAction.UNBAN: auditAction = AuditAction.UNBAN; break;
+          case ModerationAction.KICK: auditAction = AuditAction.KICK; break;
+          case ModerationAction.TIMEOUT: auditAction = AuditAction.TIMEOUT; break;
+          case ModerationAction.UNTIMEOUT: auditAction = AuditAction.UNTIMEOUT; break;
+          case ModerationAction.WARN: auditAction = AuditAction.WARN; break;
+          case ModerationAction.PURGE: auditAction = AuditAction.PURGE; break;
+          case ModerationAction.LOCK: auditAction = AuditAction.LOCK; break;
+          case ModerationAction.UNLOCK: auditAction = AuditAction.UNLOCK; break;
+          case ModerationAction.SLOWMODE: auditAction = AuditAction.SLOWMODE; break;
+          case ModerationAction.NICKNAME: auditAction = AuditAction.NICKNAME; break;
+          case ModerationAction.SOFTBAN: auditAction = AuditAction.BAN; break;
+        }
+
+        eventBus.emitAsync('moderation.action', {
+          guildId: params.guildId,
+          action: auditAction,
+          actorUserId: params.moderatorUserId,
+          targetUserId: params.targetUserId,
+          caseId: modCase.id !== 'transient' ? modCase.id : undefined,
+          reason: params.reason,
+          metadata: { caseNumber, duration: params.duration, ...params.metadata },
+        });
+
+        eventBus.emitAsync('audit.log', {
+          guildId: params.guildId,
+          eventType: AuditEventType.CASE_CREATED,
+          action: auditAction,
+          actorUserId: params.moderatorUserId,
+          targetUserId: params.targetUserId,
+          caseId: modCase.id !== 'transient' ? modCase.id : undefined,
+          reason: params.reason || `Case #${caseNumber} created`,
+          metadata: { caseNumber, type: params.type, ...params.metadata },
+        });
+      } catch (err) {
+        logger.warn({ err }, 'Failed to dispatch moderation audit event');
+      }
+
       return modCase;
     } catch (err) {
       logger.error({ err, params }, 'Error creating moderation case in database');

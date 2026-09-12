@@ -4,11 +4,15 @@ import { registerReadyEvent } from './events/ready';
 import { registerInteractionEvent } from './events/interactionCreate';
 import { registerMessageCreateEvent } from './events/messageCreate';
 import { registerGuildMemberAddEvent } from './events/guildMemberAdd';
+import { AuditLogService } from './services/audit/auditLogService';
 import { startHealthServer } from './services/health';
 import { logger } from './utils/logger';
 
 async function main(): Promise<void> {
   logger.info({ nodeEnv: config.NODE_ENV }, 'Starting SMCore Bot Service...');
+
+  // Initialize central audit log subscriptions
+  AuditLogService.initialize();
 
   // Start health server for uptime checks
   const healthServer = startHealthServer(config.BOT_PORT);

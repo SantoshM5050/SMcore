@@ -24,6 +24,7 @@ model Guild {
   warnings            Warning[]
   escalationRules     WarningEscalationRule[]
   memberNotes         MemberNote[]
+  auditLogs           AuditLog[]
 
   @@index([ownerId])
   @@map("guilds")
@@ -142,6 +143,7 @@ model ModerationCase {
   metadata        Json?
 
   warnings        Warning[]
+  auditLogs       AuditLog[]
 
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -213,3 +215,33 @@ model MemberNote {
   @@index([targetUserId])
   @@map("member_notes")
 }
+
+model AuditLog {
+  id            String          @id @default(cuid())
+  guildId       String
+  guild         Guild           @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  eventType     String          // AuditEventType enum string
+  action        String          // AuditAction enum string
+  actorUserId   String?         // Moderator / Bot / System user Discord ID
+  targetUserId  String?         // Affected user Discord ID
+  targetType    String?         // USER, CHANNEL, ROLE, GUILD, MESSAGE
+  channelId     String?         // Channel Discord ID
+  caseId        String?
+  case          ModerationCase? @relation(fields: [caseId], references: [id], onDelete: SetNull)
+
+  reason        String?
+  metadata      Json?
+
+  createdAt     DateTime        @default(now())
+
+  @@index([guildId])
+  @@index([guildId, createdAt])
+  @@index([guildId, eventType])
+  @@index([guildId, action])
+  @@index([guildId, actorUserId])
+  @@index([guildId, targetUserId])
+  @@index([caseId])
+  @@map("audit_logs")
+}
+

@@ -12,7 +12,7 @@ export class NoteService {
     content: string
   ) {
     try {
-      return await prisma.memberNote.create({
+      const note = await prisma.memberNote.create({
         data: {
           guildId,
           targetUserId,
@@ -20,6 +20,25 @@ export class NoteService {
           content,
         },
       });
+
+      try {
+        const { eventBus } = await import('../events/eventBus');
+        const { AuditAction, AuditEventType, AuditTargetType } = await import('@smcore/shared');
+        eventBus.emitAsync('audit.log', {
+          guildId,
+          eventType: AuditEventType.NOTE_CREATED,
+          action: AuditAction.NOTE,
+          actorUserId: authorUserId,
+          targetUserId,
+          targetType: AuditTargetType.USER,
+          reason: 'Staff member note added',
+          metadata: { noteId: note.id },
+        });
+      } catch {
+        // Non-blocking
+      }
+
+      return note;
     } catch (err) {
       logger.warn({ err, guildId, targetUserId }, 'Failed to save note to database');
       return {
@@ -79,6 +98,21 @@ export class NoteService {
       await prisma.memberNote.delete({
         where: { id: noteId, guildId },
       });
+
+      try {
+        const { eventBus } = await import('../events/eventBus');
+        const { AuditAction, AuditEventType } = await import('@smcore/shared');
+        eventBus.emitAsync('audit.log', {
+          guildId,
+          eventType: AuditEventType.NOTE_REVOKED,
+          action: AuditAction.NOTE,
+          reason: `Note ${noteId} deleted`,
+          metadata: { noteId },
+        });
+      } catch {
+        // Non-blocking
+      }
+
       return true;
     } catch (err) {
       logger.warn({ err, guildId, noteId }, 'Failed to delete note in database');

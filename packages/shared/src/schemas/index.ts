@@ -8,6 +8,9 @@ import {
   SecurityRiskLevel,
   SecurityAction,
   SecurityEventType,
+  AuditEventType,
+  AuditAction,
+  AuditTargetType,
 } from '../enums';
 
 export const SnowflakeSchema = z
@@ -271,3 +274,44 @@ export const GuildSecuritySettingsUpdateSchema = GuildSecuritySettingsSchema.omi
   guildId: true,
 }).partial();
 export type GuildSecuritySettingsUpdate = z.infer<typeof GuildSecuritySettingsUpdateSchema>;
+
+// Phase 4 Audit Logs & Event System Schemas
+
+export const AuditEventTypeSchema = z.nativeEnum(AuditEventType);
+export const AuditActionSchema = z.nativeEnum(AuditAction);
+export const AuditTargetTypeSchema = z.nativeEnum(AuditTargetType);
+
+export const AuditLogCreateSchema = z.object({
+  guildId: SnowflakeSchema,
+  eventType: AuditEventTypeSchema,
+  action: AuditActionSchema,
+  actorUserId: SnowflakeSchema.nullable().optional(),
+  targetUserId: SnowflakeSchema.nullable().optional(),
+  targetType: AuditTargetTypeSchema.nullable().optional(),
+  channelId: SnowflakeSchema.nullable().optional(),
+  caseId: z.string().cuid().nullable().optional(),
+  reason: z.string().max(1000).nullable().optional(),
+  metadata: z.record(z.unknown()).nullable().optional(),
+});
+export type AuditLogCreate = z.infer<typeof AuditLogCreateSchema>;
+
+export const AuditLogEntrySchema = AuditLogCreateSchema.extend({
+  id: z.string(),
+  createdAt: z.date(),
+});
+export type AuditLogEntry = z.infer<typeof AuditLogEntrySchema>;
+
+export const AuditLogQuerySchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  eventType: AuditEventTypeSchema.optional(),
+  action: AuditActionSchema.optional(),
+  actorUserId: SnowflakeSchema.optional(),
+  targetUserId: SnowflakeSchema.optional(),
+  channelId: SnowflakeSchema.optional(),
+  caseId: z.string().optional(),
+  from: z.coerce.date().optional(),
+  to: z.coerce.date().optional(),
+});
+export type AuditLogQuery = z.infer<typeof AuditLogQuerySchema>;
+

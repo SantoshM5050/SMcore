@@ -150,6 +150,22 @@ export class SecurityActionService {
       );
     }
 
+    // Emit security alert audit event
+    try {
+      const { eventBus } = await import('../events/eventBus');
+      eventBus.emitAsync('security.alert', {
+        guildId: guild.id,
+        eventType,
+        action,
+        riskLevel,
+        targetUserId: member.id,
+        reason,
+        metadata,
+      });
+    } catch {
+      // Non-blocking
+    }
+
     return event;
   }
 }

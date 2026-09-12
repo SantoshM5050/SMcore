@@ -135,6 +135,23 @@ export class PunishmentService {
       logger.error({ err, authorId, punishment }, 'Error executing AutoMod punishment action');
     }
 
+    // Emit AutoMod violation audit event
+    try {
+      const { eventBus } = await import('../events/eventBus');
+      eventBus.emitAsync('automod.violation', {
+        guildId: guild.id,
+        protectionType: detection.protectionType!,
+        punishment,
+        authorId,
+        channelId: message.channel.id,
+        messageId: message.id,
+        reason,
+        metadata: detection.metadata,
+      });
+    } catch {
+      // Non-blocking
+    }
+
     return {
       guildId: guild.id,
       targetUserId: authorId,
