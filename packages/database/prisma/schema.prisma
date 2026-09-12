@@ -17,11 +17,12 @@ model Guild {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  settings         GuildSettings?
-  moderationCases  ModerationCase[]
-  warnings         Warning[]
-  escalationRules  WarningEscalationRule[]
-  memberNotes      MemberNote[]
+  settings            GuildSettings?
+  protectionSettings  GuildProtectionSettings?
+  moderationCases     ModerationCase[]
+  warnings            Warning[]
+  escalationRules     WarningEscalationRule[]
+  memberNotes         MemberNote[]
 
   @@index([ownerId])
   @@map("guilds")
@@ -45,6 +46,51 @@ model GuildSettings {
 
   @@index([guildId])
   @@map("guild_settings")
+}
+
+model GuildProtectionSettings {
+  id                        String   @id @default(cuid())
+  guildId                   String   @unique
+  guild                     Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  // Anti-Spam
+  antiSpamEnabled           Boolean  @default(false)
+  antiSpamMessageLimit      Int      @default(5)
+  antiSpamWindowSeconds     Int      @default(5)
+  duplicateMessageLimit     Int      @default(3)
+  antiSpamPunishment        String   @default("TIMEOUT")
+
+  // Mass Mention
+  massMentionEnabled        Boolean  @default(false)
+  maxUserMentions           Int      @default(5)
+  maxRoleMentions           Int      @default(3)
+  maxTotalMentions          Int      @default(6)
+  everyoneMentionAllowed    Boolean  @default(false)
+  massMentionPunishment     String   @default("TIMEOUT")
+
+  // Discord Invite Filter
+  inviteFilterEnabled       Boolean  @default(false)
+  allowedInviteGuilds       String[] @default([])
+  inviteFilterPunishment    String   @default("DELETE")
+
+  // External Link Filter
+  externalLinkFilterEnabled Boolean  @default(false)
+  allowedDomains            String[] @default([])
+  blockedDomains            String[] @default([])
+  externalLinkPunishment    String   @default("DELETE")
+
+  // Prohibited Keywords
+  keywordFilterEnabled      Boolean  @default(false)
+  prohibitedKeywords        String[] @default([])
+  keywordPunishment         String   @default("DELETE")
+
+  deleteViolatingMessages   Boolean  @default(true)
+
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  @@index([guildId])
+  @@map("guild_protection_settings")
 }
 
 model ModerationCase {

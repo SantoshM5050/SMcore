@@ -2,6 +2,7 @@ import { config } from './config';
 import { createDiscordClient } from './discord/client';
 import { registerReadyEvent } from './events/ready';
 import { registerInteractionEvent } from './events/interactionCreate';
+import { registerMessageCreateEvent } from './events/messageCreate';
 import { startHealthServer } from './services/health';
 import { logger } from './utils/logger';
 
@@ -15,6 +16,7 @@ async function main(): Promise<void> {
   const client = createDiscordClient();
   registerReadyEvent(client);
   registerInteractionEvent(client);
+  registerMessageCreateEvent(client);
 
   // Graceful shutdown handling
   const shutdown = async (signal: string) => {

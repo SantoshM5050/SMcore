@@ -50,6 +50,22 @@ export enum HierarchyCheckResult {
   PROTECTED_TARGET = 'PROTECTED_TARGET',
 }
 
+export enum ProtectionType {
+  SPAM = 'SPAM',
+  MASS_MENTION = 'MASS_MENTION',
+  DISCORD_INVITE = 'DISCORD_INVITE',
+  EXTERNAL_LINK = 'EXTERNAL_LINK',
+  PROHIBITED_KEYWORD = 'PROHIBITED_KEYWORD',
+}
+
+export enum AutoModPunishment {
+  DELETE = 'DELETE',
+  WARN = 'WARN',
+  TIMEOUT = 'TIMEOUT',
+  KICK = 'KICK',
+  BAN = 'BAN',
+}
+
 export enum AutoModTrigger {
   SPAM = 'SPAM',
   MASS_MENTION = 'MASS_MENTION',

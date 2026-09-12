@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ModerationAction, CaseStatus, WarningStatus } from '../enums';
+import { ModerationAction, CaseStatus, WarningStatus, ProtectionType, AutoModPunishment } from '../enums';
 
 export const SnowflakeSchema = z
   .string()
@@ -145,3 +145,85 @@ export const CaseFilterSchema = PaginationQuerySchema.extend({
   status: z.nativeEnum(CaseStatus).optional(),
 });
 export type CaseFilter = z.infer<typeof CaseFilterSchema>;
+
+// Phase 2 AutoMod & Protection Shield Schemas
+
+export const AutoModPunishmentSchema = z.nativeEnum(AutoModPunishment);
+
+export const AntiSpamConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  messageLimit: z.number().int().min(2).max(30).default(5),
+  windowSeconds: z.number().int().min(1).max(60).default(5),
+  duplicateMessageLimit: z.number().int().min(2).max(10).default(3),
+  punishment: AutoModPunishmentSchema.default(AutoModPunishment.TIMEOUT),
+});
+export type AntiSpamConfig = z.infer<typeof AntiSpamConfigSchema>;
+
+export const MassMentionConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  maxUserMentions: z.number().int().min(1).max(50).default(5),
+  maxRoleMentions: z.number().int().min(0).max(20).default(3),
+  maxTotalMentions: z.number().int().min(1).max(60).default(6),
+  everyoneMentionAllowed: z.boolean().default(false),
+  punishment: AutoModPunishmentSchema.default(AutoModPunishment.TIMEOUT),
+});
+export type MassMentionConfig = z.infer<typeof MassMentionConfigSchema>;
+
+export const InviteFilterConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  allowedInviteGuilds: z.array(z.string().trim()).default([]),
+  punishment: AutoModPunishmentSchema.default(AutoModPunishment.DELETE),
+});
+export type InviteFilterConfig = z.infer<typeof InviteFilterConfigSchema>;
+
+export const ExternalLinkConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  allowedDomains: z.array(z.string().trim().toLowerCase()).default([]),
+  blockedDomains: z.array(z.string().trim().toLowerCase()).default([]),
+  punishment: AutoModPunishmentSchema.default(AutoModPunishment.DELETE),
+});
+export type ExternalLinkConfig = z.infer<typeof ExternalLinkConfigSchema>;
+
+export const KeywordFilterConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  prohibitedKeywords: z.array(z.string().trim().min(1).max(100)).max(500).default([]),
+  punishment: AutoModPunishmentSchema.default(AutoModPunishment.DELETE),
+});
+export type KeywordFilterConfig = z.infer<typeof KeywordFilterConfigSchema>;
+
+export const GuildProtectionSettingsSchema = z.object({
+  guildId: SnowflakeSchema,
+  antiSpamEnabled: z.boolean().default(false),
+  antiSpamMessageLimit: z.number().int().min(2).max(30).default(5),
+  antiSpamWindowSeconds: z.number().int().min(1).max(60).default(5),
+  duplicateMessageLimit: z.number().int().min(2).max(10).default(3),
+  antiSpamPunishment: AutoModPunishmentSchema.default(AutoModPunishment.TIMEOUT),
+
+  massMentionEnabled: z.boolean().default(false),
+  maxUserMentions: z.number().int().min(1).max(50).default(5),
+  maxRoleMentions: z.number().int().min(0).max(20).default(3),
+  maxTotalMentions: z.number().int().min(1).max(60).default(6),
+  everyoneMentionAllowed: z.boolean().default(false),
+  massMentionPunishment: AutoModPunishmentSchema.default(AutoModPunishment.TIMEOUT),
+
+  inviteFilterEnabled: z.boolean().default(false),
+  allowedInviteGuilds: z.array(z.string().trim()).default([]),
+  inviteFilterPunishment: AutoModPunishmentSchema.default(AutoModPunishment.DELETE),
+
+  externalLinkFilterEnabled: z.boolean().default(false),
+  allowedDomains: z.array(z.string().trim().toLowerCase()).default([]),
+  blockedDomains: z.array(z.string().trim().toLowerCase()).default([]),
+  externalLinkPunishment: AutoModPunishmentSchema.default(AutoModPunishment.DELETE),
+
+  keywordFilterEnabled: z.boolean().default(false),
+  prohibitedKeywords: z.array(z.string().trim().min(1).max(100)).max(500).default([]),
+  keywordPunishment: AutoModPunishmentSchema.default(AutoModPunishment.DELETE),
+
+  deleteViolatingMessages: z.boolean().default(true),
+});
+export type GuildProtectionSettings = z.infer<typeof GuildProtectionSettingsSchema>;
+
+export const GuildProtectionSettingsUpdateSchema = GuildProtectionSettingsSchema.omit({
+  guildId: true,
+}).partial();
+export type GuildProtectionSettingsUpdate = z.infer<typeof GuildProtectionSettingsUpdateSchema>;
