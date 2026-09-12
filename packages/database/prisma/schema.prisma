@@ -17,7 +17,11 @@ model Guild {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  settings    GuildSettings?
+  settings         GuildSettings?
+  moderationCases  ModerationCase[]
+  warnings         Warning[]
+  escalationRules  WarningEscalationRule[]
+  memberNotes      MemberNote[]
 
   @@index([ownerId])
   @@map("guilds")
@@ -41,4 +45,92 @@ model GuildSettings {
 
   @@index([guildId])
   @@map("guild_settings")
+}
+
+model ModerationCase {
+  id              String    @id @default(cuid())
+  guildId         String
+  guild           Guild     @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  caseNumber      Int
+  type            String    // BAN, UNBAN, KICK, TIMEOUT, UNTIMEOUT, WARN, PURGE, LOCK, UNLOCK, SLOWMODE, NICKNAME
+  targetUserId    String    // Discord Snowflake ID
+  moderatorUserId String    // Discord Snowflake ID
+  reason          String?
+  duration        Int?      // in seconds
+  expiresAt       DateTime?
+  status          String    @default("ACTIVE") // ACTIVE, COMPLETED, REVOKED, EXPIRED
+  metadata        Json?
+
+  warnings        Warning[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([guildId, caseNumber])
+  @@index([guildId])
+  @@index([targetUserId])
+  @@index([moderatorUserId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@map("moderation_cases")
+}
+
+model Warning {
+  id              String          @id @default(cuid())
+  guildId         String
+  guild           Guild           @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  targetUserId    String          // Discord Snowflake ID
+  moderatorUserId String          // Discord Snowflake ID
+  reason          String
+  status          String          @default("ACTIVE") // ACTIVE, REVOKED, EXPIRED
+  expiresAt       DateTime?
+
+  caseId          String?
+  case            ModerationCase? @relation(fields: [caseId], references: [id], onDelete: SetNull)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([guildId])
+  @@index([targetUserId])
+  @@index([status])
+  @@map("warnings")
+}
+
+model WarningEscalationRule {
+  id           String   @id @default(cuid())
+  guildId      String
+  guild        Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  warningCount Int
+  action       String   // BAN, KICK, TIMEOUT
+  duration     Int?     // duration in seconds if action is TIMEOUT
+  enabled      Boolean  @default(true)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([guildId, warningCount])
+  @@index([guildId])
+  @@map("warning_escalation_rules")
+}
+
+model MemberNote {
+  id           String   @id @default(cuid())
+  guildId      String
+  guild        Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  targetUserId String   // Discord Snowflake ID
+  authorUserId String   // Discord Snowflake ID (staff member)
+  content      String
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([guildId])
+  @@index([targetUserId])
+  @@map("member_notes")
 }

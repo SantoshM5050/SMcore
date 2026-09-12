@@ -13,13 +13,41 @@ export enum StaffPermission {
 }
 
 export enum ModerationAction {
-  WARN = 'WARN',
+  BAN = 'BAN',
+  UNBAN = 'UNBAN',
+  KICK = 'KICK',
   TIMEOUT = 'TIMEOUT',
   UNTIMEOUT = 'UNTIMEOUT',
-  KICK = 'KICK',
-  BAN = 'BAN',
+  WARN = 'WARN',
+  PURGE = 'PURGE',
+  LOCK = 'LOCK',
+  UNLOCK = 'UNLOCK',
+  SLOWMODE = 'SLOWMODE',
+  NICKNAME = 'NICKNAME',
   SOFTBAN = 'SOFTBAN',
-  UNBAN = 'UNBAN',
+}
+
+export enum CaseStatus {
+  ACTIVE = 'ACTIVE',
+  COMPLETED = 'COMPLETED',
+  REVOKED = 'REVOKED',
+  EXPIRED = 'EXPIRED',
+}
+
+export enum WarningStatus {
+  ACTIVE = 'ACTIVE',
+  REVOKED = 'REVOKED',
+  EXPIRED = 'EXPIRED',
+}
+
+export enum HierarchyCheckResult {
+  SUCCESS = 'SUCCESS',
+  TARGET_IS_GUILD_OWNER = 'TARGET_IS_GUILD_OWNER',
+  TARGET_ROLE_TOO_HIGH = 'TARGET_ROLE_TOO_HIGH',
+  BOT_ROLE_TOO_LOW = 'BOT_ROLE_TOO_LOW',
+  TARGET_IS_BOT = 'TARGET_IS_BOT',
+  TARGET_IS_SELF = 'TARGET_IS_SELF',
+  PROTECTED_TARGET = 'PROTECTED_TARGET',
 }
 
 export enum AutoModTrigger {

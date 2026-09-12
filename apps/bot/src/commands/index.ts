@@ -1,11 +1,12 @@
-/**
- * SMCore Bot Command Foundation Interface
- * Commands will be registered here in Phase 1 (Moderation Engine)
- */
+import { Collection } from 'discord.js';
+import { moderationCommands, CommandHandler } from './moderationCommands';
 
-export interface BotCommand {
-  name: string;
-  description: string;
+export const commandList = [...moderationCommands];
+
+export const commands = new Collection<string, CommandHandler>();
+
+for (const cmd of commandList) {
+  commands.set(cmd.data.name, cmd);
 }
 
-export const commands: BotCommand[] = [];
+export * from './moderationCommands';
