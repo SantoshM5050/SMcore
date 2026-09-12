@@ -32,29 +32,29 @@ interface ProtectionSettings {
 }
 
 const DEFAULT_PROTECTION: ProtectionSettings = {
-  antiSpamEnabled: true,
+  antiSpamEnabled: false,
   spamMessageThreshold: 5,
   spamIntervalSeconds: 5,
   spamAction: 'TIMEOUT',
   spamTimeoutMinutes: 10,
 
-  massMentionEnabled: true,
+  massMentionEnabled: false,
   massMentionThreshold: 4,
   massMentionAction: 'TIMEOUT',
 
-  inviteFilterEnabled: true,
+  inviteFilterEnabled: false,
   inviteDeleteMessage: true,
   invitePunishSender: false,
-  allowedInvites: ['discord.gg/apexnetwork'],
+  allowedInvites: [],
 
   linkFilterEnabled: false,
   blockAllLinks: false,
-  allowedDomains: ['youtube.com', 'twitch.tv', 'github.com'],
+  allowedDomains: [],
 
-  keywordFilterEnabled: true,
-  bannedWords: ['phishing', 'token-grabber', 'free-nitro-link'],
+  keywordFilterEnabled: false,
+  bannedWords: [],
 
-  capsFilterEnabled: true,
+  capsFilterEnabled: false,
   capsMaxPercentage: 70,
 };
 
@@ -75,6 +75,10 @@ export default function AutoModEnginePage() {
   useEffect(() => {
     let isMounted = true;
     async function loadProtection() {
+      if (!selectedGuildId) {
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
       try {
         const res = await apiClient.getProtectionSettings(selectedGuildId);
@@ -111,13 +115,10 @@ export default function AutoModEnginePage() {
         setInitialSettings(settings);
         setSaveStatus('Protection configuration successfully saved.');
       } else {
-        // In local mode without DB, simulate optimistic save
-        setInitialSettings(settings);
-        setSaveStatus('Configuration updated in memory buffer (DB Offline mode).');
+        setSaveStatus(res.error?.message || 'Failed to save configuration (Database unavailable).');
       }
-    } catch {
-      setInitialSettings(settings);
-      setSaveStatus('Configuration updated in local runtime buffer.');
+    } catch (err) {
+      setSaveStatus(err instanceof Error ? err.message : 'Failed to save configuration.');
     } finally {
       setIsSaving(false);
       setTimeout(() => setSaveStatus(null), 4000);

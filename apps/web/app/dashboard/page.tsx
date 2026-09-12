@@ -6,37 +6,49 @@ import { useGuild } from '@/lib/context/guildContext';
 import { apiClient } from '@/lib/api/apiClient';
 
 export default function DashboardOverviewPage() {
-  const { selectedGuildId, availableGuilds, health, isDbOffline } = useGuild();
-  const currentGuild = availableGuilds.find((g) => g.id === selectedGuildId) || {
-    name: 'Apex Network',
-    id: selectedGuildId,
-    memberCount: 148200,
-  };
+  const { selectedGuildId, availableGuilds, health, isDbOffline, isLoadingGuilds } = useGuild();
+  const currentGuild = availableGuilds.find((g) => g.id === selectedGuildId);
 
   const [metrics, setMetrics] = useState({
     casesCount: 0,
     activeTimeouts: 0,
     recentAuditsCount: 0,
     raidModeActive: false,
-    automodBlocked: 0,
+    openTickets: 0,
+    antiSpamActive: false,
+    massMentionActive: false,
+    inviteFilterActive: false,
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
+    if (!selectedGuildId) {
+      setIsLoading(false);
+      return;
+    }
+
     async function loadData() {
       setIsLoading(true);
+      setErrorMsg(null);
       try {
-        const [casesRes, secRes, auditsRes] = await Promise.all([
-          apiClient.getCases(selectedGuildId, { limit: 10 }),
+        const [casesRes, secRes, auditsRes, protRes, ticketsRes] = await Promise.all([
+          apiClient.getCases(selectedGuildId, { limit: 50 }),
           apiClient.getSecuritySettings(selectedGuildId),
-          apiClient.getAuditLogs(selectedGuildId, { limit: 10 }),
+          apiClient.getAuditLogs(selectedGuildId, { limit: 20 }),
+          apiClient.getProtectionSettings(selectedGuildId),
+          apiClient.tickets.list(selectedGuildId, { status: 'OPEN', limit: 50 }),
         ]);
 
         if (isMounted) {
+          if (casesRes.error?.code === 'DATABASE_UNAVAILABLE' || auditsRes.error?.code === 'DATABASE_UNAVAILABLE') {
+            setErrorMsg('Database unavailable');
+          }
+
           const cases = casesRes.data?.items || [];
           const activeTimeouts = cases.filter(
-            (c: any) => c.action === 'TIMEOUT' && (!c.expiresAt || new Date(c.expiresAt) > new Date())
+            (c) => c.type === 'TIMEOUT' && (!c.expiresAt || new Date(c.expiresAt) > new Date())
           ).length;
 
           setMetrics({
@@ -44,11 +56,16 @@ export default function DashboardOverviewPage() {
             activeTimeouts,
             recentAuditsCount: auditsRes.data?.length || 0,
             raidModeActive: secRes.data?.raidModeEnabled || false,
-            automodBlocked: cases.filter((c: any) => c.moderatorId === 'AUTOMOD').length,
+            openTickets: ticketsRes.data?.total || 0,
+            antiSpamActive: protRes.data?.antiSpamEnabled || false,
+            massMentionActive: protRes.data?.massMentionEnabled || false,
+            inviteFilterActive: protRes.data?.inviteFilterEnabled || false,
           });
         }
       } catch {
-        // Fallback default
+        if (isMounted) {
+          setErrorMsg('Failed to load dashboard metrics');
+        }
       } finally {
         if (isMounted) setIsLoading(false);
       }
@@ -59,6 +76,31 @@ export default function DashboardOverviewPage() {
       isMounted = false;
     };
   }, [selectedGuildId]);
+
+  if (isLoadingGuilds || (isLoading && !currentGuild)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-outline">
+        <span className="material-symbols-outlined text-4xl animate-spin text-primary">progress_activity</span>
+        <span className="text-sm font-mono tracking-wide">Loading server telemetry...</span>
+      </div>
+    );
+  }
+
+  if (!currentGuild && availableGuilds.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center px-6">
+        <div className="w-14 h-14 rounded-2xl bg-surface-container flex items-center justify-center text-outline">
+          <span className="material-symbols-outlined text-3xl">dns</span>
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-lg font-bold text-on-surface">No Discord Servers Connected</h2>
+          <p className="text-xs text-outline max-w-md">
+            Invite the SMCore bot to your server or authorize your account to configure security and moderation.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col w-full">
@@ -77,9 +119,19 @@ export default function DashboardOverviewPage() {
             <h1 className="text-xl md:text-2xl font-bold tracking-tight text-on-surface">
               Operations Command Center
             </h1>
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-tertiary-container/20 text-tertiary font-mono text-[11px] font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse" />
-              Real-time Sync
+            <span
+              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full font-mono text-[11px] font-medium ${
+                health.bot === 'online'
+                  ? 'bg-tertiary-container/20 text-tertiary'
+                  : 'bg-error-container/20 text-error'
+              }`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  health.bot === 'online' ? 'bg-tertiary animate-pulse' : 'bg-error'
+                }`}
+              />
+              {health.bot === 'online' ? 'Real-time Sync' : 'Discord Bot Unavailable'}
             </span>
           </div>
         </div>
@@ -92,6 +144,13 @@ export default function DashboardOverviewPage() {
           >
             <span className="material-symbols-outlined text-[16px] text-primary">gavel</span>
             <span>Moderation</span>
+          </Link>
+          <Link
+            href="/dashboard/tickets"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold transition-colors"
+          >
+            <span className="material-symbols-outlined text-[16px] text-primary-container">confirmation_number</span>
+            <span>Tickets</span>
           </Link>
           <Link
             href="/dashboard/automod"
@@ -107,15 +166,16 @@ export default function DashboardOverviewPage() {
             <span className="material-symbols-outlined text-[16px] text-error">shield</span>
             <span>Anti-Raid</span>
           </Link>
-          <Link
-            href="/dashboard/audit-logs"
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold transition-colors"
-          >
-            <span className="material-symbols-outlined text-[16px] text-secondary">history_edu</span>
-            <span>Audit Trail</span>
-          </Link>
         </div>
       </div>
+
+      {/* Error / Warning Alert Strip */}
+      {(errorMsg || isDbOffline) && (
+        <div className="mx-6 mt-4 p-3 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center gap-3 text-xs text-amber-300">
+          <span className="material-symbols-outlined text-[20px] text-amber-400">warning</span>
+          <span>{errorMsg || 'Database unavailable — please verify connection to Neon PostgreSQL.'}</span>
+        </div>
+      )}
 
       {/* Subsystem Health Cards Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 px-6 py-4">
@@ -134,13 +194,13 @@ export default function DashboardOverviewPage() {
                     : 'bg-amber-500/20 text-amber-300'
                 }`}
               >
-                {!isDbOffline && health.db === 'connected' ? 'Connected' : 'Offline Mode'}
+                {!isDbOffline && health.db === 'connected' ? 'Connected' : 'Database Unavailable'}
               </span>
             </div>
             <p className="text-[10px] text-outline mt-1">
               {!isDbOffline && health.db === 'connected'
                 ? 'Prisma ORM Client Live'
-                : 'Memory-safe offline fallback active'}
+                : 'Connection failed or credentials unverified'}
             </p>
           </div>
           <div className="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center">
@@ -169,10 +229,12 @@ export default function DashboardOverviewPage() {
                     : 'bg-surface-container-high text-outline'
                 }`}
               >
-                {health.bot === 'online' ? 'Online' : 'Standby'}
+                {health.bot === 'online' ? 'Online' : 'Offline'}
               </span>
             </div>
-            <p className="text-[10px] text-outline mt-1">{health.pingMs}ms heartbeat ping</p>
+            <p className="text-[10px] text-outline mt-1">
+              {health.bot === 'online' ? `${health.pingMs}ms heartbeat ping` : 'Bot process unreachable'}
+            </p>
           </div>
           <div className="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center">
             <span
@@ -225,9 +287,13 @@ export default function DashboardOverviewPage() {
               Target Guild
             </span>
             <span className="text-base font-bold text-on-surface truncate mt-1">
-              {currentGuild.name}
+              {currentGuild?.name || 'No Guild Selected'}
             </span>
-            <span className="text-[10px] font-mono text-outline truncate">{currentGuild.id}</span>
+            <span className="text-[10px] font-mono text-outline truncate">
+              {currentGuild?.memberCount !== undefined
+                ? `${currentGuild.memberCount.toLocaleString()} members`
+                : currentGuild?.id || '—'}
+            </span>
           </div>
           <div className="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center shrink-0">
             <span className="material-symbols-outlined text-[20px] text-secondary">
@@ -237,18 +303,40 @@ export default function DashboardOverviewPage() {
         </div>
       </div>
 
+      {/* Operational Metrics Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-6 py-2">
+        <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/20">
+          <span className="text-[10px] font-mono uppercase text-outline">Recorded Cases</span>
+          <div className="text-2xl font-bold text-on-surface mt-1">{metrics.casesCount}</div>
+        </div>
+        <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/20">
+          <span className="text-[10px] font-mono uppercase text-outline">Active Timeouts</span>
+          <div className="text-2xl font-bold text-tertiary mt-1">{metrics.activeTimeouts}</div>
+        </div>
+        <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/20">
+          <span className="text-[10px] font-mono uppercase text-outline">Open Tickets</span>
+          <div className="text-2xl font-bold text-primary mt-1">{metrics.openTickets}</div>
+        </div>
+        <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/20">
+          <span className="text-[10px] font-mono uppercase text-outline">Audit Trail Records</span>
+          <div className="text-2xl font-bold text-on-surface mt-1">{metrics.recentAuditsCount}</div>
+        </div>
+      </div>
+
       {/* Main Content Grid: Security Posture + Quick Modules */}
-      <div className="px-6 py-2 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="px-6 py-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Active Security Posture */}
         <div className="lg:col-span-2 space-y-4">
           <div className="p-5 rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-outline-variant/20 pb-3">
               <div>
                 <h3 className="text-sm font-bold text-on-surface">Active Defense Matrix</h3>
-                <p className="text-xs text-outline">Automated protection shields running for {currentGuild.name}</p>
+                <p className="text-xs text-outline">
+                  Automated protection shields running for {currentGuild?.name || 'server'}
+                </p>
               </div>
               <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-tertiary-container/30 text-tertiary border border-tertiary/20">
-                SHIELDS ACTIVE
+                LIVE STATUS
               </span>
             </div>
 
@@ -261,7 +349,13 @@ export default function DashboardOverviewPage() {
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-on-surface">Anti-Spam Shield</span>
-                    <span className="text-[10px] font-mono text-tertiary">ENABLED</span>
+                    <span
+                      className={`text-[10px] font-mono ${
+                        metrics.antiSpamActive ? 'text-tertiary' : 'text-outline'
+                      }`}
+                    >
+                      {metrics.antiSpamActive ? 'ENABLED' : 'DISABLED'}
+                    </span>
                   </div>
                   <p className="text-[11px] text-outline mt-0.5">
                     Heuristic message flood & character duplicate detection
@@ -277,7 +371,13 @@ export default function DashboardOverviewPage() {
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-on-surface">Mass Mention Filter</span>
-                    <span className="text-[10px] font-mono text-tertiary">ENABLED</span>
+                    <span
+                      className={`text-[10px] font-mono ${
+                        metrics.massMentionActive ? 'text-tertiary' : 'text-outline'
+                      }`}
+                    >
+                      {metrics.massMentionActive ? 'ENABLED' : 'DISABLED'}
+                    </span>
                   </div>
                   <p className="text-[11px] text-outline mt-0.5">
                     Threshold enforcement against user & role mass tagging
@@ -293,7 +393,13 @@ export default function DashboardOverviewPage() {
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-on-surface">Invite Protection</span>
-                    <span className="text-[10px] font-mono text-tertiary">ENABLED</span>
+                    <span
+                      className={`text-[10px] font-mono ${
+                        metrics.inviteFilterActive ? 'text-tertiary' : 'text-outline'
+                      }`}
+                    >
+                      {metrics.inviteFilterActive ? 'ENABLED' : 'DISABLED'}
+                    </span>
                   </div>
                   <p className="text-[11px] text-outline mt-0.5">
                     Auto-purges unauthorized external Discord server invites
@@ -309,7 +415,13 @@ export default function DashboardOverviewPage() {
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-on-surface">Anti-Raid Engine</span>
-                    <span className="text-[10px] font-mono text-tertiary">ENABLED</span>
+                    <span
+                      className={`text-[10px] font-mono ${
+                        metrics.raidModeActive ? 'text-error font-bold' : 'text-tertiary'
+                      }`}
+                    >
+                      {metrics.raidModeActive ? 'LOCKDOWN' : 'MONITORING'}
+                    </span>
                   </div>
                   <p className="text-[11px] text-outline mt-0.5">
                     Account age risk scoring & sliding-window join gate
@@ -349,7 +461,7 @@ export default function DashboardOverviewPage() {
               </div>
               <div className="flex items-center justify-between py-1.5 border-b border-outline-variant/20">
                 <span className="text-outline">Audit Event Bus</span>
-                <span className="font-mono text-tertiary">Active (Isolated Channel)</span>
+                <span className="font-mono text-tertiary">Active (Async Dispatch)</span>
               </div>
               <div className="flex items-center justify-between py-1.5">
                 <span className="text-outline">Database Isolation</span>

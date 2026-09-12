@@ -45,6 +45,12 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    title: 'Support & Tickets',
+    items: [
+      { name: 'Ticket Management', href: '/dashboard/tickets', icon: 'confirmation_number' },
+    ],
+  },
+  {
     title: 'Configuration',
     items: [
       { name: 'Guild Settings', href: '/dashboard/settings', icon: 'tune' },
@@ -53,7 +59,6 @@ const navSections: NavSection[] = [
   {
     title: 'Future Modules',
     items: [
-      { name: 'Ticket System', href: '#', icon: 'confirmation_number', badge: 'Soon', disabled: true },
       { name: 'Forum Logging Hub', href: '#', icon: 'forum', badge: 'Soon', disabled: true },
       { name: 'Staff & RBAC Matrix', href: '#', icon: 'badge', badge: 'Soon', disabled: true },
       { name: 'Intelligence & Trends', href: '#', icon: 'monitoring', badge: 'Soon', disabled: true },
@@ -68,9 +73,9 @@ export function Sidebar() {
   const [customGuildInput, setCustomGuildInput] = useState('');
 
   const currentGuild = availableGuilds.find((g) => g.id === selectedGuildId) || {
-    id: selectedGuildId,
-    name: 'Apex Network',
-    memberCount: 148200,
+    id: selectedGuildId || 'None',
+    name: selectedGuildId ? `Guild ${selectedGuildId}` : 'Select a Discord Server',
+    memberCount: undefined,
   };
 
   const handleCustomGuildSubmit = (e: React.FormEvent) => {
@@ -236,12 +241,12 @@ export function Sidebar() {
       <div className="p-3 bg-surface-container-lowest/95 border-t border-outline-variant/20">
         <div className="flex items-center justify-between p-2 rounded-xl bg-surface-container-low">
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs ring-1 ring-tertiary/40 shrink-0">
-              AV
+            <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs ring-1 ring-tertiary/40 shrink-0 font-mono">
+              OP
             </div>
             <div className="flex flex-col truncate">
-              <span className="text-xs font-semibold text-on-surface truncate">Alex Vance</span>
-              <span className="text-[10px] font-mono text-outline truncate">SecOps Lead</span>
+              <span className="text-xs font-semibold text-on-surface truncate">Console Operator</span>
+              <span className="text-[10px] font-mono text-outline truncate">SecOps Authorized</span>
             </div>
           </div>
           <div className="flex items-center gap-1">

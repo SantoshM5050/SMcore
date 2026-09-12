@@ -1,9 +1,14 @@
 import http from 'http';
-import { logger } from '../utils/logger';
+import { Client } from 'discord.js';
+import { startBotBridgeServer } from './bridge/botBridgeServer';
 
-export function startHealthServer(port: number): http.Server {
+export function startHealthServer(port: number, client?: Client): http.Server {
+  if (client) {
+    return startBotBridgeServer({ port, client, internalSecret: process.env.SESSION_SECRET });
+  }
+
   const server = http.createServer((req, res) => {
-    if (req.url === '/health' || req.url === '/') {
+    if (req.url === '/health' || req.url === '/' || req.url === '/telemetry') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(
         JSON.stringify({
@@ -20,9 +25,7 @@ export function startHealthServer(port: number): http.Server {
     res.end(JSON.stringify({ error: 'Not Found' }));
   });
 
-  server.listen(port, () => {
-    logger.info({ port }, 'Health server listening for uptime monitoring');
-  });
-
+  server.listen(port);
   return server;
 }
+

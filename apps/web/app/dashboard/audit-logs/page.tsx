@@ -1,127 +1,80 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useGuild } from '@/lib/context/guildContext';
-import { apiClient } from '@/lib/api/apiClient';
+import { apiClient, AuditLogItem } from '@/lib/api/apiClient';
 
-interface AuditLogEntry {
+export interface FormattedAuditLog {
   id: string;
   guildId: string;
   action: string;
-  category: 'MODERATION' | 'AUTOMOD' | 'SECURITY' | 'GUILD_CONFIG' | 'MEMBER';
+  category: string;
   actorId: string;
   actorTag?: string;
   targetId?: string;
   targetTag?: string;
   reason?: string;
-  details?: any;
+  details?: Record<string, unknown>;
   createdAt: string;
 }
 
-const SAMPLE_AUDIT_LOGS: AuditLogEntry[] = [
-  {
-    id: 'audit-001',
-    guildId: '123456789012345678',
-    action: 'MEMBER_TIMEOUT',
-    category: 'MODERATION',
-    actorId: '29482910482910482',
-    actorTag: 'AlexVance (SecOps)',
-    targetId: '98127391823791283',
-    targetTag: 'ghost_rider',
-    reason: 'Targeted harassment in #voice-chat-2',
-    details: { durationSeconds: 86400, caseId: 1042 },
-    createdAt: new Date(Date.now() - 1000 * 60 * 24).toISOString(),
-  },
-  {
-    id: 'audit-002',
-    guildId: '123456789012345678',
-    action: 'INVITE_FILTER_BLOCK',
-    category: 'AUTOMOD',
-    actorId: 'AUTOMOD',
-    actorTag: 'SMCore AutoMod',
-    targetId: '82937109283719284',
-    targetTag: 'Vortex_Null',
-    reason: 'Phishing invite propagation',
-    details: { inviteCode: 'discord.gg/malicious-phish', channelId: '123456789012345679' },
-    createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-  },
-  {
-    id: 'audit-003',
-    guildId: '123456789012345678',
-    action: 'RAID_MODE_ENGAGED',
-    category: 'SECURITY',
-    actorId: 'SYSTEM',
-    actorTag: 'Anti-Raid Engine',
-    reason: 'Surge threshold breached: 12 joins in 8s',
-    details: { threshold: 8, windowSeconds: 10, recentJoins: 12 },
-    createdAt: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
-  },
-  {
-    id: 'audit-004',
-    guildId: '123456789012345678',
-    action: 'PROTECTION_CONFIG_UPDATE',
-    category: 'GUILD_CONFIG',
-    actorId: '39482910482910482',
-    actorTag: 'SarahT (Admin)',
-    reason: 'Updated mass mention limit to 4',
-    details: { field: 'massMentionThreshold', oldValue: 6, newValue: 4 },
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
-  },
-  {
-    id: 'audit-005',
-    guildId: '123456789012345678',
-    action: 'MEMBER_QUARANTINED',
-    category: 'SECURITY',
-    actorId: 'SYSTEM',
-    actorTag: 'Anti-Raid Gate',
-    targetId: '49281729481928471',
-    targetTag: 'suspicious_alt_01',
-    reason: 'Account age under 24h risk profile',
-    details: { accountAgeHours: 6, minAgeDays: 7 },
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(),
-  },
-];
-
 export default function AuditLogsPage() {
   const { selectedGuildId } = useGuild();
-  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
+  const [logs, setLogs] = useState<FormattedAuditLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedLog, setSelectedLog] = useState<AuditLogEntry | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedLog, setSelectedLog] = useState<FormattedAuditLog | null>(null);
 
   // Filters
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    let isMounted = true;
-    async function loadAudits() {
-      setIsLoading(true);
-      try {
-        const res = await apiClient.getAuditLogs(selectedGuildId, { limit: 50 });
-        if (isMounted) {
-          if (res.success && res.data && res.data.length > 0) {
-            setLogs(res.data);
-            setSelectedLog(res.data[0]);
-          } else {
-            setLogs(SAMPLE_AUDIT_LOGS);
-            setSelectedLog(SAMPLE_AUDIT_LOGS[0]);
-          }
-        }
-      } catch {
-        if (isMounted) {
-          setLogs(SAMPLE_AUDIT_LOGS);
-          setSelectedLog(SAMPLE_AUDIT_LOGS[0]);
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    }
+  const loadAudits = useCallback(async () => {
+    if (!selectedGuildId) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await apiClient.auditLogs.list(selectedGuildId, {
+        limit: 100,
+        eventType: categoryFilter !== 'ALL' ? categoryFilter : undefined,
+      });
 
+      if (res.success && res.data) {
+        const mapped: FormattedAuditLog[] = res.data.map((item: AuditLogItem) => ({
+          id: item.id,
+          guildId: item.guildId,
+          action: item.action,
+          category: item.eventType || item.targetType || 'SYSTEM',
+          actorId: item.actorUserId || 'SYSTEM',
+          actorTag: item.actorTag || (item.actorUserId ? `User (${item.actorUserId})` : 'System'),
+          targetId: item.targetUserId || item.targetId || item.channelId || (item.caseId ? `Case #${item.caseId}` : undefined),
+          targetTag: item.targetUserId ? `User (${item.targetUserId})` : item.channelId ? `Channel (${item.channelId})` : undefined,
+          reason: item.reason || (item.metadata?.reason as string) || undefined,
+          details: item.metadata || {},
+          createdAt: item.createdAt,
+        }));
+        setLogs(mapped);
+        setSelectedLog(mapped.length > 0 ? mapped[0] : null);
+      } else {
+        setLogs([]);
+        setSelectedLog(null);
+        if (res.error?.message) {
+          setError(res.error.message);
+        }
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to fetch audit records';
+      setError(msg);
+      setLogs([]);
+      setSelectedLog(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedGuildId, categoryFilter]);
+
+  useEffect(() => {
     loadAudits();
-    return () => {
-      isMounted = false;
-    };
-  }, [selectedGuildId]);
+  }, [loadAudits]);
 
   const filteredLogs = useMemo(() => {
     return logs.filter((entry) => {
@@ -168,6 +121,12 @@ export default function AuditLogsPage() {
             CONFIG
           </span>
         );
+      case 'TICKET':
+        return (
+          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-indigo-500/20 text-indigo-400">
+            TICKET
+          </span>
+        );
       default:
         return (
           <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-surface-container text-outline">
@@ -202,11 +161,28 @@ export default function AuditLogsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-outline bg-surface-container px-3 py-1.5 rounded-lg border border-outline-variant/30">
-            Isolated Channel Scoped
-          </span>
+          <button
+            type="button"
+            onClick={() => loadAudits()}
+            disabled={isLoading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-mono border border-outline-variant/30 transition-colors"
+          >
+            <span className={`material-symbols-outlined text-[16px] ${isLoading ? 'animate-spin' : ''}`}>
+              refresh
+            </span>
+            <span>Refresh</span>
+          </button>
         </div>
       </div>
+
+      {error && (
+        <div className="mx-6 mt-4 p-3 rounded-lg bg-error-container/20 border border-error/30 text-error text-xs flex items-center justify-between">
+          <span>{error}</span>
+          <button type="button" onClick={() => loadAudits()} className="underline font-bold ml-2">
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Filter Deck */}
       <div className="px-6 py-3">
@@ -220,7 +196,7 @@ export default function AuditLogsPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by action, actor Snowflake ID, target, or metadata reason..."
+              placeholder="Search by action, actor Snowflake ID, target, or reason..."
               className="w-full pl-9 pr-4 py-1.5 bg-surface-container-lowest text-on-surface placeholder:text-outline-variant text-xs rounded-lg border border-outline-variant/40 focus:outline-none focus:border-primary transition-all font-mono"
             />
           </div>
@@ -237,6 +213,7 @@ export default function AuditLogsPage() {
               <option value="AUTOMOD">AutoMod</option>
               <option value="SECURITY">Security / Anti-Raid</option>
               <option value="GUILD_CONFIG">Guild Configuration</option>
+              <option value="TICKET">Ticketing</option>
               <option value="MEMBER">Member Lifecycle</option>
             </select>
           </div>
@@ -271,13 +248,28 @@ export default function AuditLogsPage() {
                 {isLoading ? (
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-outline">
-                      Loading audit events...
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="material-symbols-outlined animate-spin text-[18px] text-primary">
+                          progress_activity
+                        </span>
+                        <span>Loading audit records from database...</span>
+                      </div>
                     </td>
                   </tr>
                 ) : filteredLogs.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-outline">
-                      No matching audit records found.
+                    <td colSpan={7} className="py-12 text-center text-outline">
+                      <div className="flex flex-col items-center justify-center gap-1.5">
+                        <span className="material-symbols-outlined text-outline text-[32px]">
+                          history_edu
+                        </span>
+                        <span className="text-on-surface font-medium text-xs">
+                          No audit records found
+                        </span>
+                        <span className="text-[11px] text-outline max-w-sm">
+                          Events are recorded automatically whenever moderation actions, automod infractions, or security alerts occur in this server.
+                        </span>
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -298,7 +290,7 @@ export default function AuditLogsPage() {
                           {entry.action}
                         </td>
                         <td className="py-2.5 px-3">
-                          <span className="font-semibold text-on-surface">
+                          <span className="font-semibold text-on-surface font-mono">
                             {entry.actorTag || entry.actorId}
                           </span>
                         </td>
@@ -343,7 +335,7 @@ export default function AuditLogsPage() {
                   <span className="text-sm font-bold text-on-surface">Event Detail</span>
                   {getCategoryBadge(selectedLog.category)}
                 </div>
-                <span className="text-[10px] font-mono text-outline">{selectedLog.id}</span>
+                <span className="text-[10px] font-mono text-outline truncate max-w-[120px]">{selectedLog.id}</span>
               </div>
 
               <div className="p-4 space-y-4 text-xs">
@@ -360,13 +352,13 @@ export default function AuditLogsPage() {
                 <div className="grid grid-cols-2 gap-2">
                   <div className="p-2.5 rounded-lg bg-surface-container border border-outline-variant/20">
                     <div className="text-[10px] uppercase font-mono text-outline">Actor</div>
-                    <div className="font-semibold text-on-surface truncate mt-0.5">
+                    <div className="font-semibold text-on-surface font-mono truncate mt-0.5">
                       {selectedLog.actorTag || selectedLog.actorId}
                     </div>
                   </div>
                   <div className="p-2.5 rounded-lg bg-surface-container border border-outline-variant/20">
                     <div className="text-[10px] uppercase font-mono text-outline">Target</div>
-                    <div className="font-semibold text-on-surface truncate mt-0.5">
+                    <div className="font-semibold text-on-surface font-mono truncate mt-0.5">
                       {selectedLog.targetTag || selectedLog.targetId || 'None'}
                     </div>
                   </div>

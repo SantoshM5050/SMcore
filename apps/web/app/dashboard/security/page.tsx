@@ -23,17 +23,17 @@ interface SecuritySettings {
 }
 
 const DEFAULT_SECURITY: SecuritySettings = {
-  antiRaidEnabled: true,
+  antiRaidEnabled: false,
   joinThreshold: 8,
   slidingWindowSeconds: 10,
   autoLockdown: true,
   lockdownDurationMinutes: 30,
 
-  quarantineEnabled: true,
-  quarantineRoleId: '123456789012345679',
-  quarantineChannelId: '123456789012345680',
+  quarantineEnabled: false,
+  quarantineRoleId: '',
+  quarantineChannelId: '',
 
-  accountAgeRiskEnabled: true,
+  accountAgeRiskEnabled: false,
   minAccountAgeDays: 7,
   suspiciousAccountAction: 'QUARANTINE',
 
@@ -54,7 +54,7 @@ export default function SecurityAntiRaidPage() {
     quarantinedCount: number;
   }>({
     active: false,
-    recentJoins: 2,
+    recentJoins: 0,
     quarantinedCount: 0,
   });
 
@@ -63,6 +63,10 @@ export default function SecurityAntiRaidPage() {
   useEffect(() => {
     let isMounted = true;
     async function loadSecurity() {
+      if (!selectedGuildId) {
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
       try {
         const [secRes, statRes] = await Promise.all([
@@ -72,14 +76,28 @@ export default function SecurityAntiRaidPage() {
 
         if (isMounted) {
           if (secRes.success && secRes.data) {
-            const merged = { ...DEFAULT_SECURITY, ...secRes.data };
-            setSettings(merged);
-            setInitialSettings(merged);
+            const d = secRes.data;
+            const mapped: SecuritySettings = {
+              antiRaidEnabled: d.raidDetectionEnabled ?? false,
+              joinThreshold: d.raidJoinThreshold ?? 8,
+              slidingWindowSeconds: d.raidWindowSeconds ?? 10,
+              autoLockdown: d.enabled ?? true,
+              lockdownDurationMinutes: Math.floor((d.raidModeDurationSeconds ?? 1800) / 60),
+              quarantineEnabled: d.quarantineEnabled ?? false,
+              quarantineRoleId: d.quarantineRoleId || '',
+              quarantineChannelId: '',
+              accountAgeRiskEnabled: d.accountAgeProtectionEnabled ?? false,
+              minAccountAgeDays: Math.floor((d.minimumAccountAgeHours ?? 168) / 24),
+              suspiciousAccountAction: d.accountAgeAction ?? 'QUARANTINE',
+              raidModeEnabled: d.raidModeEnabled ?? false,
+            };
+            setSettings(mapped);
+            setInitialSettings(mapped);
           }
           if (statRes.success && statRes.data) {
             setRaidStatus({
-              active: statRes.data.isRaidModeActive || false,
-              recentJoins: statRes.data.recentJoinsCount || 2,
+              active: statRes.data.active || false,
+              recentJoins: statRes.data.recentJoins || 0,
               quarantinedCount: statRes.data.quarantinedCount || 0,
             });
           }
@@ -104,27 +122,50 @@ export default function SecurityAntiRaidPage() {
     setIsSaving(true);
     setStatusBanner(null);
     try {
-      const res = await apiClient.updateSecuritySettings(selectedGuildId, settings);
+      const payload = {
+        enabled: settings.autoLockdown,
+        raidDetectionEnabled: settings.antiRaidEnabled,
+        raidJoinThreshold: settings.joinThreshold,
+        raidWindowSeconds: settings.slidingWindowSeconds,
+        raidModeDurationSeconds: settings.lockdownDurationMinutes * 60,
+        quarantineEnabled: settings.quarantineEnabled,
+        quarantineRoleId: settings.quarantineRoleId.trim() || null,
+        accountAgeProtectionEnabled: settings.accountAgeRiskEnabled,
+        minimumAccountAgeHours: settings.minAccountAgeDays * 24,
+        accountAgeAction: settings.suspiciousAccountAction,
+      };
+      const res = await apiClient.updateSecuritySettings(selectedGuildId, payload);
       if (res.success) {
         setInitialSettings(settings);
         setStatusBanner('Security policies deployed successfully.');
       } else {
-        setInitialSettings(settings);
-        setStatusBanner('Updated in memory buffer (DB Offline mode).');
+        setStatusBanner(res.error?.message || 'Failed to save security settings.');
       }
-    } catch {
-      setInitialSettings(settings);
-      setStatusBanner('Updated in memory buffer (DB Offline mode).');
+    } catch (err) {
+      setStatusBanner(err instanceof Error ? err.message : 'Error updating security settings.');
     } finally {
       setIsSaving(false);
       setTimeout(() => setStatusBanner(null), 4000);
     }
   };
 
-  const handleToggleLockdown = () => {
+  const handleToggleLockdown = async () => {
     const nextState = !settings.raidModeEnabled;
-    setSettings((prev) => ({ ...prev, raidModeEnabled: nextState }));
-    setRaidStatus((prev) => ({ ...prev, active: nextState }));
+    try {
+      const res = await apiClient.security.toggleRaidMode(selectedGuildId, {
+        engage: nextState,
+        reason: nextState ? 'Manual raid mode engaged via dashboard' : 'Manual raid mode lifted via dashboard',
+      });
+      if (res.success) {
+        setSettings((prev) => ({ ...prev, raidModeEnabled: nextState }));
+        setRaidStatus((prev) => ({ ...prev, active: nextState }));
+        setStatusBanner(res.data?.message || (nextState ? 'Raid lockdown engaged' : 'Raid lockdown lifted'));
+      } else {
+        setStatusBanner(res.error?.message || 'Failed to toggle raid mode on Discord bot');
+      }
+    } catch (err) {
+      setStatusBanner(err instanceof Error ? err.message : 'Error toggling raid mode');
+    }
   };
 
   return (

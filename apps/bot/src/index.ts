@@ -14,15 +14,15 @@ async function main(): Promise<void> {
   // Initialize central audit log subscriptions
   AuditLogService.initialize();
 
-  // Start health server for uptime checks
-  const healthServer = startHealthServer(config.BOT_PORT);
-
   // Initialize Discord client
   const client = createDiscordClient();
   registerReadyEvent(client);
   registerInteractionEvent(client);
   registerMessageCreateEvent(client);
   registerGuildMemberAddEvent(client);
+
+  // Start internal HTTP bridge & health server with live Discord client
+  const healthServer = startHealthServer(config.BOT_PORT, client);
 
   // Graceful shutdown handling
   const shutdown = async (signal: string) => {

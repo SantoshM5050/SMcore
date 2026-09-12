@@ -15,6 +15,7 @@ import { TicketParticipantService } from '../services/tickets/ticketParticipantS
 import { TicketService } from '../services/tickets/ticketService';
 import { TicketTranscriptService } from '../services/tickets/ticketTranscriptService';
 import { TicketDTO } from '../services/tickets/ticketTypes';
+import { prisma } from '@smcore/database';
 
 function createMockMember(
   id: string,
@@ -67,10 +68,34 @@ function createMockGuild(id: string, roles: string[] = []): any {
 }
 
 test('Premium Ticketing System — Unit Test Suite', async (t) => {
-  t.beforeEach(() => {
+  const testGuildIds = ['123456789012345678', '111111111111111111', '222222222222222222'];
+
+  t.before(async () => {
+    for (const gid of testGuildIds) {
+      await prisma.guild.upsert({
+        where: { id: gid },
+        update: {},
+        create: { id: gid, name: `Test Guild ${gid}`, ownerId: '1067745184160423946' },
+      }).catch(() => null);
+    }
+  });
+
+  t.after(async () => {
+    for (const gid of testGuildIds) {
+      await prisma.guild.delete({ where: { id: gid } }).catch(() => null);
+    }
+  });
+
+  t.beforeEach(async () => {
     TicketService.clearMemory();
     TicketConfigService.clearCache();
     TicketCategoryService.clearMemory();
+    await prisma.ticket.deleteMany({
+      where: { guildId: { in: testGuildIds } },
+    }).catch(() => null);
+    await prisma.ticketCategory.deleteMany({
+      where: { guildId: { in: testGuildIds } },
+    }).catch(() => null);
   });
 
   await t.test('1. Sequential Ticket Numbering & Guild Isolation', async () => {
@@ -236,6 +261,7 @@ test('Premium Ticketing System — Unit Test Suite', async (t) => {
     const staffMember = createMockMember('staff-closer', [], true);
 
     await TicketConfigService.updateSettings(guildId, {
+      enabled: true,
       cooldownSeconds: 0,
       allowReopen: true,
       allowUserClose: true,
@@ -412,7 +438,7 @@ test('Premium Ticketing System — Unit Test Suite', async (t) => {
     const mockGuild = createMockGuild(guildId);
     const staff = createMockMember('staff-audit', [], true);
 
-    await TicketConfigService.updateSettings(guildId, { cooldownSeconds: 0 });
+    await TicketConfigService.updateSettings(guildId, { enabled: true, cooldownSeconds: 0 });
     const createRes = await TicketService.createTicket(mockGuild, 'creator-audit');
     assert.ok(createRes.ticket);
 

@@ -6,8 +6,8 @@ import { useGuild } from '../lib/context/guildContext';
 export function Topbar() {
   const { selectedGuildId, availableGuilds, health, isDbOffline } = useGuild();
   const currentGuild = availableGuilds.find((g) => g.id === selectedGuildId) || {
-    name: 'Apex Network',
-    id: selectedGuildId,
+    name: selectedGuildId ? `Guild ${selectedGuildId}` : 'No Server Selected',
+    id: selectedGuildId || '',
   };
 
   return (
@@ -28,11 +28,15 @@ export function Topbar() {
                 health.bot === 'online' ? 'bg-tertiary animate-pulse' : 'bg-error'
               }`}
             />
-            <span>Bot Gateway: {health.bot === 'online' ? 'Online' : 'Standby'}</span>
+            <span>Bot Gateway: {health.bot === 'online' ? 'Online' : 'Offline'}</span>
             <span className="text-outline-variant">•</span>
             <span>{health.pingMs}ms</span>
-            <span className="text-outline-variant">•</span>
-            <span>v1.0.0</span>
+            {health.guildCount > 0 && (
+              <>
+                <span className="text-outline-variant">•</span>
+                <span>{health.guildCount} guild{health.guildCount === 1 ? '' : 's'}</span>
+              </>
+            )}
           </div>
 
           {/* Database Health Pill */}
@@ -48,24 +52,26 @@ export function Topbar() {
                 !isDbOffline && health.db === 'connected' ? 'bg-tertiary' : 'bg-amber-400'
               }`}
             />
-            <span>DB: {!isDbOffline && health.db === 'connected' ? 'Connected' : 'Offline Mode'}</span>
+            <span>DB: {!isDbOffline && health.db === 'connected' ? 'Connected' : 'Database Unavailable'}</span>
           </div>
 
           {/* Current Guild Breadcrumb */}
-          <div className="hidden xl:flex items-center gap-2 text-xs text-outline">
-            <span className="material-symbols-outlined text-[16px]">dns</span>
-            <span className="text-on-surface font-semibold truncate max-w-[150px]">{currentGuild.name}</span>
-            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-            <span className="text-on-surface-variant font-mono text-[11px]">Operations Portal</span>
-          </div>
+          {currentGuild.id && (
+            <div className="hidden xl:flex items-center gap-2 text-xs text-outline">
+              <span className="material-symbols-outlined text-[16px]">dns</span>
+              <span className="text-on-surface font-semibold truncate max-w-[180px]">{currentGuild.name}</span>
+              <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+              <span className="text-on-surface-variant font-mono text-[11px]">Control Panel</span>
+            </div>
+          )}
         </div>
 
         {/* Right Action Icons & Status */}
         <div className="flex items-center gap-3">
           {isDbOffline && (
             <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-300 text-[11px] border border-amber-500/30">
-              <span className="material-symbols-outlined text-[15px]">info</span>
-              <span>PostgreSQL Local Offline (Memory-Safe Fallback)</span>
+              <span className="material-symbols-outlined text-[15px]">cloud_off</span>
+              <span>Database unavailable</span>
             </div>
           )}
 
@@ -82,12 +88,12 @@ export function Topbar() {
 
           <div className="w-px h-5 bg-surface-container-highest mx-1 hidden sm:block" />
 
-          {/* User Profile Avatar */}
+          {/* Staff SecOps Badge */}
           <div className="flex items-center gap-2 pl-1">
             <div className="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-xs ring-1 ring-primary/40">
-              AV
+              <span className="material-symbols-outlined text-[18px]">admin_panel_settings</span>
             </div>
-            <span className="text-xs font-semibold text-on-surface hidden md:inline">Alex Vance</span>
+            <span className="text-xs font-semibold text-on-surface hidden md:inline">SecOps Staff</span>
           </div>
         </div>
       </div>

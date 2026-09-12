@@ -1,25 +1,20 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { apiClient } from '../api/apiClient';
-
-export interface GuildInfo {
-  id: string;
-  name: string;
-  memberCount?: number;
-  icon?: string | null;
-}
+import { apiClient, GuildItem } from '../api/apiClient';
 
 export interface HealthState {
   bot: 'online' | 'offline' | 'unknown';
-  db: 'connected' | 'degraded' | 'offline' | 'unknown';
+  db: 'connected' | 'offline' | 'unknown';
   pingMs: number;
+  uptimeSeconds: number;
+  guildCount: number;
 }
 
 interface GuildContextValue {
   selectedGuildId: string;
   setSelectedGuildId: (id: string) => void;
-  availableGuilds: GuildInfo[];
+  availableGuilds: GuildItem[];
   isLoadingGuilds: boolean;
   isDbOffline: boolean;
   health: HealthState;
@@ -29,22 +24,27 @@ interface GuildContextValue {
 
 const GuildContext = createContext<GuildContextValue | undefined>(undefined);
 
-const DEFAULT_FALLBACK_GUILD: GuildInfo = {
-  id: '123456789012345678',
-  name: 'Apex Network',
-  memberCount: 148200,
-  icon: null,
-};
-
 export function GuildProvider({ children }: { children: React.ReactNode }) {
-  const [selectedGuildId, setSelectedGuildIdState] = useState<string>('123456789012345678');
-  const [availableGuilds, setAvailableGuilds] = useState<GuildInfo[]>([DEFAULT_FALLBACK_GUILD]);
+  const [selectedGuildId, setSelectedGuildIdState] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return localStorage.getItem('smcore_selected_guild_id') || '';
+      } catch {
+        return '';
+      }
+    }
+    return '';
+  });
+
+  const [availableGuilds, setAvailableGuilds] = useState<GuildItem[]>([]);
   const [isLoadingGuilds, setIsLoadingGuilds] = useState(true);
   const [isDbOffline, setIsDbOffline] = useState(false);
   const [health, setHealth] = useState<HealthState>({
     bot: 'unknown',
     db: 'unknown',
-    pingMs: 24,
+    pingMs: 0,
+    uptimeSeconds: 0,
+    guildCount: 0,
   });
 
   const setSelectedGuildId = useCallback((id: string) => {
@@ -53,29 +53,29 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
       try {
         localStorage.setItem('smcore_selected_guild_id', id);
       } catch {
-        // Ignore localStorage error
+        // Ignore localStorage errors
       }
     }
   }, []);
 
   const refreshHealth = useCallback(async () => {
     try {
-      const res = await apiClient.getHealth();
+      const res = await apiClient.health.get();
       if (res.success && res.data) {
-        const dbStatus = res.data.database?.status;
-        const botStatus = res.data.gateway?.status;
+        const dbConnected = res.data.database.status === 'connected';
+        const botConnected = res.data.gateway.status === 'connected';
+
         setHealth({
-          db: dbStatus === 'connected' ? 'connected' : dbStatus === 'degraded' ? 'degraded' : 'offline',
-          bot: botStatus === 'connected' ? 'online' : 'offline',
-          pingMs: res.data.gateway?.pingMs ?? 24,
+          db: dbConnected ? 'connected' : 'offline',
+          bot: botConnected ? 'online' : 'offline',
+          pingMs: res.data.gateway.pingMs,
+          uptimeSeconds: res.data.gateway.uptimeSeconds,
+          guildCount: res.data.gateway.guildCount,
         });
-        if (dbStatus === 'offline') {
-          setIsDbOffline(true);
-        } else if (dbStatus === 'connected') {
-          setIsDbOffline(false);
-        }
+
+        setIsDbOffline(!dbConnected);
       } else {
-        setHealth((prev) => ({ ...prev, db: 'offline' }));
+        setHealth((prev) => ({ ...prev, db: 'offline', bot: 'offline' }));
         setIsDbOffline(true);
       }
     } catch {
@@ -87,47 +87,45 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
   const refreshGuilds = useCallback(async () => {
     setIsLoadingGuilds(true);
     try {
-      const res = await apiClient.getGuilds();
-      if (res.meta?.dbOffline || res.meta?.fallback) {
-        setIsDbOffline(true);
-      }
-      if (res.success && res.data && res.data.length > 0) {
+      const res = await apiClient.guilds.list();
+      if (res.success && Array.isArray(res.data)) {
         setAvailableGuilds(res.data);
-        // If current guild is not in list, pick first
-        setSelectedGuildIdState((prev) => {
-          const exists = res.data!.some((g) => g.id === prev);
-          return exists ? prev : res.data![0].id;
+        setIsDbOffline(false);
+
+        setSelectedGuildIdState((current) => {
+          if (res.data!.length === 0) return '';
+          const exists = res.data!.some((g) => g.id === current);
+          if (exists) return current;
+          const firstId = res.data![0].id;
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('smcore_selected_guild_id', firstId);
+            } catch {
+              // Ignore
+            }
+          }
+          return firstId;
         });
       } else {
-        setAvailableGuilds([DEFAULT_FALLBACK_GUILD]);
+        setAvailableGuilds([]);
+        if (res.error?.code === 'DATABASE_UNAVAILABLE') {
+          setIsDbOffline(true);
+        }
       }
     } catch {
+      setAvailableGuilds([]);
       setIsDbOffline(true);
-      setAvailableGuilds([DEFAULT_FALLBACK_GUILD]);
     } finally {
       setIsLoadingGuilds(false);
     }
   }, []);
 
   useEffect(() => {
-    // Restore saved guild id from localStorage
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('smcore_selected_guild_id');
-        if (saved && /^\d{17,20}$/.test(saved)) {
-          setSelectedGuildIdState(saved);
-        }
-      } catch {
-        // Ignore
-      }
-    }
-
     refreshHealth();
     refreshGuilds();
 
-    // Periodic health poll (every 30s)
-    const interval = setInterval(refreshHealth, 30000);
-    return () => clearInterval(interval);
+    const healthInterval = setInterval(refreshHealth, 10000);
+    return () => clearInterval(healthInterval);
   }, [refreshHealth, refreshGuilds]);
 
   return (
@@ -149,9 +147,9 @@ export function GuildProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useGuild(): GuildContextValue {
-  const ctx = useContext(GuildContext);
-  if (!ctx) {
+  const context = useContext(GuildContext);
+  if (!context) {
     throw new Error('useGuild must be used within a GuildProvider');
   }
-  return ctx;
+  return context;
 }

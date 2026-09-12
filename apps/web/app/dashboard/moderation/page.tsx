@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useGuild } from '@/lib/context/guildContext';
 import { apiClient } from '@/lib/api/apiClient';
 
@@ -19,84 +19,6 @@ interface CaseRecord {
   createdAt: string;
   expiresAt?: string | null;
 }
-
-const SAMPLE_FALLBACK_CASES: CaseRecord[] = [
-  {
-    id: 'case-1042',
-    caseNumber: 1042,
-    guildId: '123456789012345678',
-    targetUserId: '98127391823791283',
-    targetUserTag: 'ghost_rider',
-    moderatorId: '29482910482910482',
-    moderatorTag: 'AlexVance (SecOps)',
-    action: 'TIMEOUT',
-    reason: 'Targeted harassment and rule #4 violation in #voice-chat-2',
-    status: 'ACTIVE',
-    durationSeconds: 86400,
-    createdAt: new Date(Date.now() - 1000 * 60 * 24).toISOString(),
-    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 18).toISOString(),
-  },
-  {
-    id: 'case-1041',
-    caseNumber: 1041,
-    guildId: '123456789012345678',
-    targetUserId: '82937109283719284',
-    targetUserTag: 'Vortex_Null',
-    moderatorId: 'AUTOMOD',
-    moderatorTag: 'SMCore AutoMod',
-    action: 'BAN',
-    reason: 'Coordinated phishing link propagation in #trading',
-    status: 'ACTIVE',
-    durationSeconds: 604800,
-    createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 6).toISOString(),
-  },
-  {
-    id: 'case-1040',
-    caseNumber: 1040,
-    guildId: '123456789012345678',
-    targetUserId: '19482739481928374',
-    targetUserTag: 'KronoRaid',
-    moderatorId: '39482910482910482',
-    moderatorTag: 'SarahT (Admin)',
-    action: 'BAN',
-    reason: 'Mass token raid orchestration and malicious webhook spoofing',
-    status: 'ACTIVE',
-    durationSeconds: null,
-    createdAt: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
-    expiresAt: null,
-  },
-  {
-    id: 'case-1039',
-    caseNumber: 1039,
-    guildId: '123456789012345678',
-    targetUserId: '59283719482910482',
-    targetUserTag: 'DeltaJack',
-    moderatorId: 'AUTOMOD',
-    moderatorTag: 'SMCore AutoMod',
-    action: 'KICK',
-    reason: 'Failure to verify within 48h gate check period',
-    status: 'EXPIRED',
-    durationSeconds: null,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    expiresAt: null,
-  },
-  {
-    id: 'case-1038',
-    caseNumber: 1038,
-    guildId: '123456789012345678',
-    targetUserId: '39482910482910482',
-    targetUserTag: 'ne0n_byte',
-    moderatorId: '29482910482910482',
-    moderatorTag: 'AlexVance (SecOps)',
-    action: 'WARN',
-    reason: 'Excessive uppercase and repetitive spamming in #general',
-    status: 'ACTIVE',
-    durationSeconds: null,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(),
-    expiresAt: null,
-  },
-];
 
 export default function ModerationCommandCenterPage() {
   const { selectedGuildId, isDbOffline } = useGuild();
@@ -118,46 +40,62 @@ export default function ModerationCommandCenterPage() {
   const [actionReason, setActionReason] = useState('');
   const [actionDuration, setActionDuration] = useState('60');
   const [modalFeedback, setModalFeedback] = useState<string | null>(null);
+  const [isSubmittingAction, setIsSubmittingAction] = useState(false);
 
   // Member Lookup Drawer
   const [lookupUserId, setLookupUserId] = useState('');
   const [lookupResult, setLookupResult] = useState<{
-    warnings: any[];
-    notes: any[];
+    warnings: Array<{ id: string; reason: string; status: string; createdAt: string }>;
+    notes: Array<{ id: string; note: string; createdAt: string }>;
   } | null>(null);
   const [isLookingUp, setIsLookingUp] = useState(false);
 
-  useEffect(() => {
-    let isMounted = true;
-    async function fetchCases() {
-      setIsLoading(true);
-      try {
-        const res = await apiClient.getCases(selectedGuildId, { pageSize: 50 });
-        if (isMounted) {
-          if (res.success && res.data?.items && res.data.items.length > 0) {
-            setCases(res.data.items);
-            setSelectedCase(res.data.items[0]);
-          } else {
-            // Use fallback cases for visual representation
-            setCases(SAMPLE_FALLBACK_CASES);
-            setSelectedCase(SAMPLE_FALLBACK_CASES[0]);
-          }
-        }
-      } catch {
-        if (isMounted) {
-          setCases(SAMPLE_FALLBACK_CASES);
-          setSelectedCase(SAMPLE_FALLBACK_CASES[0]);
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
+  const fetchCases = useCallback(async () => {
+    if (!selectedGuildId) {
+      setCases([]);
+      setSelectedCase(null);
+      setIsLoading(false);
+      return;
     }
-
-    fetchCases();
-    return () => {
-      isMounted = false;
-    };
+    setIsLoading(true);
+    try {
+      const res = await apiClient.getCases(selectedGuildId, { pageSize: 50 });
+      if (res.success && res.data?.items) {
+        const mapped: CaseRecord[] = res.data.items.map((item) => ({
+          id: item.id,
+          caseNumber: item.caseNumber,
+          guildId: item.guildId,
+          targetUserId: item.targetUserId,
+          targetUserTag: item.targetUserTag,
+          moderatorId: item.moderatorUserId,
+          moderatorTag: item.moderatorTag,
+          action: item.type as CaseRecord['action'],
+          reason: item.reason,
+          status: item.status,
+          durationSeconds: item.duration,
+          createdAt: item.createdAt,
+          expiresAt: item.expiresAt,
+        }));
+        setCases(mapped);
+        setSelectedCase((prev) => {
+          if (!prev) return mapped[0] || null;
+          return mapped.find((c) => c.id === prev.id) || mapped[0] || null;
+        });
+      } else {
+        setCases([]);
+        setSelectedCase(null);
+      }
+    } catch {
+      setCases([]);
+      setSelectedCase(null);
+    } finally {
+      setIsLoading(false);
+    }
   }, [selectedGuildId]);
+
+  useEffect(() => {
+    fetchCases();
+  }, [fetchCases]);
 
   const filteredCases = useMemo(() => {
     return cases.filter((c) => {
@@ -168,7 +106,9 @@ export default function ModerationCommandCenterPage() {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchCase = String(c.caseNumber).includes(q);
-        const matchTarget = c.targetUserId.toLowerCase().includes(q) || (c.targetUserTag && c.targetUserTag.toLowerCase().includes(q));
+        const matchTarget =
+          c.targetUserId.toLowerCase().includes(q) ||
+          (c.targetUserTag && c.targetUserTag.toLowerCase().includes(q));
         const matchReason = c.reason.toLowerCase().includes(q);
         if (!matchCase && !matchTarget && !matchReason) return false;
       }
@@ -177,42 +117,54 @@ export default function ModerationCommandCenterPage() {
     });
   }, [cases, actionFilter, moderatorFilter, searchQuery]);
 
-  const handleExecuteAction = (e: React.FormEvent) => {
+  const handleExecuteAction = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!/^\d{17,20}$/.test(actionTargetId.trim())) {
       setModalFeedback('Invalid Discord Snowflake ID (must be 17-20 digits)');
       return;
     }
 
-    // Add optimistic case to table
-    const newCase: CaseRecord = {
-      id: `case-${Date.now()}`,
-      caseNumber: cases.length > 0 ? Math.max(...cases.map((c) => c.caseNumber)) + 1 : 1050,
-      guildId: selectedGuildId,
-      targetUserId: actionTargetId.trim(),
-      targetUserTag: `user_${actionTargetId.slice(-4)}`,
-      moderatorId: '29482910482910482',
-      moderatorTag: 'AlexVance (SecOps)',
-      action: actionModal.actionType.toUpperCase() as any,
-      reason: actionReason.trim() || 'No reason specified',
-      status: 'ACTIVE',
-      durationSeconds: actionModal.actionType === 'timeout' ? parseInt(actionDuration, 10) * 60 : null,
-      createdAt: new Date().toISOString(),
-      expiresAt:
-        actionModal.actionType === 'timeout'
-          ? new Date(Date.now() + parseInt(actionDuration, 10) * 60 * 1000).toISOString()
-          : null,
-    };
+    setIsSubmittingAction(true);
+    setModalFeedback(null);
 
-    setCases((prev) => [newCase, ...prev]);
-    setSelectedCase(newCase);
-    setModalFeedback(`Successfully dispatched ${actionModal.actionType.toUpperCase()} action.`);
-    setTimeout(() => {
-      setActionModal({ isOpen: false, actionType: '' });
-      setActionTargetId('');
-      setActionReason('');
-      setModalFeedback(null);
-    }, 1200);
+    const action = actionModal.actionType.toUpperCase() as
+      | 'WARN'
+      | 'TIMEOUT'
+      | 'UNTIMEOUT'
+      | 'KICK'
+      | 'BAN'
+      | 'UNBAN';
+
+    const durationSeconds =
+      actionModal.actionType === 'timeout' ? parseInt(actionDuration, 10) * 60 : undefined;
+
+    try {
+      const res = await apiClient.moderation.executeAction(selectedGuildId, {
+        action,
+        targetUserId: actionTargetId.trim(),
+        reason: actionReason.trim() || undefined,
+        durationSeconds,
+      });
+
+      setIsSubmittingAction(false);
+
+      if (!res.success) {
+        setModalFeedback(res.error?.message || 'Failed to execute moderation action on Discord');
+        return;
+      }
+
+      setModalFeedback(res.data?.message || `Successfully executed ${action} on Discord.`);
+      setTimeout(() => {
+        setActionModal({ isOpen: false, actionType: '' });
+        setActionTargetId('');
+        setActionReason('');
+        setModalFeedback(null);
+        fetchCases();
+      }, 900);
+    } catch (err) {
+      setIsSubmittingAction(false);
+      setModalFeedback(err instanceof Error ? err.message : 'Action failed');
+    }
   };
 
   const handleMemberLookup = async (e: React.FormEvent) => {
@@ -759,9 +711,14 @@ export default function ModerationCommandCenterPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-primary-container text-on-primary-container font-bold hover:bg-primary-container/90 shadow-md shadow-primary-container/20"
+                  disabled={isSubmittingAction}
+                  className={`px-4 py-2 rounded-lg font-bold shadow-md transition-all ${
+                    isSubmittingAction
+                      ? 'bg-surface-container text-outline opacity-60 cursor-not-allowed'
+                      : 'bg-primary-container text-on-primary-container hover:bg-primary-container/90 shadow-primary-container/20 cursor-pointer'
+                  }`}
                 >
-                  Execute Action
+                  {isSubmittingAction ? 'Executing on Discord...' : 'Execute Action'}
                 </button>
               </div>
             </form>

@@ -2,51 +2,65 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@smcore/database';
 
 export async function GET() {
-  const telemetry = {
-    timestamp: new Date().toISOString(),
-    api: 'OPERATIONAL' as 'OPERATIONAL' | 'DEGRADED' | 'OFFLINE',
-    database: 'UNKNOWN' as 'CONNECTED' | 'OFFLINE',
-    botGateway: 'UNKNOWN' as 'ONLINE' | 'OFFLINE',
-    latencyMs: 0,
-  };
-
   const startTime = Date.now();
+  let dbStatus: 'connected' | 'offline' = 'offline';
 
   // 1. Test Database connectivity with timeout
   try {
     const dbPromise = prisma.$queryRaw`SELECT 1`;
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('DB Timeout')), 1000)
+      setTimeout(() => reject(new Error('DB Timeout')), 1500)
     );
     await Promise.race([dbPromise, timeoutPromise]);
-    telemetry.database = 'CONNECTED';
+    dbStatus = 'connected';
   } catch {
-    telemetry.database = 'OFFLINE';
+    dbStatus = 'offline';
   }
 
-  // 2. Test Bot Health Endpoint
+  // 2. Test Bot Telemetry Endpoint
+  let gatewayStatus: 'connected' | 'offline' = 'offline';
+  let pingMs = 0;
+  let uptimeSeconds = 0;
+  let guildCount = 0;
+
   try {
     const botPort = process.env.BOT_PORT || '3001';
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1000);
-    const botRes = await fetch(`http://localhost:${botPort}/health`, {
+    const timeoutId = setTimeout(() => controller.abort(), 1500);
+
+    const res = await fetch(`http://localhost:${botPort}/telemetry`, {
       signal: controller.signal,
     }).catch(() => null);
     clearTimeout(timeoutId);
 
-    if (botRes && botRes.ok) {
-      telemetry.botGateway = 'ONLINE';
-    } else {
-      telemetry.botGateway = 'OFFLINE';
+    if (res && res.ok) {
+      const botData = await res.json().catch(() => null);
+      if (botData && botData.bot === 'online') {
+        gatewayStatus = 'connected';
+        pingMs = typeof botData.pingMs === 'number' ? botData.pingMs : 0;
+        uptimeSeconds = typeof botData.uptimeSeconds === 'number' ? botData.uptimeSeconds : 0;
+        guildCount = typeof botData.guildCount === 'number' ? botData.guildCount : 0;
+      }
     }
   } catch {
-    telemetry.botGateway = 'OFFLINE';
+    gatewayStatus = 'offline';
   }
-
-  telemetry.latencyMs = Date.now() - startTime;
 
   return NextResponse.json({
     success: true,
-    data: telemetry,
+    data: {
+      api: 'OPERATIONAL' as const,
+      database: {
+        status: dbStatus,
+      },
+      gateway: {
+        status: gatewayStatus,
+        pingMs,
+        uptimeSeconds,
+        guildCount,
+      },
+      latencyMs: Date.now() - startTime,
+      timestamp: new Date().toISOString(),
+    },
   });
 }
