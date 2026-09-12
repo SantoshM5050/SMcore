@@ -19,6 +19,7 @@ model Guild {
 
   settings            GuildSettings?
   protectionSettings  GuildProtectionSettings?
+  securitySettings    GuildSecuritySettings?
   moderationCases     ModerationCase[]
   warnings            Warning[]
   escalationRules     WarningEscalationRule[]
@@ -91,6 +92,38 @@ model GuildProtectionSettings {
 
   @@index([guildId])
   @@map("guild_protection_settings")
+}
+
+model GuildSecuritySettings {
+  id                          String   @id @default(cuid())
+  guildId                     String   @unique
+  guild                       Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  enabled                     Boolean  @default(false)
+
+  // Raid Detection & Raid Mode
+  raidDetectionEnabled        Boolean  @default(false)
+  raidJoinThreshold           Int      @default(10)
+  raidWindowSeconds           Int      @default(10)
+  raidModeDurationSeconds     Int      @default(300)
+  raidAction                  String   @default("QUARANTINE")
+
+  // Suspicious & Young Account Protection
+  accountAgeProtectionEnabled  Boolean  @default(false)
+  minimumAccountAgeHours      Int      @default(24)
+  accountAgeAction            String   @default("QUARANTINE")
+
+  // Role Quarantine Configuration
+  quarantineEnabled           Boolean  @default(false)
+  quarantineRoleId            String?
+  removeRolesOnQuarantine     Boolean  @default(false)
+  restoreRolesOnRelease       Boolean  @default(false)
+
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  @@index([guildId])
+  @@map("guild_security_settings")
 }
 
 model ModerationCase {

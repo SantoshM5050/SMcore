@@ -66,6 +66,32 @@ export enum AutoModPunishment {
   BAN = 'BAN',
 }
 
+export enum SecurityRiskLevel {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+}
+
+export enum SecurityAction {
+  NONE = 'NONE',
+  QUARANTINE = 'QUARANTINE',
+  WARN = 'WARN',
+  TIMEOUT = 'TIMEOUT',
+  KICK = 'KICK',
+  BAN = 'BAN',
+}
+
+export enum SecurityEventType {
+  SUSPICIOUS_JOIN = 'SUSPICIOUS_JOIN',
+  ACCOUNT_TOO_YOUNG = 'ACCOUNT_TOO_YOUNG',
+  RAID_DETECTED = 'RAID_DETECTED',
+  RAID_MODE_STARTED = 'RAID_MODE_STARTED',
+  RAID_MODE_ENDED = 'RAID_MODE_ENDED',
+  QUARANTINED_MEMBER = 'QUARANTINED_MEMBER',
+  RELEASED_MEMBER = 'RELEASED_MEMBER',
+  SECURITY_ACTION_FAILED = 'SECURITY_ACTION_FAILED',
+}
+
 export enum AutoModTrigger {
   SPAM = 'SPAM',
   MASS_MENTION = 'MASS_MENTION',

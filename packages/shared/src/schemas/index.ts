@@ -1,5 +1,14 @@
 import { z } from 'zod';
-import { ModerationAction, CaseStatus, WarningStatus, ProtectionType, AutoModPunishment } from '../enums';
+import {
+  ModerationAction,
+  CaseStatus,
+  WarningStatus,
+  ProtectionType,
+  AutoModPunishment,
+  SecurityRiskLevel,
+  SecurityAction,
+  SecurityEventType,
+} from '../enums';
 
 export const SnowflakeSchema = z
   .string()
@@ -227,3 +236,38 @@ export const GuildProtectionSettingsUpdateSchema = GuildProtectionSettingsSchema
   guildId: true,
 }).partial();
 export type GuildProtectionSettingsUpdate = z.infer<typeof GuildProtectionSettingsUpdateSchema>;
+
+// Phase 3 Advanced Security & Anti-Raid Schemas
+
+export const SecurityActionSchema = z.nativeEnum(SecurityAction);
+export const SecurityRiskLevelSchema = z.nativeEnum(SecurityRiskLevel);
+export const SecurityEventTypeSchema = z.nativeEnum(SecurityEventType);
+
+export const GuildSecuritySettingsSchema = z.object({
+  guildId: SnowflakeSchema,
+  enabled: z.boolean().default(false),
+
+  // Raid Detection & Raid Mode
+  raidDetectionEnabled: z.boolean().default(false),
+  raidJoinThreshold: z.number().int().min(2).max(100).default(10),
+  raidWindowSeconds: z.number().int().min(5).max(300).default(10),
+  raidModeDurationSeconds: z.number().int().min(60).max(86400).default(300),
+  raidAction: SecurityActionSchema.default(SecurityAction.QUARANTINE),
+
+  // Suspicious & Young Account Protection
+  accountAgeProtectionEnabled: z.boolean().default(false),
+  minimumAccountAgeHours: z.number().int().min(1).max(720).default(24),
+  accountAgeAction: SecurityActionSchema.default(SecurityAction.QUARANTINE),
+
+  // Role Quarantine Configuration
+  quarantineEnabled: z.boolean().default(false),
+  quarantineRoleId: SnowflakeSchema.nullable().optional(),
+  removeRolesOnQuarantine: z.boolean().default(false),
+  restoreRolesOnRelease: z.boolean().default(false),
+});
+export type GuildSecuritySettings = z.infer<typeof GuildSecuritySettingsSchema>;
+
+export const GuildSecuritySettingsUpdateSchema = GuildSecuritySettingsSchema.omit({
+  guildId: true,
+}).partial();
+export type GuildSecuritySettingsUpdate = z.infer<typeof GuildSecuritySettingsUpdateSchema>;
