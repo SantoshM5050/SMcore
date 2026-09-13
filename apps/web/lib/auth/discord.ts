@@ -69,10 +69,13 @@ export function buildAuthorizationUrl(state: string): string {
 // ------------------------------------------------------------
 // Token exchange (server-side only — never exposed to browser)
 // ------------------------------------------------------------
-export async function exchangeCodeForToken(code: string): Promise<DiscordTokenResponse> {
+export async function exchangeCodeForToken(
+  code: string,
+  customRedirectUri?: string
+): Promise<DiscordTokenResponse> {
   const clientId = process.env.DISCORD_CLIENT_ID;
   const clientSecret = process.env.DISCORD_CLIENT_SECRET;
-  const redirectUri = process.env.DISCORD_REDIRECT_URI;
+  const redirectUri = customRedirectUri || process.env.DISCORD_REDIRECT_URI;
 
   if (!clientId) throw new Error('DISCORD_CLIENT_ID is not configured');
   if (!clientSecret) throw new Error('DISCORD_CLIENT_SECRET is not configured');

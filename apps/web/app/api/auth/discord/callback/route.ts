@@ -89,17 +89,32 @@ export async function GET(req: NextRequest) {
   await session.save();
 
   try {
+    // Determine the exact redirect URI to use for token exchange
+    const requestUrl = new URL(req.url);
+    const candidateUri = `${requestUrl.origin}${requestUrl.pathname}`;
+    const configuredUri = process.env.DISCORD_REDIRECT_URI;
+    // Prefer matching the configured redirect URI if its path matches the current route, otherwise use request URL
+    const redirectUriToUse = configuredUri && configuredUri.endsWith(requestUrl.pathname)
+      ? configuredUri
+      : (configuredUri || candidateUri);
+
+    console.log('[OAuth Callback] Beginning token exchange with redirectUri:', redirectUriToUse);
+
     // Exchange authorization code for access token (server-side only)
-    const tokenData = await exchangeCodeForToken(code);
+    const tokenData = await exchangeCodeForToken(code, redirectUriToUse);
+    console.log('[OAuth Callback] Token exchange successful');
 
     // Fetch Discord user identity
     const discordUser = await fetchDiscordUser(tokenData.access_token);
+    console.log('[OAuth Callback] Discord user identity fetched:', discordUser.username);
 
     // Fetch Discord guild memberships
     const discordGuilds = await fetchDiscordGuilds(tokenData.access_token);
+    console.log('[OAuth Callback] User total guilds count:', discordGuilds.length);
 
     // Filter to only guilds the user can manage
     const manageableDiscordGuilds = filterManageableGuilds(discordGuilds);
+    console.log('[OAuth Callback] Manageable guilds count:', manageableDiscordGuilds.length);
 
     // Cross-reference with DB to determine bot presence
     // Only query IDs we care about
@@ -135,6 +150,7 @@ export async function GET(req: NextRequest) {
     // Fall back to DB for any guilds not found in bot live list
     if (manageableGuildIds.length > 0) {
       try {
+        console.log('[OAuth Callback] Querying database for manageable guilds bot status...');
         const dbGuilds = await prisma.guild.findMany({
           where: { id: { in: manageableGuildIds } },
           select: { id: true, botPresent: true },
@@ -144,8 +160,9 @@ export async function GET(req: NextRequest) {
             botPresentMap.set(dg.id, dg.botPresent);
           }
         }
-      } catch {
-        // DB offline — conservative: assume bot not present for unknown guilds
+        console.log('[OAuth Callback] Database query completed successfully');
+      } catch (dbErr) {
+        console.warn('[OAuth Callback] Database check warning (non-fatal, continuing with fallback):', dbErr instanceof Error ? dbErr.message : dbErr);
       }
     }
 
@@ -166,6 +183,8 @@ export async function GET(req: NextRequest) {
     newSession.oauthState = undefined;
     await newSession.save();
 
+    console.log('[OAuth Callback] Authenticated session created successfully for user:', discordUser.username);
+
     // Redirect to dashboard
     const dashboardUrl = new URL('/dashboard', req.url);
     return NextResponse.redirect(dashboardUrl.toString(), {
@@ -173,6 +192,7 @@ export async function GET(req: NextRequest) {
       status: 302,
     });
   } catch (err) {
+    console.error('[OAuth Callback Exception]:', err instanceof Error ? err.message : String(err), err instanceof Error ? err.stack : '');
     // Clear session on error
     session.authenticated = false;
     session.user = undefined;

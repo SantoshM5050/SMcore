@@ -9,7 +9,7 @@ export async function GET() {
   try {
     const dbPromise = prisma.$queryRaw`SELECT 1`;
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('DB Timeout')), 1500)
+      setTimeout(() => reject(new Error('DB Timeout')), 3500)
     );
     await Promise.race([dbPromise, timeoutPromise]);
     dbStatus = 'connected';
