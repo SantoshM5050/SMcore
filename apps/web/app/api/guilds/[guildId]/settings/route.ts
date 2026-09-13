@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@smcore/database';
 import { z } from 'zod';
+import { authorizeGuildAccess } from '@/lib/auth/authorize';
 
 interface RouteContext {
   params: { guildId: string };
@@ -19,12 +20,8 @@ const GuildSettingsUpdateSchema = z.object({
 export async function GET(req: NextRequest, { params }: RouteContext) {
   const { guildId } = params;
 
-  if (!/^\d{17,20}$/.test(guildId)) {
-    return NextResponse.json(
-      { success: false, error: { code: 'INVALID_GUILD_ID', message: 'Invalid Discord Guild ID' } },
-      { status: 400 }
-    );
-  }
+  const authResult = await authorizeGuildAccess(req, guildId);
+  if (!authResult.authorized) return authResult.response;
 
   try {
     const settings = await prisma.guildSettings.findUnique({
@@ -63,12 +60,8 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
   const { guildId } = params;
 
-  if (!/^\d{17,20}$/.test(guildId)) {
-    return NextResponse.json(
-      { success: false, error: { code: 'INVALID_GUILD_ID', message: 'Invalid Discord Guild ID' } },
-      { status: 400 }
-    );
-  }
+  const authResult = await authorizeGuildAccess(req, guildId);
+  if (!authResult.authorized) return authResult.response;
 
   try {
     const body = await req.json();

@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@smcore/database';
 import { SnowflakeSchema, TicketCategoryCreateSchema } from '@smcore/shared';
+import { authorizeGuildAccess } from '@/lib/auth/authorize';
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { guildId: string } }
 ) {
-  const guildValidation = SnowflakeSchema.safeParse(params.guildId);
-  if (!guildValidation.success) {
-    return NextResponse.json(
-      { success: false, error: { code: 'INVALID_GUILD_ID', message: 'Invalid Discord guild ID' } },
-      { status: 400 }
-    );
-  }
+  const authResult = await authorizeGuildAccess(req, params.guildId);
+  if (!authResult.authorized) return authResult.response;
 
   try {
     const categories = await prisma.ticketCategory.findMany({
@@ -40,13 +36,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { guildId: string } }
 ) {
-  const guildValidation = SnowflakeSchema.safeParse(params.guildId);
-  if (!guildValidation.success) {
-    return NextResponse.json(
-      { success: false, error: { code: 'INVALID_GUILD_ID', message: 'Invalid Discord guild ID' } },
-      { status: 400 }
-    );
-  }
+  const authResult = await authorizeGuildAccess(req, params.guildId);
+  if (!authResult.authorized) return authResult.response;
 
   try {
     const body = await req.json();

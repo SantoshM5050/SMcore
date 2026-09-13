@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { GuildProvider } from '@/lib/context/guildContext';
+import { AuthProvider } from '@/lib/context/authContext';
 import { Sidebar } from '@/components/sidebar';
 import { Topbar } from '@/components/topbar';
 
@@ -10,17 +11,24 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
   return (
-    <GuildProvider>
-      <div className="min-h-screen bg-surface text-on-surface">
-        <Sidebar />
-        <div className="pl-72">
-          <Topbar />
-          <main className="relative w-full pt-16 bg-surface min-h-[calc(100vh-4rem)]">
-            {children}
-          </main>
+    <AuthProvider>
+      <GuildProvider>
+        <div className="min-h-screen bg-background text-on-surface flex flex-col">
+          <Sidebar
+            isMobileOpen={isMobileSidebarOpen}
+            onCloseMobile={() => setIsMobileSidebarOpen(false)}
+          />
+          <div className="lg:pl-72 flex-1 flex flex-col min-w-0">
+            <Topbar onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)} />
+            <main className="relative w-full pt-16 bg-background flex-1 flex flex-col min-w-0">
+              {children}
+            </main>
+          </div>
         </div>
-      </div>
-    </GuildProvider>
+      </GuildProvider>
+    </AuthProvider>
   );
 }

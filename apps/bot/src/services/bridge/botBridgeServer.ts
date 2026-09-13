@@ -20,34 +20,28 @@ export function startBotBridgeServer(options: BotBridgeServerOptions): http.Serv
     const sendJson = (statusCode: number, payload: unknown) => {
       res.writeHead(statusCode, {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-internal-secret',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       });
       res.end(JSON.stringify(payload));
     };
 
-    // CORS preflight
+    // Reject CORS preflight - bot bridge is strictly internal server-to-server
     if (req.method === 'OPTIONS') {
-      res.writeHead(204, {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-internal-secret',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      });
-      res.end();
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Direct browser cross-origin requests are forbidden' }));
       return;
     }
 
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
     const pathname = url.pathname;
 
-    // Optional Internal Secret Validation for write endpoints
-    if (req.method === 'POST' && internalSecret) {
+    // Strict internal secret validation for privileged write endpoints
+    if (req.method === 'POST') {
       const authHeader = req.headers['authorization'];
       const customSecret = req.headers['x-internal-secret'];
-      const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : customSecret;
-      if (token && token !== internalSecret) {
-        sendJson(401, { success: false, error: 'Unauthorized internal bridge access' });
+      const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : (customSecret as string | undefined);
+      if (!token || (internalSecret && token !== internalSecret)) {
+        logger.warn({ ip: req.socket.remoteAddress, pathname }, 'Rejected unauthenticated internal bot bridge write request');
+        sendJson(401, { success: false, error: 'Unauthorized internal bridge access: valid secret required' });
         return;
       }
     }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { ModerationAction } from '@smcore/shared';
+import { authorizeGuildAccess } from '@/lib/auth/authorize';
 
 interface RouteContext {
   params: { guildId: string };
@@ -32,11 +33,10 @@ const ModerationActionSchema = z.object({
 export async function POST(req: NextRequest, { params }: RouteContext) {
   const { guildId } = params;
 
-  if (!/^\d{17,20}$/.test(guildId)) {
-    return NextResponse.json(
-      { success: false, error: { code: 'INVALID_GUILD_ID', message: 'Invalid Discord Guild ID' } },
-      { status: 400 }
-    );
+  // Authenticate and authorize guild access
+  const authResult = await authorizeGuildAccess(req, guildId);
+  if (!authResult.authorized) {
+    return authResult.response;
   }
 
   try {

@@ -3,6 +3,11 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useGuild } from '@/lib/context/guildContext';
 import { apiClient } from '@/lib/api/apiClient';
+import { StatusBadge } from '@/components/ui/statusBadge';
+import { Drawer } from '@/components/ui/drawer';
+import { Modal } from '@/components/ui/modal';
+import { EmptyState } from '@/components/ui/emptyState';
+import { LoadingState } from '@/components/ui/loadingState';
 
 interface CaseRecord {
   id: string;
@@ -29,26 +34,29 @@ export default function ModerationCommandCenterPage() {
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [actionFilter, setActionFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [moderatorFilter, setModeratorFilter] = useState('ALL');
 
   // Quick Action Modal
   const [actionModal, setActionModal] = useState<{
     isOpen: boolean;
-    actionType: string;
+    actionType: 'BAN' | 'TIMEOUT' | 'WARN' | 'KICK' | 'PURGE' | 'LOCK' | '';
   }>({ isOpen: false, actionType: '' });
   const [actionTargetId, setActionTargetId] = useState('');
   const [actionReason, setActionReason] = useState('');
   const [actionDuration, setActionDuration] = useState('60');
-  const [modalFeedback, setModalFeedback] = useState<string | null>(null);
+  const [purgeChannelId, setPurgeChannelId] = useState('');
+  const [purgeCount, setPurgeCount] = useState('10');
+  const [lockChannelId, setLockChannelId] = useState('');
+  const [modalFeedback, setModalFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
 
-  // Member Lookup Drawer
-  const [lookupUserId, setLookupUserId] = useState('');
-  const [lookupResult, setLookupResult] = useState<{
+  // Target User Prior Record / Member Lookup
+  const [memberLookup, setMemberLookup] = useState<{
     warnings: Array<{ id: string; reason: string; status: string; createdAt: string }>;
     notes: Array<{ id: string; note: string; createdAt: string }>;
+    loading: boolean;
   } | null>(null);
-  const [isLookingUp, setIsLookingUp] = useState(false);
 
   const fetchCases = useCallback(async () => {
     if (!selectedGuildId) {
@@ -59,7 +67,7 @@ export default function ModerationCommandCenterPage() {
     }
     setIsLoading(true);
     try {
-      const res = await apiClient.getCases(selectedGuildId, { pageSize: 50 });
+      const res = await apiClient.getCases(selectedGuildId, { pageSize: 100 });
       if (res.success && res.data?.items) {
         const mapped: CaseRecord[] = res.data.items.map((item) => ({
           id: item.id,
@@ -97,9 +105,65 @@ export default function ModerationCommandCenterPage() {
     fetchCases();
   }, [fetchCases]);
 
+  // Load prior warnings & notes whenever selectedCase changes
+  useEffect(() => {
+    if (!selectedCase || !selectedGuildId) {
+      setMemberLookup(null);
+      return;
+    }
+    let isMounted = true;
+    async function loadSubjectDetails() {
+      setMemberLookup({ warnings: [], notes: [], loading: true });
+      try {
+        const [warnRes, noteRes] = await Promise.all([
+          apiClient.members.getWarnings(selectedGuildId, selectedCase!.targetUserId).catch(() => ({ success: false, data: [] })),
+          apiClient.members.getNotes(selectedGuildId, selectedCase!.targetUserId).catch(() => ({ success: false, data: [] })),
+        ]);
+        if (isMounted) {
+          setMemberLookup({
+            warnings: (warnRes.data as Array<{ id: string; reason: string; status: string; createdAt: string }>) || [],
+            notes: (noteRes.data as Array<{ id: string; note: string; createdAt: string }>) || [],
+            loading: false,
+          });
+        }
+      } catch {
+        if (isMounted) {
+          setMemberLookup({ warnings: [], notes: [], loading: false });
+        }
+      }
+    }
+    loadSubjectDetails();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedCase, selectedGuildId]);
+
+  // Keyboard Shortcuts for Quick Actions
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore when user is actively typing in an input
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
+        return;
+      }
+      if (e.key === 'b' || e.key === 'B') {
+        e.preventDefault();
+        setActionModal({ isOpen: true, actionType: 'BAN' });
+      } else if (e.key === 't' || e.key === 'T') {
+        e.preventDefault();
+        setActionModal({ isOpen: true, actionType: 'TIMEOUT' });
+      } else if (e.key === 'w' || e.key === 'W') {
+        e.preventDefault();
+        setActionModal({ isOpen: true, actionType: 'WARN' });
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const filteredCases = useMemo(() => {
     return cases.filter((c) => {
       if (actionFilter !== 'ALL' && c.action !== actionFilter) return false;
+      if (statusFilter !== 'ALL' && c.status !== statusFilter) return false;
       if (moderatorFilter === 'AUTOMOD' && c.moderatorId !== 'AUTOMOD') return false;
       if (moderatorFilter === 'STAFF' && c.moderatorId === 'AUTOMOD') return false;
 
@@ -109,234 +173,226 @@ export default function ModerationCommandCenterPage() {
         const matchTarget =
           c.targetUserId.toLowerCase().includes(q) ||
           (c.targetUserTag && c.targetUserTag.toLowerCase().includes(q));
+        const matchMod =
+          c.moderatorId.toLowerCase().includes(q) ||
+          (c.moderatorTag && c.moderatorTag.toLowerCase().includes(q));
         const matchReason = c.reason.toLowerCase().includes(q);
-        if (!matchCase && !matchTarget && !matchReason) return false;
+        if (!matchCase && !matchTarget && !matchMod && !matchReason) return false;
       }
-
       return true;
     });
-  }, [cases, actionFilter, moderatorFilter, searchQuery]);
+  }, [cases, actionFilter, statusFilter, moderatorFilter, searchQuery]);
 
   const handleExecuteAction = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!/^\d{17,20}$/.test(actionTargetId.trim())) {
-      setModalFeedback('Invalid Discord Snowflake ID (must be 17-20 digits)');
-      return;
-    }
+    if (!selectedGuildId || !actionModal.actionType) return;
 
     setIsSubmittingAction(true);
     setModalFeedback(null);
 
-    const action = actionModal.actionType.toUpperCase() as
-      | 'WARN'
-      | 'TIMEOUT'
-      | 'UNTIMEOUT'
-      | 'KICK'
-      | 'BAN'
-      | 'UNBAN';
-
-    const durationSeconds =
-      actionModal.actionType === 'timeout' ? parseInt(actionDuration, 10) * 60 : undefined;
-
     try {
-      const res = await apiClient.moderation.executeAction(selectedGuildId, {
-        action,
-        targetUserId: actionTargetId.trim(),
-        reason: actionReason.trim() || undefined,
-        durationSeconds,
-      });
-
-      setIsSubmittingAction(false);
-
-      if (!res.success) {
-        setModalFeedback(res.error?.message || 'Failed to execute moderation action on Discord');
-        return;
+      let res;
+      if (actionModal.actionType === 'PURGE') {
+        res = await apiClient.moderation.executeAction(selectedGuildId, {
+          action: 'PURGE',
+          channelId: purgeChannelId.trim(),
+          messageCount: parseInt(purgeCount, 10) || 10,
+          reason: actionReason.trim() || 'Chat purge command via dashboard',
+        });
+      } else if (actionModal.actionType === 'LOCK') {
+        res = await apiClient.moderation.executeAction(selectedGuildId, {
+          action: 'LOCK',
+          channelId: lockChannelId.trim(),
+          reason: actionReason.trim() || 'Channel emergency lockdown',
+        });
+      } else {
+        res = await apiClient.moderation.executeAction(selectedGuildId, {
+          action: actionModal.actionType,
+          targetUserId: actionTargetId.trim(),
+          reason: actionReason.trim() || 'Disciplinary action via dashboard',
+          durationSeconds:
+            actionModal.actionType === 'TIMEOUT' ? parseInt(actionDuration, 10) * 60 : undefined,
+        });
       }
 
-      setModalFeedback(res.data?.message || `Successfully executed ${action} on Discord.`);
-      setTimeout(() => {
-        setActionModal({ isOpen: false, actionType: '' });
-        setActionTargetId('');
-        setActionReason('');
-        setModalFeedback(null);
-        fetchCases();
-      }, 900);
+      if (res.success) {
+        setModalFeedback({
+          type: 'success',
+          message: res.data?.message || `Successfully dispatched ${actionModal.actionType} action.`,
+        });
+        setTimeout(() => {
+          setActionModal({ isOpen: false, actionType: '' });
+          setActionTargetId('');
+          setActionReason('');
+          setModalFeedback(null);
+          fetchCases();
+        }, 1200);
+      } else {
+        setModalFeedback({
+          type: 'error',
+          message: res.error?.message || 'Operation failed. Please verify bot permissions in Discord.',
+        });
+      }
     } catch (err) {
-      setIsSubmittingAction(false);
-      setModalFeedback(err instanceof Error ? err.message : 'Action failed');
-    }
-  };
-
-  const handleMemberLookup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!/^\d{17,20}$/.test(lookupUserId.trim())) return;
-    setIsLookingUp(true);
-    try {
-      const [warnRes, noteRes] = await Promise.all([
-        apiClient.members.getWarnings(selectedGuildId, lookupUserId.trim()),
-        apiClient.members.getNotes(selectedGuildId, lookupUserId.trim()),
-      ]);
-      setLookupResult({
-        warnings: warnRes.data || [],
-        notes: noteRes.data || [],
+      setModalFeedback({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Network execution failed.',
       });
-    } catch {
-      setLookupResult({ warnings: [], notes: [] });
     } finally {
-      setIsLookingUp(false);
+      setIsSubmittingAction(false);
     }
   };
 
-  const getActionBadge = (action: string) => {
+  const getActionBadge = (action: CaseRecord['action']) => {
     switch (action) {
       case 'BAN':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-error-container/40 text-on-error-container font-mono text-[11px] font-bold">
-            <span className="material-symbols-outlined text-[13px]">block</span>
-            BAN
-          </span>
-        );
+        return <StatusBadge variant="rose" icon="gavel">BAN</StatusBadge>;
       case 'TIMEOUT':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/40 text-secondary-fixed font-mono text-[11px] font-semibold">
-            <span className="material-symbols-outlined text-[13px]">timer</span>
-            TIMEOUT
-          </span>
-        );
+        return <StatusBadge variant="amber" icon="timer">TIMEOUT</StatusBadge>;
       case 'WARN':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono text-[11px] font-semibold">
-            <span className="material-symbols-outlined text-[13px]">warning</span>
-            WARN
-          </span>
-        );
+        return <StatusBadge variant="indigo" icon="warning">WARN</StatusBadge>;
       case 'KICK':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-mono text-[11px] font-semibold">
-            <span className="material-symbols-outlined text-[13px]">door_open</span>
-            KICK
-          </span>
-        );
+        return <StatusBadge variant="neutral" icon="door_open">KICK</StatusBadge>;
+      case 'UNBAN':
+        return <StatusBadge variant="emerald" icon="lock_open">UNBAN</StatusBadge>;
+      case 'UNTIMEOUT':
+        return <StatusBadge variant="emerald" icon="schedule">UNTIMEOUT</StatusBadge>;
       default:
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container text-outline font-mono text-[11px]">
-            {action}
-          </span>
-        );
+        return <StatusBadge variant="neutral">{action}</StatusBadge>;
     }
   };
 
   return (
-    <div className="flex flex-col w-full pb-12">
-      {/* Command Header & Breadcrumb */}
-      <div className="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface-container-lowest/60 border-b border-outline-variant/20">
+    <div className="flex flex-col w-full min-h-screen pb-16">
+      {/* Command Header & Live Quick Action Launcher */}
+      <div className="px-4 sm:px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface-container-low border-b border-border-subtle">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2 font-mono text-[11px] text-outline">
             <span>MODERATION</span>
             <span className="text-outline-variant">/</span>
-            <span className="text-primary font-medium">CASES & PUNISHMENTS</span>
-            <span className="px-1.5 py-0.5 rounded bg-surface-container font-mono text-[10px] text-secondary-fixed-dim">
+            <span className="text-primary-light font-medium">CASES & PUNISHMENTS</span>
+            <span className="px-1.5 py-0.5 rounded bg-surface-container font-mono text-[10px] text-secondary-fixed">
               LIVE DISPATCH
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-on-surface">
+            <h1 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-on-surface">
               Moderation Command Center
             </h1>
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-tertiary-container/20 text-tertiary font-mono text-[11px] font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse" />
-              Telemetry 0.9s sync
-            </span>
+            <StatusBadge variant="emerald" pulse>
+              Telemetry Sync Live
+            </StatusBadge>
           </div>
         </div>
 
-        {/* Live Quick Action Launcher */}
-        <div className="flex flex-wrap items-center gap-1.5 bg-surface-container-low p-1.5 rounded-xl border border-outline-variant/30">
+        {/* Live Quick Action Launcher matching Stitch */}
+        <div className="flex flex-wrap items-center gap-1.5 bg-surface-container-lowest p-1.5 rounded-xl border border-border-subtle">
           <button
             type="button"
-            onClick={() => setActionModal({ isOpen: true, actionType: 'ban' })}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-error/15 hover:bg-error/25 text-error text-xs font-semibold transition-colors"
+            onClick={() => setActionModal({ isOpen: true, actionType: 'BAN' })}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-error/15 hover:bg-error/25 text-error text-xs font-semibold transition-colors"
           >
             <span className="material-symbols-outlined text-[16px]">gavel</span>
             <span>Issue Ban</span>
+            <kbd className="font-mono text-[10px] px-1 rounded bg-error/30 text-on-surface">B</kbd>
           </button>
           <button
             type="button"
-            onClick={() => setActionModal({ isOpen: true, actionType: 'timeout' })}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-secondary-container/30 hover:bg-secondary-container/50 text-secondary-fixed text-xs font-semibold transition-colors"
+            onClick={() => setActionModal({ isOpen: true, actionType: 'TIMEOUT' })}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-warning/15 hover:bg-warning/25 text-warning text-xs font-semibold transition-colors"
           >
             <span className="material-symbols-outlined text-[16px]">timer</span>
             <span>Timeout</span>
+            <kbd className="font-mono text-[10px] px-1 rounded bg-surface-container text-outline">T</kbd>
           </button>
           <button
             type="button"
-            onClick={() => setActionModal({ isOpen: true, actionType: 'warn' })}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-semibold transition-colors"
+            onClick={() => setActionModal({ isOpen: true, actionType: 'WARN' })}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/15 hover:bg-primary/25 text-primary-light text-xs font-semibold transition-colors"
           >
             <span className="material-symbols-outlined text-[16px]">warning</span>
             <span>Warn</span>
+            <kbd className="font-mono text-[10px] px-1 rounded bg-surface-container text-outline">W</kbd>
           </button>
           <button
             type="button"
-            onClick={() => setActionModal({ isOpen: true, actionType: 'kick' })}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface text-xs font-semibold transition-colors"
+            onClick={() => setActionModal({ isOpen: true, actionType: 'KICK' })}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface text-xs font-semibold transition-colors"
           >
             <span className="material-symbols-outlined text-[16px]">door_open</span>
             <span>Kick</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActionModal({ isOpen: true, actionType: 'PURGE' })}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface text-xs font-semibold transition-colors"
+          >
+            <span className="material-symbols-outlined text-[16px]">mop</span>
+            <span>Purge</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActionModal({ isOpen: true, actionType: 'LOCK' })}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-error-container/40 hover:bg-error-container/70 text-on-error-container text-xs font-semibold transition-colors"
+          >
+            <span className="material-symbols-outlined text-[16px]">lock</span>
+            <span>Lockdown</span>
           </button>
         </div>
       </div>
 
       {/* Operational Metrics Ticker Strip */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 px-6 py-3 bg-surface">
-        <div className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-center justify-between shadow-sm">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 px-4 sm:px-6 py-3.5 bg-surface">
+        <div className="p-3.5 rounded-xl bg-surface-container border border-border-medium flex items-center justify-between shadow-sm">
           <div className="flex flex-col">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-outline">
-              Total Infractions
-            </span>
-            <span className="text-xl font-bold text-on-surface">{cases.length}</span>
+            <span className="font-mono text-[10px] uppercase tracking-wider text-outline">Total Cases</span>
+            <span className="font-display text-xl font-bold text-on-surface">{cases.length}</span>
           </div>
-          <span className="material-symbols-outlined text-[24px] text-tertiary">fact_check</span>
+          <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary-light font-semibold">
+            Repository
+          </span>
         </div>
 
-        <div className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-center justify-between shadow-sm">
+        <div className="p-3.5 rounded-xl bg-surface-container border border-border-medium flex items-center justify-between shadow-sm">
           <div className="flex flex-col">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-outline">
-              Active Timeouts
-            </span>
-            <span className="text-xl font-bold text-secondary">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-outline">Active Timeouts</span>
+            <span className="font-display text-xl font-bold text-secondary">
               {cases.filter((c) => c.action === 'TIMEOUT' && c.status === 'ACTIVE').length}
             </span>
           </div>
-          <span className="material-symbols-outlined text-[24px] text-secondary">timer</span>
+          <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-secondary/15 text-secondary font-semibold">
+            In Cooldown
+          </span>
         </div>
 
-        <div className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-center justify-between shadow-sm">
+        <div className="p-3.5 rounded-xl bg-surface-container border border-border-medium flex items-center justify-between shadow-sm">
           <div className="flex flex-col">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-outline">
-              AutoMod Dispatches
-            </span>
-            <span className="text-xl font-bold text-tertiary">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-outline">Automod Actions</span>
+            <span className="font-display text-xl font-bold text-tertiary">
               {cases.filter((c) => c.moderatorId === 'AUTOMOD').length}
             </span>
           </div>
-          <span className="material-symbols-outlined text-[24px] text-tertiary">smart_toy</span>
+          <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-tertiary/15 text-tertiary font-semibold">
+            AI Automated
+          </span>
         </div>
 
-        <div className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-center justify-between shadow-sm">
+        <div className="p-3.5 rounded-xl bg-surface-container border border-border-medium flex items-center justify-between shadow-sm">
           <div className="flex flex-col">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-outline">
-              Hierarchy Gate
+            <span className="font-mono text-[10px] uppercase tracking-wider text-outline">Staff Actions</span>
+            <span className="font-display text-xl font-bold text-on-surface">
+              {cases.filter((c) => c.moderatorId !== 'AUTOMOD').length}
             </span>
-            <span className="text-sm font-bold text-on-surface mt-1">Role Enforced</span>
           </div>
-          <span className="material-symbols-outlined text-[24px] text-primary">security</span>
+          <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-surface-container-high text-outline font-semibold">
+            Manual Enforced
+          </span>
         </div>
       </div>
 
-      {/* Search & Filter Deck */}
-      <div className="px-6 py-2">
-        <div className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/30 flex flex-col xl:flex-row gap-3 items-stretch xl:items-center justify-between shadow-sm">
+      {/* Search and Filter Command Deck */}
+      <div className="px-4 sm:px-6 py-2">
+        <div className="p-2.5 rounded-xl bg-surface-container border border-border-medium flex flex-col xl:flex-row gap-3 items-stretch xl:items-center justify-between shadow-sm">
           {/* Search Input */}
           <div className="relative flex-1">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">
@@ -346,125 +402,186 @@ export default function ModerationCommandCenterPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by username, Snowflake ID, Case #, or violation keywords..."
-              className="w-full pl-9 pr-4 py-1.5 bg-surface-container-lowest text-on-surface placeholder:text-outline-variant text-xs rounded-lg border border-outline-variant/40 focus:outline-none focus:border-primary transition-all font-mono"
+              placeholder="Search by username, Snowflake ID (e.g. 8492019...), Case #, or violation reason..."
+              className="w-full pl-9 pr-14 py-2 bg-surface-container-lowest text-on-surface placeholder:text-outline-variant font-sans text-xs rounded-lg border border-border-subtle focus:outline-none focus:border-primary transition-colors"
             />
+            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              <kbd className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-surface-container text-outline">
+                ⌘F
+              </kbd>
+            </div>
           </div>
 
-          {/* Segmented Select Filters */}
+          {/* Filters */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Action Filter */}
-            <select
-              value={actionFilter}
-              onChange={(e) => setActionFilter(e.target.value)}
-              className="bg-surface-container-lowest text-on-surface text-xs rounded-lg px-2.5 py-1.5 border border-outline-variant/40 focus:outline-none"
-            >
-              <option value="ALL">All Actions</option>
-              <option value="BAN">Ban</option>
-              <option value="TIMEOUT">Timeout</option>
-              <option value="WARN">Warn</option>
-              <option value="KICK">Kick</option>
-            </select>
+            {/* Action Type Filter */}
+            <div className="flex items-center bg-surface-container-lowest border border-border-subtle rounded-lg px-2 py-1">
+              <span className="material-symbols-outlined text-[16px] text-outline mr-1.5">category</span>
+              <select
+                value={actionFilter}
+                onChange={(e) => setActionFilter(e.target.value)}
+                className="bg-transparent text-on-surface font-sans text-xs py-1 pr-4 focus:outline-none cursor-pointer"
+              >
+                <option value="ALL" className="bg-surface-container">All Actions</option>
+                <option value="BAN" className="bg-surface-container">Ban</option>
+                <option value="TIMEOUT" className="bg-surface-container">Timeout</option>
+                <option value="WARN" className="bg-surface-container">Warning</option>
+                <option value="KICK" className="bg-surface-container">Kick</option>
+                <option value="UNBAN" className="bg-surface-container">Unban</option>
+              </select>
+            </div>
 
             {/* Moderator Filter */}
-            <select
-              value={moderatorFilter}
-              onChange={(e) => setModeratorFilter(e.target.value)}
-              className="bg-surface-container-lowest text-on-surface text-xs rounded-lg px-2.5 py-1.5 border border-outline-variant/40 focus:outline-none"
-            >
-              <option value="ALL">All Enforcers</option>
-              <option value="STAFF">Human Staff</option>
-              <option value="AUTOMOD">SMCore AutoMod</option>
-            </select>
+            <div className="flex items-center bg-surface-container-lowest border border-border-subtle rounded-lg px-2 py-1">
+              <span className="material-symbols-outlined text-[16px] text-outline mr-1.5">badge</span>
+              <select
+                value={moderatorFilter}
+                onChange={(e) => setModeratorFilter(e.target.value)}
+                className="bg-transparent text-on-surface font-sans text-xs py-1 pr-4 focus:outline-none cursor-pointer"
+              >
+                <option value="ALL" className="bg-surface-container">All Enforcers</option>
+                <option value="STAFF" className="bg-surface-container">Manual Staff</option>
+                <option value="AUTOMOD" className="bg-surface-container">SMCore AutoMod</option>
+              </select>
+            </div>
 
-            {/* Snowflake Member Lookup Button */}
-            <button
-              type="button"
-              onClick={() => {
-                if (selectedCase) {
-                  setLookupUserId(selectedCase.targetUserId);
-                }
-              }}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-xs font-semibold text-primary transition-colors border border-outline-variant/40"
-            >
-              <span className="material-symbols-outlined text-[16px]">account_box</span>
-              <span>Inspect Target</span>
-            </button>
+            {/* Status Filter */}
+            <div className="flex items-center bg-surface-container-lowest border border-border-subtle rounded-lg px-2 py-1">
+              <span className="material-symbols-outlined text-[16px] text-outline mr-1.5">filter_list</span>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="bg-transparent text-on-surface font-sans text-xs py-1 pr-4 focus:outline-none cursor-pointer"
+              >
+                <option value="ALL" className="bg-surface-container">All Statuses</option>
+                <option value="ACTIVE" className="bg-surface-container">Status: Active</option>
+                <option value="EXPIRED" className="bg-surface-container">Status: Expired</option>
+                <option value="REVOKED" className="bg-surface-container">Status: Revoked</option>
+              </select>
+            </div>
+
+            {/* Reset Filters Button */}
+            {(searchQuery || actionFilter !== 'ALL' || statusFilter !== 'ALL' || moderatorFilter !== 'ALL') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setActionFilter('ALL');
+                  setStatusFilter('ALL');
+                  setModeratorFilter('ALL');
+                }}
+                className="p-2 rounded-lg bg-surface-container-lowest hover:bg-surface-container border border-border-subtle text-outline hover:text-on-surface transition-colors"
+                title="Reset Filters"
+              >
+                <span className="material-symbols-outlined text-[16px]">filter_alt_off</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Primary Workspace: Table + Inspection Drawer */}
-      <div className="px-6 py-2 flex flex-col xl:flex-row gap-4 items-start relative">
-        {/* Cases Table */}
-        <div className="w-full xl:w-[68%] 2xl:w-[72%] flex flex-col rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm overflow-hidden">
-          <div className="px-4 py-2.5 bg-surface-container flex items-center justify-between border-b border-outline-variant/20">
-            <span className="text-xs font-semibold text-on-surface">Infractions Repository</span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-surface-container-high text-primary">
-              Showing {filteredCases.length} of {cases.length} records
-            </span>
+      {/* Primary Workspace: Cases Table + Interactive Slide-over Drawer */}
+      <div className="px-4 sm:px-6 py-2 flex-1 flex gap-6 items-start relative">
+        {/* Cases Table Container */}
+        <div
+          className={`transition-all duration-300 flex flex-col rounded-xl bg-surface-container border border-border-medium shadow-sm overflow-hidden ${
+            selectedCase ? 'w-full xl:w-[68%] 2xl:w-[72%]' : 'w-full'
+          }`}
+        >
+          {/* Table Header Status Bar */}
+          <div className="px-4 py-3 bg-surface-container-low border-b border-border-subtle flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="font-display text-xs font-bold text-on-surface">
+                Active Infractions Repository
+              </span>
+              <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-surface-container-high text-primary-light">
+                Showing {filteredCases.length} of {cases.length} cases
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={fetchCases}
+              className="text-xs text-outline hover:text-on-surface flex items-center gap-1 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[14px]">refresh</span>
+              <span>Sync</span>
+            </button>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-surface-container-lowest/80 text-outline text-[10px] uppercase font-mono tracking-wider border-b border-outline-variant/20">
-                  <th className="py-2.5 px-3 w-16">Case</th>
-                  <th className="py-2.5 px-3 min-w-[180px]">Target User</th>
-                  <th className="py-2.5 px-3 w-28">Action</th>
-                  <th className="py-2.5 px-3 min-w-[220px]">Reason & Scope</th>
-                  <th className="py-2.5 px-3 min-w-[140px]">Enforcer</th>
-                  <th className="py-2.5 px-3 w-28">Status</th>
-                  <th className="py-2.5 px-3 text-right w-20">Inspect</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-outline-variant/10">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-outline">
-                      Loading infraction records...
-                    </td>
+          {/* Cases Data Table */}
+          {isLoading ? (
+            <LoadingState message="Fetching infraction repository from database..." />
+          ) : filteredCases.length === 0 ? (
+            <EmptyState
+              icon="search_off"
+              title="No Infraction Records Found"
+              description={
+                cases.length === 0
+                  ? 'No moderation cases have been logged for this Discord server yet.'
+                  : 'No cases match your active search query and filter criteria.'
+              }
+              actionLabel={cases.length > 0 ? 'Clear Filters' : undefined}
+              onAction={() => {
+                setSearchQuery('');
+                setActionFilter('ALL');
+                setStatusFilter('ALL');
+                setModeratorFilter('ALL');
+              }}
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-surface-container-lowest/60 border-b border-border-subtle text-outline font-mono text-[10px] uppercase tracking-wider">
+                    <th className="py-2.5 px-3 w-20">Case</th>
+                    <th className="py-2.5 px-3 min-w-[180px]">Target User</th>
+                    <th className="py-2.5 px-3 w-32">Action</th>
+                    <th className="py-2.5 px-3 min-w-[220px]">Reason</th>
+                    <th className="py-2.5 px-3 min-w-[140px]">Enforcer</th>
+                    <th className="py-2.5 px-3 w-28 text-right">Logged</th>
+                    <th className="py-2.5 px-3 text-right w-20">Inspect</th>
                   </tr>
-                ) : filteredCases.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-outline">
-                      No matching moderation records found.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredCases.map((c) => {
+                </thead>
+                <tbody className="divide-y divide-border-subtle font-sans text-xs">
+                  {filteredCases.map((c) => {
                     const isSelected = selectedCase?.id === c.id;
                     return (
                       <tr
                         key={c.id}
                         onClick={() => setSelectedCase(c)}
-                        className={`cursor-pointer transition-colors ${
+                        className={`cursor-pointer transition-colors group ${
                           isSelected
-                            ? 'bg-surface-container-high/80'
-                            : 'hover:bg-surface-container/60'
+                            ? 'bg-surface-container-high border-l-2 border-l-primary'
+                            : 'hover:bg-surface-container-high/60'
                         }`}
                       >
-                        <td className="py-2.5 px-3 font-mono font-bold text-primary">
-                          #{c.caseNumber}
+                        <td className="py-2.5 px-3">
+                          <span className="font-mono font-bold text-primary-light">
+                            #{c.caseNumber}
+                          </span>
                         </td>
                         <td className="py-2.5 px-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full bg-surface-bright text-on-surface flex items-center justify-center font-bold text-[10px] shrink-0">
-                              {(c.targetUserTag || 'U').charAt(0).toUpperCase()}
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-7 h-7 rounded-full bg-surface-container-highest text-on-surface flex items-center justify-center font-bold text-[11px] shrink-0 font-mono">
+                              {(c.targetUserTag || c.targetUserId).charAt(0).toUpperCase()}
                             </div>
-                            <div className="flex flex-col truncate">
+                            <div className="flex flex-col min-w-0">
                               <span className="font-semibold text-on-surface truncate">
-                                {c.targetUserTag || `user_${c.targetUserId.slice(-4)}`}
+                                {c.targetUserTag || 'Discord Member'}
                               </span>
-                              <span className="font-mono text-[10px] text-outline truncate">
+                              <span className="font-mono text-[10px] text-outline truncate select-all">
                                 {c.targetUserId}
                               </span>
                             </div>
                           </div>
                         </td>
-                        <td className="py-2.5 px-3">{getActionBadge(c.action)}</td>
                         <td className="py-2.5 px-3">
-                          <p className="text-on-surface-variant truncate max-w-xs">{c.reason}</p>
+                          {getActionBadge(c.action)}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <p className="text-on-surface-variant truncate max-w-xs" title={c.reason}>
+                            {c.reason}
+                          </p>
                         </td>
                         <td className="py-2.5 px-3">
                           <div className="flex items-center gap-1.5">
@@ -473,21 +590,13 @@ export default function ModerationCommandCenterPage() {
                                 c.moderatorId === 'AUTOMOD' ? 'bg-tertiary' : 'bg-primary'
                               }`}
                             />
-                            <span className="text-on-surface truncate font-medium">
-                              {c.moderatorTag || c.moderatorId}
+                            <span className="text-on-surface font-medium truncate">
+                              {c.moderatorTag || (c.moderatorId === 'AUTOMOD' ? 'AutoMod' : `@${c.moderatorId}`)}
                             </span>
                           </div>
                         </td>
-                        <td className="py-2.5 px-3">
-                          <span
-                            className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${
-                              c.status === 'ACTIVE'
-                                ? 'bg-tertiary-container/30 text-tertiary font-semibold'
-                                : 'bg-surface-container text-outline'
-                            }`}
-                          >
-                            {c.status}
-                          </span>
+                        <td className="py-2.5 px-3 text-right font-mono text-[10px] text-outline whitespace-nowrap">
+                          {new Date(c.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                         </td>
                         <td className="py-2.5 px-3 text-right">
                           <button
@@ -496,235 +605,299 @@ export default function ModerationCommandCenterPage() {
                               e.stopPropagation();
                               setSelectedCase(c);
                             }}
-                            className="p-1 rounded bg-surface-container hover:bg-surface-bright text-outline hover:text-on-surface transition-colors"
+                            className="w-7 h-7 rounded bg-surface-container-lowest hover:bg-surface-container-high text-outline hover:text-on-surface flex items-center justify-center transition-colors ml-auto"
+                            title="Inspect Details"
                           >
                             <span className="material-symbols-outlined text-[16px]">dock_to_left</span>
                           </button>
                         </td>
                       </tr>
                     );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Slide-over Inspection Drawer */}
-        <div className="w-full xl:w-[32%] 2xl:w-[28%] rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-xl flex flex-col overflow-hidden">
-          {selectedCase ? (
-            <>
-              <div className="px-4 py-3 bg-surface-container flex items-center justify-between border-b border-outline-variant/20">
-                <div className="flex items-center gap-2">
-                  <span className="text-base font-bold text-on-surface">
-                    Case #{selectedCase.caseNumber}
-                  </span>
-                  {getActionBadge(selectedCase.action)}
-                </div>
-                <span className="text-[10px] font-mono text-outline">
-                  {new Date(selectedCase.createdAt).toLocaleTimeString()}
-                </span>
-              </div>
-
-              <div className="p-4 space-y-4 text-xs">
-                {/* Subject Info */}
-                <div className="p-3 rounded-lg bg-surface-container border border-outline-variant/20 space-y-2">
-                  <div className="text-[10px] uppercase font-mono text-outline">Subject Profile</div>
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-bold text-sm">
-                      {(selectedCase.targetUserTag || 'U').charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="font-bold text-on-surface text-sm">
-                        {selectedCase.targetUserTag || 'Discord Member'}
-                      </span>
-                      <span className="font-mono text-[10px] text-primary select-all">
-                        {selectedCase.targetUserId}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Violation Reason */}
-                <div className="p-3 rounded-lg bg-surface-container border border-outline-variant/20 space-y-1">
-                  <div className="text-[10px] uppercase font-mono text-outline">Infraction Reason</div>
-                  <p className="text-on-surface text-xs leading-relaxed">{selectedCase.reason}</p>
-                </div>
-
-                {/* Enforcer & Timing Details */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="p-2.5 rounded-lg bg-surface-container border border-outline-variant/20">
-                    <div className="text-[10px] uppercase font-mono text-outline">Enforcer</div>
-                    <div className="font-semibold text-on-surface mt-0.5 truncate">
-                      {selectedCase.moderatorTag || selectedCase.moderatorId}
-                    </div>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-surface-container border border-outline-variant/20">
-                    <div className="text-[10px] uppercase font-mono text-outline">Status</div>
-                    <div className="font-semibold text-on-surface mt-0.5">{selectedCase.status}</div>
-                  </div>
-                </div>
-
-                {/* Duration if temporary */}
-                {selectedCase.expiresAt && (
-                  <div className="p-2.5 rounded-lg bg-surface-container border border-outline-variant/20 flex items-center justify-between">
-                    <span className="text-outline">Expires At</span>
-                    <span className="font-mono text-tertiary">
-                      {new Date(selectedCase.expiresAt).toLocaleDateString()}{' '}
-                      {new Date(selectedCase.expiresAt).toLocaleTimeString()}
-                    </span>
-                  </div>
-                )}
-
-                {/* Member Lookup Quick Launcher */}
-                <div className="pt-2 border-t border-outline-variant/20">
-                  <form onSubmit={handleMemberLookup} className="space-y-2">
-                    <div className="text-[10px] uppercase font-mono text-outline">
-                      Member History & Notes Lookup
-                    </div>
-                    <div className="flex gap-1.5">
-                      <input
-                        type="text"
-                        value={lookupUserId}
-                        onChange={(e) => setLookupUserId(e.target.value)}
-                        placeholder="Snowflake ID..."
-                        className="flex-1 bg-surface-container-lowest text-on-surface px-2.5 py-1.5 rounded-lg border border-outline-variant/40 text-xs font-mono focus:outline-none"
-                      />
-                      <button
-                        type="submit"
-                        disabled={isLookingUp}
-                        className="px-3 py-1.5 bg-surface-container hover:bg-surface-bright text-primary rounded-lg text-xs font-semibold border border-outline-variant/40"
-                      >
-                        {isLookingUp ? '...' : 'Query'}
-                      </button>
-                    </div>
-                  </form>
-
-                  {lookupResult && (
-                    <div className="mt-3 p-2.5 rounded-lg bg-surface-container-lowest border border-outline-variant/40 space-y-1.5">
-                      <div className="text-[11px] font-bold text-on-surface">
-                        Member Profile Result
-                      </div>
-                      <div className="flex justify-between text-[11px] text-outline">
-                        <span>Recorded Warnings:</span>
-                        <span className="font-mono text-amber-300 font-bold">
-                          {lookupResult.warnings.length}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-[11px] text-outline">
-                        <span>Staff Notes:</span>
-                        <span className="font-mono text-primary font-bold">
-                          {lookupResult.notes.length}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="p-8 text-center text-outline text-xs">
-              Select a case row to inspect full infraction details and member notes.
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
-      </div>
 
-      {/* Quick Action Modal */}
-      {actionModal.isOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-surface-container rounded-2xl border border-outline-variant p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-outline-variant/30 pb-3">
-              <h3 className="text-base font-bold text-on-surface flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">gavel</span>
-                <span>Dispatch {actionModal.actionType.toUpperCase()} Action</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setActionModal({ isOpen: false, actionType: '' })}
-                className="text-outline hover:text-on-surface"
-              >
-                <span className="material-symbols-outlined text-[18px]">close</span>
-              </button>
+        {/* Slide-over Case Detail Drawer (Inspection Pane) */}
+        {selectedCase && (
+          <Drawer
+            isOpen={Boolean(selectedCase)}
+            onClose={() => setSelectedCase(null)}
+            title={
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-primary font-bold">Case #{selectedCase.caseNumber}</span>
+                <StatusBadge
+                  variant={
+                    selectedCase.status === 'ACTIVE'
+                      ? 'emerald'
+                      : selectedCase.status === 'REVOKED'
+                      ? 'rose'
+                      : 'neutral'
+                  }
+                >
+                  {selectedCase.status}
+                </StatusBadge>
+              </div>
+            }
+          >
+            {/* Target Profile Card */}
+            <div className="p-3.5 rounded-xl bg-surface-container border border-border-subtle space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-outline">
+                  Target Subject
+                </span>
+                <span className="font-mono text-[10px] text-tertiary flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-tertiary" />
+                  Discord Member
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/20 text-primary-light flex items-center justify-center font-bold text-sm shrink-0 font-mono">
+                  {(selectedCase.targetUserTag || selectedCase.targetUserId).charAt(0).toUpperCase()}
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="font-display text-sm font-bold text-on-surface truncate">
+                    {selectedCase.targetUserTag || 'Discord Member'}
+                  </span>
+                  <span className="font-mono text-[11px] text-primary select-all">
+                    {selectedCase.targetUserId}
+                  </span>
+                </div>
+              </div>
+
+              {/* Subject Prior History Lookup */}
+              <div className="pt-2 border-t border-border-subtle text-xs space-y-1.5">
+                <div className="flex items-center justify-between text-outline text-[11px]">
+                  <span>Prior Warnings:</span>
+                  <span className="font-mono text-on-surface font-semibold">
+                    {memberLookup?.loading ? 'Loading...' : `${memberLookup?.warnings.length || 0} active`}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-outline text-[11px]">
+                  <span>Member Notes:</span>
+                  <span className="font-mono text-on-surface font-semibold">
+                    {memberLookup?.loading ? 'Loading...' : `${memberLookup?.notes.length || 0} recorded`}
+                  </span>
+                </div>
+              </div>
             </div>
 
-            {modalFeedback && (
-              <div className="p-2.5 rounded-lg bg-primary-container/20 text-primary text-xs font-semibold">
-                {modalFeedback}
+            {/* Infraction Specification Grid */}
+            <div className="space-y-2">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-outline">
+                Infraction Scope
+              </span>
+              <div className="p-3.5 rounded-xl bg-surface-container border border-border-subtle space-y-2.5 text-xs">
+                <div className="flex justify-between items-start">
+                  <span className="text-outline">Action Dispatched</span>
+                  <div>{getActionBadge(selectedCase.action)}</div>
+                </div>
+
+                <div className="flex justify-between items-start">
+                  <span className="text-outline">Enforcing Staff</span>
+                  <div className="flex items-center gap-1.5 text-right font-medium text-on-surface">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    <span>{selectedCase.moderatorTag || selectedCase.moderatorId}</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-start">
+                  <span className="text-outline">Logged At</span>
+                  <span className="font-mono text-[11px] text-on-surface-variant">
+                    {new Date(selectedCase.createdAt).toLocaleString()}
+                  </span>
+                </div>
+
+                {selectedCase.durationSeconds && (
+                  <div className="flex justify-between items-start">
+                    <span className="text-outline">Duration</span>
+                    <span className="font-mono text-[11px] text-warning font-semibold">
+                      {Math.round(selectedCase.durationSeconds / 60)} minutes
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Offense Reason */}
+            <div className="space-y-2">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-outline">
+                Violation Reason
+              </span>
+              <div className="p-3.5 rounded-xl bg-surface-container border border-border-subtle text-xs text-on-surface-variant leading-relaxed">
+                {selectedCase.reason}
+              </div>
+            </div>
+
+            {/* Prior Warnings List */}
+            {memberLookup && memberLookup.warnings.length > 0 && (
+              <div className="space-y-2">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-outline">
+                  Warning History ({memberLookup.warnings.length})
+                </span>
+                <div className="space-y-1.5">
+                  {memberLookup.warnings.map((w) => (
+                    <div
+                      key={w.id}
+                      className="p-2.5 rounded-lg bg-surface-container-high border border-border-subtle text-xs space-y-0.5"
+                    >
+                      <div className="flex items-center justify-between font-mono text-[10px] text-outline">
+                        <span className="text-warning font-semibold">WARNING</span>
+                        <span>{new Date(w.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-on-surface-variant text-[11px]">{w.reason}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
+          </Drawer>
+        )}
+      </div>
 
-            <form onSubmit={handleExecuteAction} className="space-y-3 text-xs">
+      {/* Quick Action Modal for Real Dispatch */}
+      <Modal
+        isOpen={actionModal.isOpen}
+        onClose={() => setActionModal({ isOpen: false, actionType: '' })}
+        title={`Execute Disciplinary Action: ${actionModal.actionType}`}
+        subtitle="Executes immediately via Discord bot bridge & records persistent audit infraction."
+        icon="gavel"
+      >
+        <form onSubmit={handleExecuteAction} className="space-y-4">
+          {actionModal.actionType === 'PURGE' ? (
+            <>
               <div>
-                <label className="block text-outline uppercase font-mono text-[10px] mb-1">
-                  Target Discord Snowflake ID *
+                <label className="block text-xs font-mono uppercase text-outline mb-1">
+                  Discord Channel ID *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={purgeChannelId}
+                  onChange={(e) => setPurgeChannelId(e.target.value)}
+                  placeholder="e.g. 1029384756..."
+                  className="w-full bg-surface-container-lowest text-on-surface px-3 py-2 rounded-lg border border-border-subtle text-xs font-mono focus:outline-none focus:border-primary"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-mono uppercase text-outline mb-1">
+                  Message Count (1 - 100) *
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  required
+                  value={purgeCount}
+                  onChange={(e) => setPurgeCount(e.target.value)}
+                  className="w-full bg-surface-container-lowest text-on-surface px-3 py-2 rounded-lg border border-border-subtle text-xs font-mono focus:outline-none focus:border-primary"
+                />
+              </div>
+            </>
+          ) : actionModal.actionType === 'LOCK' ? (
+            <div>
+              <label className="block text-xs font-mono uppercase text-outline mb-1">
+                Discord Channel ID to Lockdown *
+              </label>
+              <input
+                type="text"
+                required
+                value={lockChannelId}
+                onChange={(e) => setLockChannelId(e.target.value)}
+                placeholder="e.g. 1029384756..."
+                className="w-full bg-surface-container-lowest text-on-surface px-3 py-2 rounded-lg border border-border-subtle text-xs font-mono focus:outline-none focus:border-primary"
+              />
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="block text-xs font-mono uppercase text-outline mb-1">
+                  Target Member Discord Snowflake ID *
                 </label>
                 <input
                   type="text"
                   required
                   value={actionTargetId}
                   onChange={(e) => setActionTargetId(e.target.value)}
-                  placeholder="e.g. 98127391823791283"
-                  className="w-full bg-surface-container-lowest text-on-surface px-3 py-2 rounded-lg border border-outline-variant/50 focus:outline-none font-mono"
+                  placeholder="e.g. 849201948273619284"
+                  className="w-full bg-surface-container-lowest text-on-surface px-3 py-2 rounded-lg border border-border-subtle text-xs font-mono focus:outline-none focus:border-primary"
                 />
               </div>
 
-              {actionModal.actionType === 'timeout' && (
+              {actionModal.actionType === 'TIMEOUT' && (
                 <div>
-                  <label className="block text-outline uppercase font-mono text-[10px] mb-1">
-                    Duration (Minutes)
+                  <label className="block text-xs font-mono uppercase text-outline mb-1">
+                    Timeout Duration (Minutes)
                   </label>
-                  <select
+                  <input
+                    type="number"
+                    min="1"
+                    max="40320"
                     value={actionDuration}
                     onChange={(e) => setActionDuration(e.target.value)}
-                    className="w-full bg-surface-container-lowest text-on-surface px-3 py-2 rounded-lg border border-outline-variant/50 focus:outline-none"
-                  >
-                    <option value="5">5 Minutes</option>
-                    <option value="60">1 Hour</option>
-                    <option value="1440">24 Hours</option>
-                    <option value="10080">7 Days</option>
-                  </select>
+                    className="w-full bg-surface-container-lowest text-on-surface px-3 py-2 rounded-lg border border-border-subtle text-xs font-mono focus:outline-none focus:border-primary"
+                  />
                 </div>
               )}
+            </>
+          )}
 
-              <div>
-                <label className="block text-outline uppercase font-mono text-[10px] mb-1">
-                  Reason for Infraction *
-                </label>
-                <textarea
-                  required
-                  rows={3}
-                  value={actionReason}
-                  onChange={(e) => setActionReason(e.target.value)}
-                  placeholder="State the server rule violation..."
-                  className="w-full bg-surface-container-lowest text-on-surface px-3 py-2 rounded-lg border border-outline-variant/50 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setActionModal({ isOpen: false, actionType: '' })}
-                  className="px-4 py-2 rounded-lg bg-surface-container-high text-on-surface-variant hover:text-on-surface font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingAction}
-                  className={`px-4 py-2 rounded-lg font-bold shadow-md transition-all ${
-                    isSubmittingAction
-                      ? 'bg-surface-container text-outline opacity-60 cursor-not-allowed'
-                      : 'bg-primary-container text-on-primary-container hover:bg-primary-container/90 shadow-primary-container/20 cursor-pointer'
-                  }`}
-                >
-                  {isSubmittingAction ? 'Executing on Discord...' : 'Execute Action'}
-                </button>
-              </div>
-            </form>
+          <div>
+            <label className="block text-xs font-mono uppercase text-outline mb-1">
+              Official Moderation Reason *
+            </label>
+            <textarea
+              required
+              rows={3}
+              value={actionReason}
+              onChange={(e) => setActionReason(e.target.value)}
+              placeholder="State the server rule violation or behavioral rationale..."
+              className="w-full bg-surface-container-lowest text-on-surface px-3 py-2 rounded-lg border border-border-subtle text-xs font-sans focus:outline-none focus:border-primary"
+            />
           </div>
-        </div>
-      )}
+
+          {modalFeedback && (
+            <div
+              className={`p-3 rounded-lg text-xs flex items-center gap-2 ${
+                modalFeedback.type === 'success'
+                  ? 'bg-tertiary/15 text-tertiary border border-tertiary/30'
+                  : 'bg-error/15 text-error border border-error/30'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                {modalFeedback.type === 'success' ? 'check_circle' : 'error'}
+              </span>
+              <span>{modalFeedback.message}</span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-border-subtle">
+            <button
+              type="button"
+              onClick={() => setActionModal({ isOpen: false, actionType: '' })}
+              disabled={isSubmittingAction}
+              className="px-4 py-2 rounded-lg bg-surface-container hover:bg-surface-container-highest text-on-surface text-xs font-medium transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmittingAction}
+              className="flex items-center gap-2 px-5 py-2 rounded-lg bg-primary hover:bg-primary-container text-white text-xs font-semibold shadow-md shadow-primary/20 transition-all disabled:opacity-50"
+            >
+              {isSubmittingAction && (
+                <span className="material-symbols-outlined text-[16px] animate-spin">
+                  progress_activity
+                </span>
+              )}
+              <span>{isSubmittingAction ? 'Enforcing in Discord...' : `Dispatch ${actionModal.actionType}`}</span>
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

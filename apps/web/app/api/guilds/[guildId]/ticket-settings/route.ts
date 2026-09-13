@@ -4,6 +4,7 @@ import {
   GuildTicketSettingsUpdateSchema,
   SnowflakeSchema,
 } from '@smcore/shared';
+import { authorizeGuildAccess } from '@/lib/auth/authorize';
 
 const DEFAULT_SETTINGS = (guildId: string) => ({
   guildId,
@@ -23,16 +24,11 @@ const DEFAULT_SETTINGS = (guildId: string) => ({
 });
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { guildId: string } }
 ) {
-  const guildValidation = SnowflakeSchema.safeParse(params.guildId);
-  if (!guildValidation.success) {
-    return NextResponse.json(
-      { success: false, error: { code: 'INVALID_GUILD_ID', message: 'Invalid Discord guild ID' } },
-      { status: 400 }
-    );
-  }
+  const authResult = await authorizeGuildAccess(req, params.guildId);
+  if (!authResult.authorized) return authResult.response;
 
   try {
     const settings = await prisma.guildTicketSettings.findUnique({
@@ -59,13 +55,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { guildId: string } }
 ) {
-  const guildValidation = SnowflakeSchema.safeParse(params.guildId);
-  if (!guildValidation.success) {
-    return NextResponse.json(
-      { success: false, error: { code: 'INVALID_GUILD_ID', message: 'Invalid Discord guild ID' } },
-      { status: 400 }
-    );
-  }
+  const authResult = await authorizeGuildAccess(req, params.guildId);
+  if (!authResult.authorized) return authResult.response;
 
   try {
     const body = await req.json();

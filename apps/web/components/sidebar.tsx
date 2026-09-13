@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useGuild } from '../lib/context/guildContext';
+import { useAuth } from '../lib/context/authContext';
 
 interface NavItem {
   name: string;
@@ -39,25 +41,25 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    title: 'Ticketing',
+    items: [
+      { name: 'Ticket Command Center', href: '/dashboard/tickets', icon: 'confirmation_number' },
+    ],
+  },
+  {
     title: 'Logging & Audit',
     items: [
       { name: 'Audit Trail', href: '/dashboard/audit-logs', icon: 'history_edu' },
     ],
   },
   {
-    title: 'Support & Tickets',
+    title: 'Settings',
     items: [
-      { name: 'Ticket Management', href: '/dashboard/tickets', icon: 'confirmation_number' },
+      { name: 'Guild Configuration', href: '/dashboard/settings', icon: 'tune' },
     ],
   },
   {
-    title: 'Configuration',
-    items: [
-      { name: 'Guild Settings', href: '/dashboard/settings', icon: 'tune' },
-    ],
-  },
-  {
-    title: 'Future Modules',
+    title: 'Upcoming Modules',
     items: [
       { name: 'Forum Logging Hub', href: '#', icon: 'forum', badge: 'Soon', disabled: true },
       { name: 'Staff & RBAC Matrix', href: '#', icon: 'badge', badge: 'Soon', disabled: true },
@@ -66,194 +68,354 @@ const navSections: NavSection[] = [
   },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  isMobileOpen?: boolean;
+  onCloseMobile?: () => void;
+}
+
+export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
   const pathname = usePathname();
   const { selectedGuildId, setSelectedGuildId, availableGuilds } = useGuild();
+  const { user, managedGuilds, botInstallUrl, isLoading: authLoading } = useAuth();
   const [showGuildDropdown, setShowGuildDropdown] = useState(false);
-  const [customGuildInput, setCustomGuildInput] = useState('');
 
   const currentGuild = availableGuilds.find((g) => g.id === selectedGuildId) || {
     id: selectedGuildId || 'None',
     name: selectedGuildId ? `Guild ${selectedGuildId}` : 'Select a Discord Server',
     memberCount: undefined,
+    botPresent: false,
   };
 
-  const handleCustomGuildSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (/^\d{17,20}$/.test(customGuildInput.trim())) {
-      setSelectedGuildId(customGuildInput.trim());
-      setCustomGuildInput('');
-      setShowGuildDropdown(false);
-    }
-  };
+  // Find the current guild's full info from managedGuilds for icon
+  const currentManagedGuild = managedGuilds.find((g) => g.id === selectedGuildId);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showGuildDropdown) setShowGuildDropdown(false);
+        else if (isMobileOpen && onCloseMobile) onCloseMobile();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMobileOpen, onCloseMobile, showGuildDropdown]);
+
+  const displayName = user?.displayName ?? user?.username ?? '...';
+  const avatarUrl = user?.avatarUrl ?? null;
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-72 bg-surface-container-lowest flex flex-col z-50 select-none border-r border-outline-variant/30 shadow-[0_0_24px_rgba(0,0,0,0.6)]">
-      {/* Brand Header */}
-      <div className="h-16 px-4 flex items-center justify-between bg-surface-container-lowest/90 border-b border-outline-variant/20">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-sm shadow-md shadow-primary-container/20">
-            SM
-          </div>
-          <div className="flex flex-col">
-            <span className="font-bold text-base tracking-tight text-on-surface">SMCore</span>
-            <span className="text-[10px] font-mono text-outline tracking-wider uppercase">SecOps v4.8</span>
-          </div>
-        </div>
-        <div className="flex items-center">
-          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-surface-container text-tertiary border border-tertiary/20">
-            ENTERPRISE
-          </span>
-        </div>
-      </div>
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+          onClick={onCloseMobile}
+          aria-hidden="true"
+        />
+      )}
 
-      {/* Guild Selector Switcher */}
-      <div className="px-3 py-2.5 relative">
-        <button
-          type="button"
-          onClick={() => setShowGuildDropdown(!showGuildDropdown)}
-          className="w-full flex items-center justify-between p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/30 transition-colors group"
-        >
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-8 h-8 rounded-lg bg-secondary-container text-on-secondary-container flex items-center justify-center text-sm font-bold shrink-0">
-              {currentGuild.name.charAt(0).toUpperCase()}
+      {/* Main Sidebar Rail */}
+      <aside
+        className={`fixed left-0 top-0 h-screen w-72 bg-surface-container-lowest flex flex-col z-50 select-none border-r border-border-subtle shadow-[0_0_24px_rgba(0,0,0,0.8)] transition-transform duration-200 ease-in-out lg:translate-x-0 ${
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+        aria-label="Sidebar navigation"
+      >
+        {/* Brand Header */}
+        <div className="h-16 px-4 flex items-center justify-between bg-surface-container-lowest border-b border-border-subtle shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-sm shadow-md shadow-primary-container/20">
+              SM
             </div>
-            <div className="flex flex-col text-left truncate">
-              <span className="text-xs font-semibold text-on-surface truncate group-hover:text-primary transition-colors">
-                {currentGuild.name}
+            <div className="flex flex-col">
+              <span className="font-display font-bold text-base tracking-tight text-on-surface">
+                SMCore
               </span>
-              <span className="text-[10px] font-mono text-tertiary flex items-center gap-1">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-                {currentGuild.memberCount ? `${(currentGuild.memberCount / 1000).toFixed(1)}k members` : currentGuild.id}
+              <span className="text-[10px] font-mono text-outline tracking-wider uppercase">
+                SecOps v4.8
               </span>
             </div>
           </div>
-          <span className="material-symbols-outlined text-outline-variant text-[18px]">
-            {showGuildDropdown ? 'expand_less' : 'unfold_more'}
-          </span>
-        </button>
 
-        {/* Guild Dropdown Menu */}
-        {showGuildDropdown && (
-          <div className="absolute left-3 right-3 top-16 mt-1 rounded-xl bg-surface-container-high border border-outline-variant p-2 shadow-2xl z-50 space-y-2">
-            <div className="text-[10px] uppercase font-mono text-outline px-2 pt-1">Registered Guilds</div>
-            <div className="max-h-40 overflow-y-auto space-y-1">
-              {availableGuilds.map((guild) => (
-                <button
-                  key={guild.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedGuildId(guild.id);
-                    setShowGuildDropdown(false);
-                  }}
-                  className={`w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center justify-between transition-colors ${
-                    guild.id === selectedGuildId
-                      ? 'bg-primary-container text-on-primary-container font-semibold'
-                      : 'text-on-surface hover:bg-surface-bright'
-                  }`}
-                >
-                  <span className="truncate">{guild.name}</span>
-                  <span className="font-mono text-[9px] opacity-75">{guild.id.slice(-4)}</span>
-                </button>
-              ))}
-            </div>
+          <div className="flex items-center gap-1.5">
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-surface-container text-tertiary border border-tertiary/25">
+              PRO
+            </span>
+            {onCloseMobile && (
+              <button
+                type="button"
+                onClick={onCloseMobile}
+                className="lg:hidden p-1 rounded text-outline hover:text-on-surface"
+                aria-label="Close sidebar"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            )}
+          </div>
+        </div>
 
-            {/* Custom Snowflake ID Form */}
-            <form onSubmit={handleCustomGuildSubmit} className="pt-2 border-t border-outline-variant/40">
-              <div className="text-[10px] font-mono text-outline px-1 mb-1">Or Connect Guild ID:</div>
-              <div className="flex items-center gap-1">
-                <input
-                  type="text"
-                  value={customGuildInput}
-                  onChange={(e) => setCustomGuildInput(e.target.value)}
-                  placeholder="Snowflake ID..."
-                  className="w-full bg-surface-container-lowest text-on-surface px-2 py-1 rounded text-xs focus:outline-none border border-outline-variant/60 font-mono"
+        {/* Guild Selector */}
+        <div className="px-3 py-2.5 relative shrink-0">
+          <button
+            type="button"
+            onClick={() => setShowGuildDropdown(!showGuildDropdown)}
+            className="w-full flex items-center justify-between p-2 rounded-xl bg-surface-container-low hover:bg-surface-container border border-border-subtle transition-colors group"
+            aria-label="Switch Discord server"
+            aria-expanded={showGuildDropdown}
+            aria-haspopup="listbox"
+          >
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              {/* Guild icon or initial */}
+              {currentManagedGuild?.iconUrl ? (
+                <Image
+                  src={currentManagedGuild.iconUrl}
+                  alt={currentGuild.name}
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 rounded-lg object-cover shrink-0"
+                  unoptimized
                 />
-                <button
-                  type="submit"
-                  className="px-2 py-1 bg-primary text-on-primary rounded text-xs font-semibold hover:bg-primary-fixed-dim"
-                >
-                  Set
-                </button>
+              ) : (
+                <div className="w-8 h-8 rounded-lg bg-secondary-container text-on-secondary-container flex items-center justify-center text-sm font-bold shrink-0">
+                  {currentGuild.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+
+              <div className="flex flex-col text-left truncate">
+                <span className="text-xs font-semibold text-on-surface truncate group-hover:text-primary transition-colors">
+                  {currentGuild.name}
+                </span>
+                <span className="text-[10px] font-mono text-tertiary flex items-center gap-1">
+                  {currentGuild.botPresent ? (
+                    <>
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse" />
+                      Bot active
+                    </>
+                  ) : selectedGuildId ? (
+                    <>
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-warning" />
+                      Bot not installed
+                    </>
+                  ) : (
+                    'Select a server'
+                  )}
+                </span>
               </div>
-            </form>
+            </div>
+            <span className="material-symbols-outlined text-outline-variant text-[18px]">
+              {showGuildDropdown ? 'expand_less' : 'unfold_more'}
+            </span>
+          </button>
+
+          {/* Guild Dropdown */}
+          {showGuildDropdown && (
+            <div
+              className="absolute left-3 right-3 top-16 mt-1 rounded-xl bg-surface-container-high border border-border-medium p-2 shadow-2xl z-50 space-y-1"
+              role="listbox"
+              aria-label="Available Discord servers"
+            >
+              <div className="text-[10px] uppercase font-mono text-outline px-2 pt-1 pb-1.5">
+                Your Manageable Servers
+              </div>
+
+              <div className="max-h-52 overflow-y-auto space-y-0.5">
+                {authLoading ? (
+                  <div className="px-2 py-3 text-xs text-outline text-center">
+                    <div className="w-4 h-4 rounded-full border border-outline border-t-transparent animate-spin mx-auto mb-1" />
+                    Loading servers...
+                  </div>
+                ) : managedGuilds.length === 0 ? (
+                  <div className="px-2 py-3 text-xs text-outline text-center">
+                    No manageable servers found.
+                    <br />
+                    You need Manage Server permission.
+                  </div>
+                ) : (
+                  managedGuilds.map((guild) => (
+                    <button
+                      key={guild.id}
+                      type="button"
+                      role="option"
+                      aria-selected={guild.id === selectedGuildId}
+                      onClick={() => {
+                        setSelectedGuildId(guild.id);
+                        setShowGuildDropdown(false);
+                      }}
+                      className={`w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center gap-2.5 transition-colors ${
+                        guild.id === selectedGuildId
+                          ? 'bg-primary-container text-on-primary-container font-semibold'
+                          : 'text-on-surface hover:bg-surface-bright'
+                      }`}
+                    >
+                      {guild.iconUrl ? (
+                        <Image
+                          src={guild.iconUrl}
+                          alt={guild.name}
+                          width={22}
+                          height={22}
+                          className="w-5 h-5 rounded object-cover shrink-0"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="w-5 h-5 rounded bg-surface-container flex items-center justify-center text-[10px] font-bold text-outline shrink-0">
+                          {guild.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="truncate flex-1">{guild.name}</span>
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                          guild.botPresent ? 'bg-tertiary' : 'bg-outline/40'
+                        }`}
+                        title={guild.botPresent ? 'Bot installed' : 'Bot not installed'}
+                      />
+                    </button>
+                  ))
+                )}
+              </div>
+
+              {/* Add SMCore CTA for servers without bot */}
+              {managedGuilds.some((g) => !g.botPresent) && (
+                <div className="pt-1.5 border-t border-border-subtle">
+                  <a
+                    href={botInstallUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-primary hover:bg-primary/10 transition-colors"
+                    onClick={() => setShowGuildDropdown(false)}
+                  >
+                    <span className="material-symbols-outlined text-[15px]">add_circle</span>
+                    Add SMCore to a server
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Bot missing banner */}
+        {selectedGuildId && currentGuild.botPresent === false && (
+          <div className="mx-3 mb-1 px-3 py-2.5 rounded-lg bg-warning/10 border border-warning/25 text-xs text-warning">
+            <div className="flex items-center gap-2 font-semibold mb-1">
+              <span className="material-symbols-outlined text-[15px]">warning</span>
+              SMCore not installed
+            </div>
+            <p className="text-[11px] leading-relaxed text-warning/80">
+              The bot is not in this server. Some features will be unavailable.
+            </p>
+            <a
+              href={botInstallUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-flex items-center gap-1 text-[11px] underline underline-offset-2 text-warning hover:text-warning/80"
+            >
+              Add SMCore
+              <span className="material-symbols-outlined text-[13px]">open_in_new</span>
+            </a>
           </div>
         )}
-      </div>
 
-      {/* Navigation Sections */}
-      <nav className="flex-1 overflow-y-auto px-3 py-1 space-y-4">
-        {navSections.map((section) => (
-          <div key={section.title} className="space-y-1">
-            <div className="px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-outline">
-              {section.title}
-            </div>
-            {section.items.map((item) => {
-              const isActive = pathname === item.href;
-              if (item.disabled) {
+        {/* Navigation Sections */}
+        <nav className="flex-1 overflow-y-auto px-3 py-1 space-y-3.5" aria-label="Main navigation">
+          {navSections.map((section) => (
+            <div key={section.title} className="space-y-0.5">
+              <div className="px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-outline">
+                {section.title}
+              </div>
+              {section.items.map((item) => {
+                const isActive = pathname === item.href;
+                if (item.disabled) {
+                  return (
+                    <div
+                      key={item.name}
+                      className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-outline/50 text-xs cursor-not-allowed select-none"
+                      aria-disabled="true"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="material-symbols-outlined text-[17px] opacity-40">
+                          {item.icon}
+                        </span>
+                        <span>{item.name}</span>
+                      </div>
+                      {item.badge && (
+                        <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-surface-container-high text-outline">
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
+                  );
+                }
+
                 return (
-                  <div
+                  <Link
                     key={item.name}
-                    className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-outline/60 text-xs cursor-not-allowed select-none"
+                    href={item.href}
+                    onClick={() => {
+                      if (onCloseMobile) onCloseMobile();
+                    }}
+                    className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      isActive
+                        ? 'bg-primary-container text-on-primary-container font-semibold shadow-glow'
+                        : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
+                    }`}
+                    aria-current={isActive ? 'page' : undefined}
                   >
                     <div className="flex items-center gap-2.5">
-                      <span className="material-symbols-outlined text-[18px] opacity-40">{item.icon}</span>
+                      <span
+                        className={`material-symbols-outlined text-[17px] ${
+                          isActive ? 'text-on-primary-container' : 'text-outline'
+                        }`}
+                      >
+                        {item.icon}
+                      </span>
                       <span>{item.name}</span>
                     </div>
                     {item.badge && (
-                      <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-surface-container-high text-outline">
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-surface-container text-tertiary">
                         {item.badge}
                       </span>
                     )}
-                  </div>
+                  </Link>
                 );
-              }
-
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    isActive
-                      ? 'bg-primary-container text-on-primary-container font-semibold shadow-[0_0_12px_rgba(128,131,255,0.25)]'
-                      : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className={`material-symbols-outlined text-[18px] ${isActive ? 'text-on-primary-container' : 'text-outline'}`}>
-                      {item.icon}
-                    </span>
-                    <span>{item.name}</span>
-                  </div>
-                  {item.badge && (
-                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-surface-container text-tertiary">
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        ))}
-      </nav>
-
-      {/* Staff Profile Footer */}
-      <div className="p-3 bg-surface-container-lowest/95 border-t border-outline-variant/20">
-        <div className="flex items-center justify-between p-2 rounded-xl bg-surface-container-low">
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs ring-1 ring-tertiary/40 shrink-0 font-mono">
-              OP
+              })}
             </div>
-            <div className="flex flex-col truncate">
-              <span className="text-xs font-semibold text-on-surface truncate">Console Operator</span>
-              <span className="text-[10px] font-mono text-outline truncate">SecOps Authorized</span>
+          ))}
+        </nav>
+
+        {/* User Profile Footer */}
+        <div className="p-3 bg-surface-container-lowest border-t border-border-subtle shrink-0">
+          <div className="flex items-center justify-between p-2 rounded-xl bg-surface-container-low border border-border-subtle">
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              {authLoading ? (
+                <div className="w-8 h-8 rounded-full bg-surface-container-high animate-pulse shrink-0" />
+              ) : avatarUrl ? (
+                <Image
+                  src={avatarUrl}
+                  alt={displayName}
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 rounded-full ring-1 ring-tertiary/40 shrink-0 object-cover"
+                  unoptimized
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs ring-1 ring-tertiary/40 shrink-0">
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="flex flex-col truncate">
+                <span className="text-xs font-semibold text-on-surface truncate">
+                  {authLoading ? '...' : displayName}
+                </span>
+                <span className="text-[10px] font-mono text-outline truncate">
+                  Dashboard Manager
+                </span>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse" title="SecOps Active" />
+            <div className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse" title="Session Active" />
+            </div>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }

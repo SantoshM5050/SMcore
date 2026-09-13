@@ -177,9 +177,51 @@ export async function apiFetch<T>(
     const res = await fetch(endpoint, {
       ...options,
       headers,
+      credentials: 'same-origin', // Always send session cookie
     });
 
     const data = (await res.json().catch(() => null)) as ApiResponse<T> | null;
+
+    if (res.status === 401) {
+      // Session expired or unauthenticated — trigger redirect client-side
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login?error=session_expired';
+      }
+      return {
+        success: false,
+        error: { code: 'UNAUTHENTICATED', message: 'Authentication required. Redirecting to login...' },
+      };
+    }
+
+    if (res.status === 403) {
+      return {
+        success: false,
+        error: data?.error || {
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to access this resource',
+        },
+      };
+    }
+
+    if (res.status === 404) {
+      return {
+        success: false,
+        error: data?.error || {
+          code: 'NOT_FOUND',
+          message: 'Requested resource not found',
+        },
+      };
+    }
+
+    if (res.status >= 500) {
+      return {
+        success: false,
+        error: data?.error || {
+          code: 'SERVER_ERROR',
+          message: 'An internal service error occurred. Please try again later.',
+        },
+      };
+    }
 
     if (!res.ok) {
       return {
@@ -367,6 +409,24 @@ export const apiClient = {
       }),
     getCategories: (guildId: string) =>
       apiFetch<TicketCategoryItem[]>(`/api/guilds/${guildId}/ticket-categories`),
+  },
+
+  auth: {
+    me: () =>
+      apiFetch<{
+        authenticated: boolean;
+        user?: {
+          id: string;
+          username: string;
+          globalName: string | null;
+          avatar: string | null;
+          discriminator: string;
+        };
+      }>('/api/auth/me'),
+    logout: () =>
+      apiFetch<{ success: boolean; message: string }>('/api/auth/logout', {
+        method: 'POST',
+      }),
   },
 
   // Aliases

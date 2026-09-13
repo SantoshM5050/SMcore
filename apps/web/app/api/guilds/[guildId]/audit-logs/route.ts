@@ -8,18 +8,14 @@ import {
   AuditTargetType,
   AuditLogEntry,
 } from '@smcore/shared';
+import { authorizeGuildAccess } from '@/lib/auth/authorize';
 
 export async function GET(
   req: NextRequest,
   { params }: { params: { guildId: string } }
 ) {
-  const guildValidation = SnowflakeSchema.safeParse(params.guildId);
-  if (!guildValidation.success) {
-    return NextResponse.json(
-      { success: false, error: { code: 'INVALID_GUILD_ID', message: 'Invalid Discord guild ID' } },
-      { status: 400 }
-    );
-  }
+  const authResult = await authorizeGuildAccess(req, params.guildId);
+  if (!authResult.authorized) return authResult.response;
 
   const { searchParams } = new URL(req.url);
   const rawQuery = {

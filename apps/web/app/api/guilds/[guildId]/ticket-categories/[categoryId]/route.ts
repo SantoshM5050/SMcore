@@ -1,20 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@smcore/database';
-import { SnowflakeSchema, TicketCategoryUpdateSchema } from '@smcore/shared';
+import { TicketCategoryUpdateSchema } from '@smcore/shared';
+import { authorizeGuildAccess } from '@/lib/auth/authorize';
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { guildId: string; categoryId: string } }
 ) {
-  const guildValidation = SnowflakeSchema.safeParse(params.guildId);
-  if (!guildValidation.success) {
-    return NextResponse.json(
-      { success: false, error: { code: 'INVALID_GUILD_ID', message: 'Invalid Discord guild ID' } },
-      { status: 400 }
-    );
-  }
+  const authResult = await authorizeGuildAccess(req, params.guildId);
+  if (!authResult.authorized) return authResult.response;
 
   try {
+    const existing = await prisma.ticketCategory.findFirst({
+      where: {
+        id: params.categoryId,
+        guildId: params.guildId, // Strict guild isolation
+      },
+    });
+
+    if (!existing) {
+      return NextResponse.json(
+        { success: false, error: { code: 'NOT_FOUND', message: 'Ticket category not found in this server' } },
+        { status: 404 }
+      );
+    }
+
     const body = await req.json();
     const parseResult = TicketCategoryUpdateSchema.safeParse(body);
 
@@ -41,7 +51,7 @@ export async function PATCH(
       success: true,
       data: updated,
     });
-  } catch (err: any) {
+  } catch {
     return NextResponse.json(
       {
         success: false,
@@ -56,18 +66,27 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { guildId: string; categoryId: string } }
 ) {
-  const guildValidation = SnowflakeSchema.safeParse(params.guildId);
-  if (!guildValidation.success) {
-    return NextResponse.json(
-      { success: false, error: { code: 'INVALID_GUILD_ID', message: 'Invalid Discord guild ID' } },
-      { status: 400 }
-    );
-  }
+  const authResult = await authorizeGuildAccess(req, params.guildId);
+  if (!authResult.authorized) return authResult.response;
 
   try {
+    const existing = await prisma.ticketCategory.findFirst({
+      where: {
+        id: params.categoryId,
+        guildId: params.guildId, // Strict guild isolation
+      },
+    });
+
+    if (!existing) {
+      return NextResponse.json(
+        { success: false, error: { code: 'NOT_FOUND', message: 'Ticket category not found in this server' } },
+        { status: 404 }
+      );
+    }
+
     await prisma.ticketCategory.delete({
       where: { id: params.categoryId },
     });
@@ -76,7 +95,7 @@ export async function DELETE(
       success: true,
       data: { id: params.categoryId, deleted: true },
     });
-  } catch (err: any) {
+  } catch {
     return NextResponse.json(
       {
         success: false,

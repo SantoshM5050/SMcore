@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@smcore/database';
 import { SnowflakeSchema, PaginationQuerySchema } from '@smcore/shared';
+import { authorizeGuildAccess } from '@/lib/auth/authorize';
 
 export async function GET(
   req: NextRequest,
   { params }: { params: { guildId: string; userId: string } }
 ) {
-  const guildValidation = SnowflakeSchema.safeParse(params.guildId);
-  const userValidation = SnowflakeSchema.safeParse(params.userId);
-
-  if (!guildValidation.success || !userValidation.success) {
-    return NextResponse.json(
-      { success: false, error: { code: 'INVALID_PARAMETERS', message: 'Invalid guild or user ID' } },
-      { status: 400 }
-    );
-  }
+  const authResult = await authorizeGuildAccess(req, params.guildId);
+  if (!authResult.authorized) return authResult.response;
 
   const searchParams = Object.fromEntries(req.nextUrl.searchParams.entries());
   const query = PaginationQuerySchema.parse(searchParams);
