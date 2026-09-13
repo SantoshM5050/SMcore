@@ -39,6 +39,8 @@ export async function middleware(req: NextRequest) {
     authenticated = false;
   }
 
+  console.log(`[Middleware] ${req.method} ${pathname} | Authenticated: ${authenticated}`);
+
   if (!authenticated) {
     // API route: return 401 JSON
     if (pathname.startsWith('/api/guilds')) {

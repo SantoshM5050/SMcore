@@ -1,3 +1,3 @@
-import { GET as discordCallbackGet } from '../discord/callback/route';
+import { handleDiscordCallback } from '@/lib/auth/discordCallback';
 
-export const GET = discordCallbackGet;
+export const GET = handleDiscordCallback;
