@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { ModerationAction } from '@smcore/shared';
 import { authorizeGuildAccess } from '@/lib/auth/authorize';
-import { getBotApiUrl } from '@/lib/api/botBridgeUrl';
 
 interface RouteContext {
   params: { guildId: string };
@@ -60,7 +59,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     const payload = parseResult.data;
 
     // Dispatch to Bot HTTP Bridge
-    const botUrl = getBotApiUrl();
+    const botPort = process.env.BOT_PORT || '3001';
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
 
@@ -71,7 +70,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       headers['x-internal-secret'] = process.env.SESSION_SECRET;
     }
 
-    const botRes = await fetch(`${botUrl}/guilds/${guildId}/actions`, {
+    const botRes = await fetch(`http://localhost:${botPort}/guilds/${guildId}/actions`, {
       method: 'POST',
       headers,
       body: JSON.stringify(payload),

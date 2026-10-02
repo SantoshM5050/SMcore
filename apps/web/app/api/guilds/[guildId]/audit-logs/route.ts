@@ -86,7 +86,7 @@ export async function GET(
       nextCursor = nextItem ? nextItem.id : null;
     }
 
-    const data: AuditLogEntry[] = items.map((item) => ({
+    const data: AuditLogEntry[] = items.map((item: any) => ({
       id: item.id,
       guildId: item.guildId,
       eventType: item.eventType as AuditEventType,

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@smcore/database';
 import { requireAuth } from '@/lib/auth/authorize';
 import { getSessionFromRequest } from '@/lib/auth/session';
-import { getBotApiUrl } from '@/lib/api/botBridgeUrl';
 
 export async function GET(req: NextRequest) {
   // Authenticate session
@@ -33,20 +32,19 @@ export async function GET(req: NextRequest) {
 
   let botGuildsMap = new Map<string, BotGuildInfo>();
   try {
-    const botUrl = getBotApiUrl();
+    const botPort = process.env.BOT_PORT || '3001';
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
+    const timeoutId = setTimeout(() => controller.abort(), 1200);
 
-    const res = await fetch(`${botUrl}/guilds`, {
+    const res = await fetch(`http://localhost:${botPort}/guilds`, {
       signal: controller.signal,
     }).catch(() => null);
     clearTimeout(timeoutId);
 
     if (res && res.ok) {
       const json = await res.json().catch(() => null);
-      const rawList = json && (Array.isArray(json.data) ? json.data : Array.isArray(json.guilds) ? json.guilds : null);
-      if (rawList) {
-        for (const bg of rawList as BotGuildInfo[]) {
+      if (json && Array.isArray(json.data)) {
+        for (const bg of json.data as BotGuildInfo[]) {
           if (sessionGuildIds.includes(bg.id)) {
             botGuildsMap.set(bg.id, bg);
           }

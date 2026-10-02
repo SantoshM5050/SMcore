@@ -88,7 +88,7 @@ export function startBotBridgeServer(options: BotBridgeServerOptions): http.Serv
               ownerId: g.ownerId,
             }))
           : [];
-        sendJson(200, { success: true, guilds, data: guilds });
+        sendJson(200, { success: true, guilds });
         return;
       }
 
@@ -333,8 +333,8 @@ export function startBotBridgeServer(options: BotBridgeServerOptions): http.Serv
     }
   });
 
-  server.listen(port, '0.0.0.0', () => {
-    logger.info({ port }, 'Bot HTTP Bridge server listening on 0.0.0.0 for dashboard telemetry & actions');
+  server.listen(port, () => {
+    logger.info({ port }, 'Bot HTTP Bridge server listening for dashboard telemetry & actions');
   });
 
   return server;

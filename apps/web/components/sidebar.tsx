@@ -214,7 +214,11 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
               role="listbox"
               aria-label="Available Discord servers"
             >
-              <div className="max-h-64 overflow-y-auto space-y-2">
+              <div className="text-[10px] uppercase font-mono text-outline px-2 pt-1 pb-1.5">
+                Your Manageable Servers
+              </div>
+
+              <div className="max-h-52 overflow-y-auto space-y-0.5">
                 {authLoading ? (
                   <div className="px-2 py-3 text-xs text-outline text-center">
                     <div className="w-4 h-4 rounded-full border border-outline border-t-transparent animate-spin mx-auto mb-1" />
@@ -227,105 +231,45 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                     You need Manage Server permission.
                   </div>
                 ) : (
-                  <>
-                    {/* Servers where bot is installed */}
-                    {managedGuilds.filter((g) => g.botPresent).length > 0 && (
-                      <div className="space-y-0.5">
-                        <div className="text-[10px] uppercase font-mono text-tertiary px-2 pt-1 pb-1 flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse" />
-                          Active Servers (SMCore Installed)
+                  managedGuilds.map((guild) => (
+                    <button
+                      key={guild.id}
+                      type="button"
+                      role="option"
+                      aria-selected={guild.id === selectedGuildId}
+                      onClick={() => {
+                        setSelectedGuildId(guild.id);
+                        setShowGuildDropdown(false);
+                      }}
+                      className={`w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center gap-2.5 transition-colors ${
+                        guild.id === selectedGuildId
+                          ? 'bg-primary-container text-on-primary-container font-semibold'
+                          : 'text-on-surface hover:bg-surface-bright'
+                      }`}
+                    >
+                      {guild.iconUrl ? (
+                        <Image
+                          src={guild.iconUrl}
+                          alt={guild.name}
+                          width={22}
+                          height={22}
+                          className="w-5 h-5 rounded object-cover shrink-0"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="w-5 h-5 rounded bg-surface-container flex items-center justify-center text-[10px] font-bold text-outline shrink-0">
+                          {guild.name.charAt(0).toUpperCase()}
                         </div>
-                        {managedGuilds
-                          .filter((g) => g.botPresent)
-                          .map((guild) => (
-                            <button
-                              key={guild.id}
-                              type="button"
-                              role="option"
-                              aria-selected={guild.id === selectedGuildId}
-                              onClick={() => {
-                                setSelectedGuildId(guild.id);
-                                setShowGuildDropdown(false);
-                              }}
-                              className={`w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center gap-2.5 transition-colors ${
-                                guild.id === selectedGuildId
-                                  ? 'bg-primary-container text-on-primary-container font-semibold'
-                                  : 'text-on-surface hover:bg-surface-bright'
-                              }`}
-                            >
-                              {guild.iconUrl ? (
-                                <Image
-                                  src={guild.iconUrl}
-                                  alt={guild.name}
-                                  width={22}
-                                  height={22}
-                                  className="w-5 h-5 rounded object-cover shrink-0"
-                                  unoptimized
-                                />
-                              ) : (
-                                <div className="w-5 h-5 rounded bg-surface-container flex items-center justify-center text-[10px] font-bold text-outline shrink-0">
-                                  {guild.name.charAt(0).toUpperCase()}
-                                </div>
-                              )}
-                              <span className="truncate flex-1">{guild.name}</span>
-                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-tertiary/15 text-tertiary shrink-0">
-                                Active
-                              </span>
-                            </button>
-                          ))}
-                      </div>
-                    )}
-
-                    {/* Servers where bot is NOT installed */}
-                    {managedGuilds.filter((g) => !g.botPresent).length > 0 && (
-                      <div className="space-y-0.5 pt-1">
-                        <div className="text-[10px] uppercase font-mono text-outline px-2 pt-1 pb-1 flex items-center justify-between">
-                          <span>Other Servers (Bot Not Added)</span>
-                          <span className="text-[9px] font-mono text-outline-variant">
-                            {managedGuilds.filter((g) => !g.botPresent).length}
-                          </span>
-                        </div>
-                        {managedGuilds
-                          .filter((g) => !g.botPresent)
-                          .map((guild) => (
-                            <button
-                              key={guild.id}
-                              type="button"
-                              role="option"
-                              aria-selected={guild.id === selectedGuildId}
-                              onClick={() => {
-                                setSelectedGuildId(guild.id);
-                                setShowGuildDropdown(false);
-                              }}
-                              className={`w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center gap-2.5 transition-colors opacity-75 hover:opacity-100 ${
-                                guild.id === selectedGuildId
-                                  ? 'bg-primary-container text-on-primary-container font-semibold opacity-100'
-                                  : 'text-on-surface hover:bg-surface-bright'
-                              }`}
-                            >
-                              {guild.iconUrl ? (
-                                <Image
-                                  src={guild.iconUrl}
-                                  alt={guild.name}
-                                  width={22}
-                                  height={22}
-                                  className="w-5 h-5 rounded object-cover shrink-0 grayscale-[40%]"
-                                  unoptimized
-                                />
-                              ) : (
-                                <div className="w-5 h-5 rounded bg-surface-container flex items-center justify-center text-[10px] font-bold text-outline shrink-0">
-                                  {guild.name.charAt(0).toUpperCase()}
-                                </div>
-                              )}
-                              <span className="truncate flex-1">{guild.name}</span>
-                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-surface-container text-outline shrink-0">
-                                Add
-                              </span>
-                            </button>
-                          ))}
-                      </div>
-                    )}
-                  </>
+                      )}
+                      <span className="truncate flex-1">{guild.name}</span>
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                          guild.botPresent ? 'bg-tertiary' : 'bg-outline/40'
+                        }`}
+                        title={guild.botPresent ? 'Bot installed' : 'Bot not installed'}
+                      />
+                    </button>
+                  ))
                 )}
               </div>
 

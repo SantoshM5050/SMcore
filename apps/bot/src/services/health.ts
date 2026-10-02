@@ -25,7 +25,7 @@ export function startHealthServer(port: number, client?: Client): http.Server {
     res.end(JSON.stringify({ error: 'Not Found' }));
   });
 
-  server.listen(port, '0.0.0.0');
+  server.listen(port);
   return server;
 }
 
