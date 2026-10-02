@@ -15,10 +15,15 @@ const ModerationActionSchema = z.object({
     'KICK',
     'BAN',
     'UNBAN',
+    'SOFTBAN',
     'PURGE',
     'LOCK',
     'UNLOCK',
     'SLOWMODE',
+    'NICKNAME',
+    'QUARANTINE',
+    'ROLE_ADD',
+    'ROLE_REMOVE',
   ]),
   targetUserId: z.string().optional(),
   moderatorUserId: z.string().optional(),
@@ -28,6 +33,8 @@ const ModerationActionSchema = z.object({
   channelId: z.string().optional(),
   messageCount: z.number().int().min(1).max(100).optional(),
   slowmodeSeconds: z.number().int().min(0).max(21600).optional(),
+  nickname: z.string().max(32).optional(),
+  roleId: z.string().optional(),
 });
 
 export async function POST(req: NextRequest, { params }: RouteContext) {

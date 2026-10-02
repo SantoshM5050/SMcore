@@ -521,6 +521,149 @@ export default function AutoModEnginePage() {
           </div>
         </div>
       </div>
+
+      {/* AutoMod Heuristic Simulator Card */}
+      <div className="px-6 pt-5 max-w-7xl mx-auto w-full">
+        <AutoModTestSimulator settings={settings} />
+      </div>
+    </div>
+  );
+}
+
+function AutoModTestSimulator({ settings }: { settings: ProtectionSettings }) {
+  const [testText, setTestText] = useState('Hey check out discord.gg/free-nitro and grab your reward NOW!!!');
+
+  const matches = React.useMemo(() => {
+    const hits: Array<{ filter: string; reason: string; severity: 'high' | 'medium' | 'low' }> = [];
+    const lower = testText.toLowerCase();
+
+    // 1. Invites
+    if (settings.inviteFilterEnabled && /(discord\.(gg|io|me|li)\/.+|discordapp\.com\/invite\/.+)/i.test(testText)) {
+      hits.push({ filter: 'Invite Filter', reason: 'Contains unauthorized Discord invite link', severity: 'high' });
+    }
+
+    // 2. Links
+    if (settings.linkFilterEnabled && /(https?:\/\/[^\s]+)/g.test(testText)) {
+      hits.push({ filter: 'External Links', reason: 'Unauthorized URL detected', severity: 'medium' });
+    }
+
+    // 3. Keywords
+    if (settings.keywordFilterEnabled) {
+      for (const w of settings.bannedWords) {
+        if (w && lower.includes(w.toLowerCase())) {
+          hits.push({ filter: 'Keyword Blocklist', reason: `Matched banned pattern: "${w}"`, severity: 'high' });
+        }
+      }
+    }
+
+    // 4. Caps
+    if (settings.capsFilterEnabled) {
+      const letters = testText.replace(/[^a-zA-Z]/g, '');
+      if (letters.length > 8) {
+        const caps = testText.replace(/[^A-Z]/g, '').length;
+        const pct = Math.round((caps / letters.length) * 100);
+        if (pct >= settings.capsMaxPercentage) {
+          hits.push({ filter: 'Caps Flood', reason: `${pct}% uppercase characters (exceeds ${settings.capsMaxPercentage}%)`, severity: 'low' });
+        }
+      }
+    }
+
+    return hits;
+  }, [testText, settings]);
+
+  const isBlocked = matches.length > 0;
+
+  return (
+    <div className="p-5 rounded-xl bg-surface-container-low border border-border-subtle shadow-sm space-y-4 text-xs">
+      <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-[20px]">science</span>
+          <div>
+            <h3 className="text-sm font-bold text-on-surface">AutoMod Policy Live Test Bench</h3>
+            <p className="text-[11px] text-outline font-sans">
+              Simulate chat message against your active AutoMod configuration
+            </p>
+          </div>
+        </div>
+        <span
+          className={`px-2.5 py-0.5 rounded font-mono text-[10px] font-bold border ${
+            isBlocked
+              ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+              : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+          }`}
+        >
+          {isBlocked ? 'ACTION TRIGGERED: BLOCKED' : 'VERIFIED: PASS'}
+        </span>
+      </div>
+
+      <div className="space-y-3">
+        <input
+          type="text"
+          value={testText}
+          onChange={(e) => setTestText(e.target.value)}
+          placeholder="Type or paste a test message to evaluate..."
+          className="w-full px-3 py-2 rounded-lg bg-surface-container text-on-surface font-sans border border-border-subtle focus:outline-none focus:border-primary text-xs"
+        />
+
+        <div className="flex items-center gap-2 text-[11px] text-outline">
+          <span className="font-mono">Quick test presets:</span>
+          <button
+            type="button"
+            onClick={() => setTestText('Check out discord.gg/cool-server!')}
+            className="hover:text-primary underline font-mono"
+          >
+            Invite Link
+          </button>
+          <span>·</span>
+          <button
+            type="button"
+            onClick={() => setTestText('Claim your free-nitro right now!')}
+            className="hover:text-primary underline font-mono"
+          >
+            Keyword Scam
+          </button>
+          <span>·</span>
+          <button
+            type="button"
+            onClick={() => setTestText('HELLO EVERYONE CAN ANYBODY HELP ME PLEASE')}
+            className="hover:text-primary underline font-mono"
+          >
+            Caps Lock
+          </button>
+          <span>·</span>
+          <button
+            type="button"
+            onClick={() => setTestText('Hello! Is there any raid guide for level 40?')}
+            className="hover:text-primary underline font-mono"
+          >
+            Clean Message
+          </button>
+        </div>
+
+        {matches.length > 0 ? (
+          <div className="space-y-2 pt-1">
+            <span className="font-mono uppercase text-[10px] font-bold text-rose-400">
+              Violations Detected ({matches.length}):
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {matches.map((m, idx) => (
+                <div
+                  key={idx}
+                  className="p-2.5 rounded-lg bg-surface-container border border-rose-500/20 text-xs space-y-0.5"
+                >
+                  <div className="font-bold text-rose-300 font-mono text-[11px]">{m.filter}</div>
+                  <div className="text-on-surface-variant text-[11px]">{m.reason}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center gap-2 font-mono">
+            <span className="material-symbols-outlined text-[16px]">check_circle</span>
+            <span>Message passes all configured heuristic filters cleanly.</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

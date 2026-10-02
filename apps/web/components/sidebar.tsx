@@ -31,21 +31,25 @@ const navSections: NavSection[] = [
   {
     title: 'Moderation Modules',
     items: [
-      { name: 'Cases & Punishments', href: '/dashboard/moderation', icon: 'gavel' },
+      { name: 'Cases & Infractions', href: '/dashboard/moderation', icon: 'gavel', badge: 'Live' },
+      { name: 'Member Directory', href: '/dashboard/members', icon: 'group' },
+      { name: 'Channels & Chat Purge', href: '/dashboard/channels', icon: 'cleaning_services' },
       { name: 'AutoMod Policy Engine', href: '/dashboard/automod', icon: 'smart_toy' },
       { name: 'Anti-Raid & Quarantine', href: '/dashboard/security', icon: 'shield' },
     ],
   },
   {
-    title: 'Helpdesk & Records',
+    title: 'Helpdesk & Community',
     items: [
       { name: 'Ticket Management', href: '/dashboard/tickets', icon: 'confirmation_number' },
+      { name: 'Discord Embed Builder', href: '/dashboard/embeds', icon: 'dashboard_customize' },
       { name: 'Audit Trail', href: '/dashboard/audit-logs', icon: 'history_edu' },
     ],
   },
   {
     title: 'Administration',
     items: [
+      { name: 'Roles & Hierarchy', href: '/dashboard/roles', icon: 'military_tech' },
       { name: 'Guild Configuration', href: '/dashboard/settings', icon: 'tune' },
     ],
   },

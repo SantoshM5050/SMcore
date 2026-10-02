@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useGuild } from '../lib/context/guildContext';
 import { useAuth } from '../lib/context/authContext';
+import { CommandPalette } from './commandPalette';
 
 interface TopbarProps {
   onToggleMobileSidebar?: () => void;
@@ -14,6 +15,7 @@ export function Topbar({ onToggleMobileSidebar }: TopbarProps) {
   const { selectedGuildId, availableGuilds, health, isDbOffline } = useGuild();
   const { user, logout, isLoading: authLoading } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
 
   const currentGuild = availableGuilds.find((g) => g.id === selectedGuildId) || {
     name: selectedGuildId ? `Guild ${selectedGuildId}` : 'No Server Selected',
@@ -114,13 +116,17 @@ export function Topbar({ onToggleMobileSidebar }: TopbarProps) {
           </Link>
 
           {/* Quick Search trigger */}
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-lg bg-surface-container border border-border-subtle text-outline text-xs">
+          <button
+            type="button"
+            onClick={() => setShowCommandPalette(true)}
+            className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors border border-border-subtle text-outline hover:text-on-surface text-xs cursor-pointer"
+          >
             <span className="material-symbols-outlined text-[16px]">search</span>
             <span className="hidden md:inline">Quick Search...</span>
             <kbd className="font-mono text-[10px] px-1 py-0.2 rounded bg-surface-container-high text-outline">
               ⌘K
             </kbd>
-          </div>
+          </button>
 
           {/* Docs link */}
           <a
@@ -217,6 +223,8 @@ export function Topbar({ onToggleMobileSidebar }: TopbarProps) {
           </div>
         </div>
       </div>
+
+      <CommandPalette isOpen={showCommandPalette} onClose={() => setShowCommandPalette(false)} />
     </header>
   );
 }

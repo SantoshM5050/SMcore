@@ -89,6 +89,94 @@ export default function TicketsDashboardPage() {
     return tickets.filter((t) => t.status === 'CLOSED').length;
   }, [tickets]);
 
+  // Chat message state & handlers
+  const [chatInput, setChatInput] = useState('');
+  const [ticketChatMessages, setTicketChatMessages] = useState<Record<string, Array<{ text: string; timestamp: string }>>>({
+    'ticket-1': [
+      { text: 'Hello! I am reviewing your ticket now.', timestamp: '10:14 AM' },
+    ],
+  });
+
+  const handleSendChatMessage = (ticketId: string) => {
+    if (!chatInput.trim()) return;
+    const newMsg = {
+      text: chatInput.trim(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+    setTicketChatMessages((prev) => ({
+      ...prev,
+      [ticketId]: [...(prev[ticketId] || []), newMsg],
+    }));
+    setChatInput('');
+  };
+
+  const handleClaimTicket = async (ticket: TicketItem) => {
+    if (!selectedGuildId) return;
+    try {
+      await fetch(`/api/guilds/${selectedGuildId}/tickets/${ticket.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'CLAIMED', claimedByUserId: '123456789012345678' }),
+      });
+      await loadTickets();
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleCloseTicket = async (ticket: TicketItem) => {
+    if (!selectedGuildId) return;
+    try {
+      await fetch(`/api/guilds/${selectedGuildId}/tickets/${ticket.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'CLOSED', closeReason: 'Resolved by staff operator' }),
+      });
+      await loadTickets();
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleReopenTicket = async (ticket: TicketItem) => {
+    if (!selectedGuildId) return;
+    try {
+      await fetch(`/api/guilds/${selectedGuildId}/tickets/${ticket.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'OPEN' }),
+      });
+      await loadTickets();
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleExportTranscript = (ticket: TicketItem) => {
+    const msgs = ticketChatMessages[ticket.id] || [];
+    const content = [
+      `============================================================`,
+      `DISCORD SUPPORT TICKET TRANSCRIPT #${ticket.ticketNumber}`,
+      `Guild ID: ${ticket.guildId}`,
+      `Channel ID: ${ticket.channelId}`,
+      `Created By: ${ticket.creatorUserId}`,
+      `Status: ${ticket.status}`,
+      `Subject: ${ticket.subject || 'Support Ticket'}`,
+      `Created At: ${new Date(ticket.createdAt).toISOString()}`,
+      `============================================================\n`,
+      `[${new Date(ticket.createdAt).toLocaleTimeString()}] USER (${ticket.creatorUserId}): ${ticket.subject || 'Ticket opened'}`,
+      ...msgs.map((m) => `[${m.timestamp}] STAFF: ${m.text}`),
+    ].join('\n');
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ticket-${ticket.ticketNumber}-transcript.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const getStatusBadge = (status: TicketItem['status']) => {
     switch (status) {
       case 'OPEN':
@@ -445,8 +533,130 @@ export default function TicketsDashboardPage() {
                   )}
                 </div>
 
+                {/* Interactive Simulated Discord Ticket Chat */}
+                <div className="p-3 rounded-lg bg-surface-container border border-outline-variant/20 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-mono text-outline font-bold">
+                      Live Channel Transcript
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleExportTranscript(selectedTicket)}
+                      className="text-[10px] font-mono text-primary hover:underline flex items-center gap-1"
+                    >
+                      <span className="material-symbols-outlined text-[13px]">download</span>
+                      <span>Export TXT</span>
+                    </button>
+                  </div>
+
+                  {/* Message feed */}
+                  <div className="p-2.5 rounded-lg bg-surface-container-lowest border border-border-subtle max-h-48 overflow-y-auto space-y-2 font-sans text-[11px]">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-1.5 font-mono text-[10px]">
+                        <span className="font-bold text-on-surface">User ({selectedTicket.creatorUserId.slice(-4)})</span>
+                        <span className="text-outline text-[9px]">Opened ticket</span>
+                      </div>
+                      <p className="text-on-surface-variant bg-surface-container-high/50 p-2 rounded">
+                        {selectedTicket.subject || 'Hello, I need help with server permissions and roles.'}
+                      </p>
+                    </div>
+
+                    {ticketChatMessages[selectedTicket.id]?.map((m, i) => (
+                      <div key={i} className="space-y-0.5">
+                        <div className="flex items-center gap-1.5 font-mono text-[10px]">
+                          <span className="font-bold text-indigo-400">Staff (You)</span>
+                          <span className="text-outline text-[9px]">{m.timestamp}</span>
+                        </div>
+                        <p className="text-on-surface bg-indigo-500/10 border border-indigo-500/20 p-2 rounded">
+                          {m.text}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Staff Reply Box & Canned Macros */}
+                  {selectedTicket.status !== 'CLOSED' && (
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-center gap-1 overflow-x-auto pb-1 text-[10px]">
+                        <span className="text-outline text-[9px] uppercase font-mono shrink-0">Macros:</span>
+                        <button
+                          type="button"
+                          onClick={() => setChatInput('Hello! Thanks for reaching out. How can we assist you today?')}
+                          className="px-1.5 py-0.5 rounded bg-surface-container-high text-outline hover:text-on-surface whitespace-nowrap"
+                        >
+                          Greeting
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setChatInput('Please provide your user ID and any relevant screenshots.')}
+                          className="px-1.5 py-0.5 rounded bg-surface-container-high text-outline hover:text-on-surface whitespace-nowrap"
+                        >
+                          Request Info
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setChatInput('Issue has been resolved. Closing ticket now. Thank you!')}
+                          className="px-1.5 py-0.5 rounded bg-surface-container-high text-outline hover:text-on-surface whitespace-nowrap"
+                        >
+                          Resolved
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleSendChatMessage(selectedTicket.id))}
+                          placeholder="Send staff message into Discord ticket..."
+                          className="flex-1 px-2.5 py-1.5 rounded-lg bg-surface-container-lowest text-on-surface text-xs border border-border-subtle focus:outline-none focus:border-primary"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleSendChatMessage(selectedTicket.id)}
+                          disabled={!chatInput.trim()}
+                          className="px-2.5 py-1.5 rounded-lg bg-primary hover:bg-primary-dark disabled:opacity-40 text-white text-xs font-semibold"
+                        >
+                          Send
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons: Claim & Close */}
+                <div className="pt-2 border-t border-outline-variant/20 flex items-center gap-2">
+                  {selectedTicket.status === 'OPEN' && (
+                    <button
+                      type="button"
+                      onClick={() => handleClaimTicket(selectedTicket)}
+                      className="flex-1 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-semibold text-xs border border-amber-500/30 transition-colors"
+                    >
+                      Claim Ticket
+                    </button>
+                  )}
+
+                  {selectedTicket.status !== 'CLOSED' ? (
+                    <button
+                      type="button"
+                      onClick={() => handleCloseTicket(selectedTicket)}
+                      className="flex-1 py-2 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-semibold text-xs border border-rose-500/30 transition-colors"
+                    >
+                      Close & Archive
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleReopenTicket(selectedTicket)}
+                      className="flex-1 py-2 rounded-lg bg-surface-container hover:bg-surface-bright text-outline hover:text-on-surface font-semibold text-xs border border-border-subtle transition-colors"
+                    >
+                      Reopen Ticket
+                    </button>
+                  )}
+                </div>
+
                 {selectedTicket.transcriptUrl && (
-                  <div className="pt-2">
+                  <div className="pt-1">
                     <a
                       href={selectedTicket.transcriptUrl}
                       target="_blank"

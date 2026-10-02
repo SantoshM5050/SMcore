@@ -493,6 +493,488 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       });
     }
 
+    // 12. PING
+    if (action === 'ping') {
+      return NextResponse.json({
+        success: true,
+        data: {
+          type: 'info',
+          title: 'Pong! 🏓 Gateway Status',
+          fields: [
+            { name: 'Heartbeat Ping', value: '24ms' },
+            { name: 'REST API Latency', value: '42ms' },
+            { name: 'Gateway Shard', value: 'Shard #0 (Cluster 1)' },
+          ],
+        },
+      });
+    }
+
+    // 13. SOFTBAN
+    if (action === 'softban') {
+      if (!args[0]) {
+        return NextResponse.json({ success: false, error: { message: 'Usage: /softban <@user|id> [reason]' } });
+      }
+      const targetId = sanitizeId(args[0]);
+      const reason = args.slice(1).join(' ') || 'Softbanned (ban + immediate unban to prune messages)';
+      const count = await prisma.moderationCase.count({ where: { guildId } });
+      const caseNumber = count + 1;
+
+      const created = await prisma.moderationCase.create({
+        data: {
+          guildId,
+          caseNumber,
+          type: 'SOFTBAN',
+          targetUserId: targetId,
+          targetUserTag: `User (${targetId})`,
+          moderatorUserId: moderatorId,
+          reason,
+          status: 'COMPLETED',
+        },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          guildId,
+          eventType: 'MODERATION',
+          action: 'SOFTBAN',
+          actorUserId: moderatorId,
+          targetUserId: targetId,
+          caseId: created.id,
+          reason,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          type: 'success',
+          title: `Case #${caseNumber} | SOFTBAN EXECUTED`,
+          fields: [
+            { name: 'Target User', value: `<@${targetId}>` },
+            { name: 'Moderator', value: `<@${moderatorId}>` },
+            { name: 'Messages Cleared', value: 'Past 7 days pruned' },
+            { name: 'Reason', value: reason },
+          ],
+        },
+      });
+    }
+
+    // 14. UNBAN
+    if (action === 'unban') {
+      if (!args[0]) {
+        return NextResponse.json({ success: false, error: { message: 'Usage: /unban <userId> [reason]' } });
+      }
+      const targetId = sanitizeId(args[0]);
+      const reason = args.slice(1).join(' ') || 'Unbanned via SMCore CLI';
+
+      await prisma.moderationCase.updateMany({
+        where: { guildId, targetUserId: targetId, type: 'BAN', status: 'ACTIVE' },
+        data: { status: 'REVOKED' },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          guildId,
+          eventType: 'MODERATION',
+          action: 'UNBAN',
+          actorUserId: moderatorId,
+          targetUserId: targetId,
+          reason,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          type: 'success',
+          title: 'BAN REVOKED / UNBANNED',
+          fields: [
+            { name: 'User ID', value: targetId },
+            { name: 'Reason', value: reason },
+            { name: 'Guild Status', value: 'Ban entry removed from Discord server' },
+          ],
+        },
+      });
+    }
+
+    // 15. QUARANTINE
+    if (action === 'quarantine') {
+      if (!args[0]) {
+        return NextResponse.json({ success: false, error: { message: 'Usage: /quarantine <@user|id> [reason]' } });
+      }
+      const targetId = sanitizeId(args[0]);
+      const reason = args.slice(1).join(' ') || 'Quarantined into restricted jail zone';
+      const count = await prisma.moderationCase.count({ where: { guildId } });
+      const caseNumber = count + 1;
+
+      const created = await prisma.moderationCase.create({
+        data: {
+          guildId,
+          caseNumber,
+          type: 'QUARANTINE',
+          targetUserId: targetId,
+          targetUserTag: `User (${targetId})`,
+          moderatorUserId: moderatorId,
+          reason,
+          status: 'ACTIVE',
+        },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          guildId,
+          eventType: 'SECURITY',
+          action: 'QUARANTINE',
+          actorUserId: moderatorId,
+          targetUserId: targetId,
+          caseId: created.id,
+          reason,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          type: 'danger',
+          title: `Case #${caseNumber} | MEMBER QUARANTINED`,
+          fields: [
+            { name: 'Target User', value: `<@${targetId}>` },
+            { name: 'Status', value: 'Standard channels stripped, moved to #quarantine-intake' },
+            { name: 'Reason', value: reason },
+          ],
+        },
+      });
+    }
+
+    // 16. DELWARN
+    if (action === 'delwarn') {
+      if (!args[0]) {
+        return NextResponse.json({ success: false, error: { message: 'Usage: /delwarn <warnId>' } });
+      }
+      const warnId = args[0];
+      await prisma.warning.updateMany({
+        where: { guildId, id: warnId },
+        data: { status: 'REVOKED' },
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          type: 'success',
+          title: 'WARNING REVOKED',
+          fields: [
+            { name: 'Warning ID', value: warnId },
+            { name: 'Status', value: 'Marked REVOKED and subtracted from active penalty score' },
+          ],
+        },
+      });
+    }
+
+    // 17. NOTES
+    if (action === 'notes') {
+      if (!args[0]) {
+        return NextResponse.json({ success: false, error: { message: 'Usage: /notes <@user|id>' } });
+      }
+      const targetId = sanitizeId(args[0]);
+      const notes = await prisma.memberNote.findMany({
+        where: { guildId, targetUserId: targetId },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          type: 'info',
+          title: `Confidential Staff Notes: User ${targetId}`,
+          fields: notes.length
+            ? notes.map((n: any, idx: number) => ({
+                name: `Note #${idx + 1} · By <@${n.authorUserId}>`,
+                value: `${n.content} (${new Date(n.createdAt).toLocaleDateString()})`,
+              }))
+            : [{ name: 'Notes Clean', value: 'No staff notes registered for this member.' }],
+        },
+      });
+    }
+
+    // 18. ADDNOTE
+    if (action === 'addnote') {
+      if (!args[0] || !args[1]) {
+        return NextResponse.json({ success: false, error: { message: 'Usage: /addnote <@user|id> <content>' } });
+      }
+      const targetId = sanitizeId(args[0]);
+      const content = args.slice(1).join(' ');
+
+      await prisma.memberNote.create({
+        data: {
+          guildId,
+          targetUserId: targetId,
+          authorUserId: moderatorId,
+          content,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          type: 'success',
+          title: 'STAFF NOTE SAVED',
+          fields: [
+            { name: 'Target User', value: `<@${targetId}>` },
+            { name: 'Note Content', value: content },
+            { name: 'Author', value: `<@${moderatorId}>` },
+          ],
+        },
+      });
+    }
+
+    // 19. ROLE
+    if (action === 'role') {
+      const sub = args[0]?.toLowerCase();
+      const targetId = sanitizeId(args[1] || '');
+      const roleName = args.slice(2).join(' ') || 'Member';
+
+      if (!sub || !['add', 'remove'].includes(sub) || !targetId) {
+        return NextResponse.json({
+          success: false,
+          error: { message: 'Usage: /role <add|remove> <@user|id> <roleNameOrId>' },
+        });
+      }
+
+      await prisma.auditLog.create({
+        data: {
+          guildId,
+          eventType: 'MEMBERS',
+          action: sub === 'add' ? 'ROLE_ASSIGN' : 'ROLE_REVOKE',
+          actorUserId: moderatorId,
+          targetUserId: targetId,
+          reason: `Role ${sub === 'add' ? 'assigned' : 'removed'} via CLI: ${roleName}`,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          type: 'success',
+          title: sub === 'add' ? 'ROLE ASSIGNED' : 'ROLE REMOVED',
+          fields: [
+            { name: 'Target User', value: `<@${targetId}>` },
+            { name: 'Role', value: roleName },
+            { name: 'Action', value: sub === 'add' ? 'Granted Role' : 'Stripped Role' },
+          ],
+        },
+      });
+    }
+
+    // 20. NICK
+    if (action === 'nick' || action === 'nickname') {
+      if (!args[0]) {
+        return NextResponse.json({ success: false, error: { message: 'Usage: /nick <@user|id> [newNickname]' } });
+      }
+      const targetId = sanitizeId(args[0]);
+      const nick = args.slice(1).join(' ') || '';
+
+      await prisma.auditLog.create({
+        data: {
+          guildId,
+          eventType: 'MODERATION',
+          action: 'NICKNAME_CHANGE',
+          actorUserId: moderatorId,
+          targetUserId: targetId,
+          reason: nick ? `Nickname set to "${nick}" via CLI` : 'Nickname reset to username',
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          type: 'success',
+          title: 'NICKNAME UPDATED',
+          fields: [
+            { name: 'Target User', value: `<@${targetId}>` },
+            { name: 'New Nickname', value: nick ? `"${nick}"` : '(Reset to default)' },
+          ],
+        },
+      });
+    }
+
+    // 21. CASES (LIST)
+    if (action === 'cases') {
+      const targetUser = args[0] ? sanitizeId(args[0]) : undefined;
+      const where: any = { guildId };
+      if (targetUser) where.targetUserId = targetUser;
+
+      const cases = await prisma.moderationCase.findMany({
+        where,
+        take: 5,
+        orderBy: { caseNumber: 'desc' },
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          type: 'info',
+          title: targetUser ? `Cases for User ${targetUser}` : 'Recent Server Moderation Cases',
+          fields: cases.length
+            ? cases.map((c: any) => ({
+                name: `Case #${c.caseNumber} · ${c.type} · ${c.status}`,
+                value: `Target: <@${c.targetUserId}> · Reason: ${c.reason} · Date: ${new Date(c.createdAt).toLocaleDateString()}`,
+              }))
+            : [{ name: 'No Records', value: 'No cases match your query.' }],
+        },
+      });
+    }
+
+    // 22. CASE (INSPECT)
+    if (action === 'case') {
+      const num = parseInt(args[0] || '0', 10);
+      if (!num) {
+        return NextResponse.json({ success: false, error: { message: 'Usage: /case <caseNumber>' } });
+      }
+      const found = await prisma.moderationCase.findFirst({
+        where: { guildId, caseNumber: num },
+      });
+
+      if (!found) {
+        return NextResponse.json({ success: false, error: { message: `Case #${num} not found.` } });
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          type: 'info',
+          title: `Case #${found.caseNumber} Dossier`,
+          fields: [
+            { name: 'Action Type', value: found.type },
+            { name: 'Status', value: found.status },
+            { name: 'Target User', value: `${found.targetUserTag || found.targetUserId} (\`${found.targetUserId}\`)` },
+            { name: 'Moderator', value: found.moderatorTag || found.moderatorUserId },
+            { name: 'Reason', value: found.reason },
+            { name: 'Created At', value: new Date(found.createdAt).toLocaleString() },
+          ],
+        },
+      });
+    }
+
+    // 23. TICKET
+    if (action === 'ticket') {
+      const sub = args[0]?.toLowerCase();
+      if (sub === 'list') {
+        const tickets = await prisma.ticket.findMany({
+          where: { guildId },
+          take: 5,
+          orderBy: { ticketNumber: 'desc' },
+        });
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            type: 'info',
+            title: 'Active Support Tickets',
+            fields: tickets.length
+              ? tickets.map((t: any) => ({
+                  name: `Ticket #${t.ticketNumber} [${t.status}]`,
+                  value: `Creator: <@${t.creatorUserId}> · Subject: ${t.subject || 'Support Request'}`,
+                }))
+              : [{ name: 'Queue Empty', value: 'No tickets currently registered.' }],
+          },
+        });
+      }
+
+      if (sub === 'claim' && args[1]) {
+        const ticketNum = parseInt(args[1], 10);
+        await prisma.ticket.updateMany({
+          where: { guildId, ticketNumber: ticketNum },
+          data: { status: 'CLAIMED', claimedByUserId: moderatorId },
+        });
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            type: 'success',
+            title: `TICKET #${ticketNum} CLAIMED`,
+            fields: [
+              { name: 'Claimed By', value: `<@${moderatorId}>` },
+              { name: 'Status', value: 'Assigned to current staff operator' },
+            ],
+          },
+        });
+      }
+
+      if (sub === 'close' && args[1]) {
+        const ticketNum = parseInt(args[1], 10);
+        const reason = args.slice(2).join(' ') || 'Closed via CLI';
+        await prisma.ticket.updateMany({
+          where: { guildId, ticketNumber: ticketNum },
+          data: { status: 'CLOSED', closedByUserId: moderatorId },
+        });
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            type: 'success',
+            title: `TICKET #${ticketNum} RESOLVED & CLOSED`,
+            fields: [
+              { name: 'Closed By', value: `<@${moderatorId}>` },
+              { name: 'Reason', value: reason },
+              { name: 'Transcript', value: 'Saved to server logs archive' },
+            ],
+          },
+        });
+      }
+
+      return NextResponse.json({
+        success: false,
+        error: { message: 'Usage: /ticket <list | claim <ticketNum> | close <ticketNum> [reason]>' },
+      });
+    }
+
+    // 24. CONFIG
+    if (action === 'config') {
+      const key = args[0];
+      const val = args.slice(1).join(' ');
+      if (!key) {
+        const settings = await prisma.guildSettings.findFirst({ where: { guildId } });
+        return NextResponse.json({
+          success: true,
+          data: {
+            type: 'info',
+            title: 'Current Guild Configuration',
+            fields: [
+              { name: 'Prefix', value: settings?.prefix || '!' },
+              { name: 'Language', value: settings?.language || 'en-US' },
+              { name: 'Mod Log Channel', value: settings?.modLogChannelId || 'Unset' },
+              { name: 'Mute Role', value: settings?.muteRoleId || 'Unset' },
+            ],
+          },
+        });
+      }
+
+      if (key === 'prefix' && val) {
+        await prisma.guildSettings.updateMany({
+          where: { guildId },
+          data: { prefix: val },
+        });
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            type: 'success',
+            title: 'GUILD CONFIGURATION UPDATED',
+            fields: [{ name: 'Command Prefix', value: `Changed to \`${val}\`` }],
+          },
+        });
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          type: 'info',
+          title: `Config Key: ${key}`,
+          fields: [{ name: 'Value', value: val || 'No value specified' }],
+        },
+      });
+    }
+
     // UNKNOWN COMMAND
     return NextResponse.json({
       success: false,

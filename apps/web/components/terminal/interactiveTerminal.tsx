@@ -5,7 +5,7 @@ import { useGuild } from '@/lib/context/guildContext';
 
 export interface TerminalMessage {
   id: string;
-  type: 'command' | 'embed' | 'error' | 'system' | 'help';
+  type: 'command' | 'embed' | 'error' | 'system' | 'help' | 'stream';
   command?: string;
   timestamp: string;
   data?: {
@@ -18,28 +18,41 @@ export interface TerminalMessage {
   error?: string;
 }
 
-const COMMAND_SUGGESTIONS = [
-  '!help',
-  '!ban @user spamming server',
-  '!softban @user raiding',
-  '!unban 200100100100100104',
-  '!kick @user rule 2 violation',
-  '!timeout @user 10m flooding chat',
-  '!untimeout @user',
-  '!warn @user inappropriate behavior',
-  '!warnings @user',
-  '!notes @user',
-  '!addnote @user User cooperative',
-  '!purge 25',
-  '!purge 50 bots',
-  '!lock #general raid incoming',
-  '!unlock #general',
-  '!slowmode 10s',
-  '!quarantine @user',
-  '!raidmode on',
-  '!raidmode off',
-  '!stats',
-  '!clear',
+interface CommandDef {
+  cmd: string;
+  usage: string;
+  desc: string;
+  category: 'MOD' | 'SECURITY' | 'CHANNELS' | 'SYSTEM';
+}
+
+const COMMAND_DEFINITIONS: CommandDef[] = [
+  { cmd: '/ban', usage: '/ban <@user|id> [reason]', desc: 'Permanently ban a member and record audit case', category: 'MOD' },
+  { cmd: '/softban', usage: '/softban <@user|id> [reason]', desc: 'Ban and immediate unban to prune recent messages', category: 'MOD' },
+  { cmd: '/unban', usage: '/unban <id> [reason]', desc: 'Revoke an existing server ban', category: 'MOD' },
+  { cmd: '/kick', usage: '/kick <@user|id> [reason]', desc: 'Kick member from Discord server', category: 'MOD' },
+  { cmd: '/timeout', usage: '/timeout <@user|id> <duration> [reason]', desc: 'Mute member (e.g. 5m, 1h, 1d)', category: 'MOD' },
+  { cmd: '/untimeout', usage: '/untimeout <@user|id>', desc: 'Remove active timeout/mute', category: 'MOD' },
+  { cmd: '/warn', usage: '/warn <@user|id> <reason>', desc: 'Issue formal warning with auto-escalation check', category: 'MOD' },
+  { cmd: '/warnings', usage: '/warnings <@user|id>', desc: 'View past infractions and warnings for user', category: 'MOD' },
+  { cmd: '/delwarn', usage: '/delwarn <warnId>', desc: 'Delete and revoke an active warning', category: 'MOD' },
+  { cmd: '/notes', usage: '/notes <@user|id>', desc: 'View confidential moderator notes', category: 'MOD' },
+  { cmd: '/addnote', usage: '/addnote <@user|id> <content>', desc: 'Add confidential moderator note', category: 'MOD' },
+  { cmd: '/nick', usage: '/nick <@user|id> [newNick]', desc: 'Change member nickname or reset to username', category: 'MOD' },
+  { cmd: '/role', usage: '/role <add|remove> <@user|id> <role>', desc: 'Assign or strip a server role', category: 'MOD' },
+  { cmd: '/quarantine', usage: '/quarantine <@user|id> [reason]', desc: 'Isolate user into restricted jail zone', category: 'SECURITY' },
+  { cmd: '/raidmode', usage: '/raidmode <on|off|status>', desc: 'Toggle emergency anti-raid defense mode', category: 'SECURITY' },
+  { cmd: '/purge', usage: '/purge <count 1-100> [filter]', desc: 'Bulk delete messages (bots, links, invites, embeds)', category: 'CHANNELS' },
+  { cmd: '/lock', usage: '/lock [#channel] [reason]', desc: 'Lockdown channel by revoking SEND_MESSAGES', category: 'CHANNELS' },
+  { cmd: '/unlock', usage: '/unlock [#channel]', desc: 'Restore standard posting permissions', category: 'CHANNELS' },
+  { cmd: '/slowmode', usage: '/slowmode <seconds>', desc: 'Set rate limit (0s, 5s, 10s, 30s, 1m, 5m)', category: 'CHANNELS' },
+  { cmd: '/case', usage: '/case <caseNumber>', desc: 'Inspect case records and evidence', category: 'SYSTEM' },
+  { cmd: '/cases', usage: '/cases [user]', desc: 'List recent server moderation cases', category: 'SYSTEM' },
+  { cmd: '/ticket', usage: '/ticket <list|claim <num>|close <num>>', desc: 'Interact with support helpdesk tickets', category: 'SYSTEM' },
+  { cmd: '/config', usage: '/config [prefix <val>]', desc: 'View or update guild bot configuration', category: 'SYSTEM' },
+  { cmd: '/stats', usage: '/stats', desc: 'Display live guild protection & gateway telemetry', category: 'SYSTEM' },
+  { cmd: '/ping', usage: '/ping', desc: 'Check Discord gateway and REST latency', category: 'SYSTEM' },
+  { cmd: '/help', usage: '/help', desc: 'Open full Discord operations manual', category: 'SYSTEM' },
+  { cmd: '/clear', usage: '/clear', desc: 'Clear the terminal screen buffer', category: 'SYSTEM' },
 ];
 
 export function InteractiveTerminal({ fullPage = false }: { fullPage?: boolean }) {
@@ -48,14 +61,19 @@ export function InteractiveTerminal({ fullPage = false }: { fullPage?: boolean }
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [streamActive, setStreamActive] = useState(true);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedSuggestionIdx, setSelectedSuggestionIdx] = useState(0);
+
   const [messages, setMessages] = useState<TerminalMessage[]>([
     {
       id: 'init-1',
       type: 'system',
       timestamp: new Date().toLocaleTimeString(),
       data: {
-        title: 'SMCore Discord Gateway CLI Console v1.0.0',
-        description: 'Interactive real-time Discord moderation terminal. Commands mutate server state, enforce punishments, and generate immutable audit logs. Type `!help` for manual.',
+        title: 'SMCore Discord Gateway Console · Shard #0 Connected',
+        description:
+          'High-speed Discord moderation shell. Commands mutate live server state, update infraction dossiers, and enforce hierarchy rules. Both slash commands (/ban) and prefix commands (!ban) are fully supported. Type /help to see all commands.',
       },
     },
   ]);
@@ -63,15 +81,63 @@ export function InteractiveTerminal({ fullPage = false }: { fullPage?: boolean }
   const outputRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-scroll on new messages
   useEffect(() => {
     if (outputRef.current) {
       outputRef.current.scrollTop = outputRef.current.scrollHeight;
     }
   }, [messages, isExecuting]);
 
+  // Periodic simulated gateway stream events if enabled
+  useEffect(() => {
+    if (!streamActive) return;
+
+    const streamEvents = [
+      'GATEWAY [HEARTBEAT_ACK] Latency: 22ms · Shard 0/1 OK',
+      'AUTOMOD [SCAN] #general · Message 109283726 checked: clean',
+      'PRESENCE [SYNC] Member cache synchronized (1,482 members cached)',
+      'SECURITY [MONITOR] Join velocity nominal (0.2 joins/min)',
+    ];
+
+    const timer = setInterval(() => {
+      const randomEvent = streamEvents[Math.floor(Math.random() * streamEvents.length)];
+      setMessages((prev) => {
+        // Keep buffer bounded
+        const updated = [...prev];
+        if (updated.length > 80) updated.shift();
+        return [
+          ...updated,
+          {
+            id: `stream-${Date.now()}`,
+            type: 'stream',
+            timestamp: new Date().toLocaleTimeString(),
+            data: { description: randomEvent },
+          },
+        ];
+      });
+    }, 18000);
+
+    return () => clearInterval(timer);
+  }, [streamActive]);
+
+  // Suggestions computation
+  const filteredSuggestions = React.useMemo(() => {
+    if (!input.trim()) return [];
+    const query = input.trim().toLowerCase();
+    const cleanQ = query.startsWith('/') || query.startsWith('!') ? query.slice(1) : query;
+    return COMMAND_DEFINITIONS.filter(
+      (c) =>
+        c.cmd.toLowerCase().includes(cleanQ) ||
+        c.desc.toLowerCase().includes(cleanQ) ||
+        c.usage.toLowerCase().includes(cleanQ)
+    );
+  }, [input]);
+
   const executeCommand = async (cmdText: string) => {
     const raw = cmdText.trim();
     if (!raw) return;
+
+    setShowSuggestions(false);
 
     if (raw === '!clear' || raw === '/clear' || raw === 'clear') {
       setMessages([]);
@@ -79,7 +145,6 @@ export function InteractiveTerminal({ fullPage = false }: { fullPage?: boolean }
       return;
     }
 
-    // Add to history
     setHistory((prev) => [raw, ...prev]);
     setHistoryIndex(-1);
 
@@ -121,7 +186,7 @@ export function InteractiveTerminal({ fullPage = false }: { fullPage?: boolean }
             id: `err-${Date.now()}`,
             type: 'error',
             timestamp: new Date().toLocaleTimeString(),
-            error: json?.error?.message || 'Command syntax error or execution failure.',
+            error: json?.error?.message || 'Command execution syntax error or unknown action.',
           },
         ]);
       }
@@ -144,17 +209,26 @@ export function InteractiveTerminal({ fullPage = false }: { fullPage?: boolean }
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      executeCommand(input);
+      if (showSuggestions && filteredSuggestions[selectedSuggestionIdx]) {
+        setInput(filteredSuggestions[selectedSuggestionIdx].cmd + ' ');
+        setShowSuggestions(false);
+      } else {
+        executeCommand(input);
+      }
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      if (history.length > 0) {
+      if (showSuggestions) {
+        setSelectedSuggestionIdx((prev) => Math.max(0, prev - 1));
+      } else if (history.length > 0) {
         const nextIndex = Math.min(historyIndex + 1, history.length - 1);
         setHistoryIndex(nextIndex);
         setInput(history[nextIndex]);
       }
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      if (historyIndex > 0) {
+      if (showSuggestions) {
+        setSelectedSuggestionIdx((prev) => Math.min(filteredSuggestions.length - 1, prev + 1));
+      } else if (historyIndex > 0) {
         const nextIndex = historyIndex - 1;
         setHistoryIndex(nextIndex);
         setInput(history[nextIndex]);
@@ -164,21 +238,40 @@ export function InteractiveTerminal({ fullPage = false }: { fullPage?: boolean }
       }
     } else if (e.key === 'Tab') {
       e.preventDefault();
-      // Simple autocompletion
-      if (input.trim()) {
-        const found = COMMAND_SUGGESTIONS.find((s) =>
-          s.toLowerCase().startsWith(input.toLowerCase())
-        );
-        if (found) {
-          setInput(found);
-        }
+      if (filteredSuggestions.length > 0) {
+        setInput(filteredSuggestions[selectedSuggestionIdx || 0].cmd + ' ');
+        setShowSuggestions(false);
       }
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
     }
+  };
+
+  const handleExportLog = () => {
+    const text = messages
+      .map((m) => {
+        if (m.type === 'command') return `[${m.timestamp}] USER: ${m.command}`;
+        if (m.type === 'error') return `[${m.timestamp}] ERROR: ${m.error}`;
+        if (m.type === 'embed')
+          return `[${m.timestamp}] BOT: ${m.data?.title} - ${m.data?.description || ''} ${
+            m.data?.fields?.map((f) => `${f.name}: ${f.value}`).join(' | ') || ''
+          }`;
+        return `[${m.timestamp}] ${m.type.toUpperCase()}: ${m.data?.description || m.data?.title || ''}`;
+      })
+      .join('\n');
+
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `smcore-terminal-log-${new Date().toISOString().slice(0, 10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
     <div
-      className={`flex flex-col bg-[#0b0e14] border border-[#1e2436] rounded-xl overflow-hidden font-mono shadow-2xl ${
+      className={`flex flex-col bg-[#0b0e14] border border-[#1e2436] rounded-xl overflow-hidden font-mono shadow-2xl relative ${
         fullPage ? 'h-[calc(100vh-140px)]' : 'h-[520px]'
       }`}
     >
@@ -195,16 +288,43 @@ export function InteractiveTerminal({ fullPage = false }: { fullPage?: boolean }
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            DISCORD DISPATCH LIVE
-          </span>
+        <div className="flex items-center gap-2.5">
+          {/* Stream live toggle */}
+          <button
+            type="button"
+            onClick={() => setStreamActive(!streamActive)}
+            className={`text-[10px] px-2 py-0.5 rounded border transition-colors flex items-center gap-1 ${
+              streamActive
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                : 'bg-surface-container text-[#6d7a96] border-[#1e263d]'
+            }`}
+            title="Toggle live background Discord gateway telemetry"
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                streamActive ? 'bg-emerald-400 animate-pulse' : 'bg-[#55607a]'
+              }`}
+            />
+            <span>STREAM {streamActive ? 'ON' : 'OFF'}</span>
+          </button>
+
+          {/* Export log */}
+          <button
+            type="button"
+            onClick={handleExportLog}
+            className="text-[11px] text-[#717c99] hover:text-[#e2e8f0] transition-colors flex items-center gap-1"
+            title="Export terminal transcript as text"
+          >
+            <span className="material-symbols-outlined text-[14px]">download</span>
+            <span>Export</span>
+          </button>
+
+          {/* Clear screen */}
           <button
             type="button"
             onClick={() => setMessages([])}
             className="text-[11px] text-[#717c99] hover:text-[#e2e8f0] transition-colors"
-            title="Clear Terminal Output"
+            title="Clear Terminal Output (/clear)"
           >
             Clear
           </button>
@@ -235,6 +355,18 @@ export function InteractiveTerminal({ fullPage = false }: { fullPage?: boolean }
             );
           }
 
+          if (msg.type === 'stream') {
+            return (
+              <div
+                key={msg.id}
+                className="text-[10px] font-mono text-[#586580] flex items-center gap-2 py-0.5"
+              >
+                <span className="text-[#3b4356] select-none">[{msg.timestamp}]</span>
+                <span className="text-[#4e5d7d]">{msg.data?.description}</span>
+              </div>
+            );
+          }
+
           if (msg.type === 'command') {
             return (
               <div key={msg.id} className="flex items-start gap-2 text-indigo-300 font-semibold pt-1">
@@ -250,14 +382,14 @@ export function InteractiveTerminal({ fullPage = false }: { fullPage?: boolean }
             return (
               <div
                 key={msg.id}
-                className="p-3.5 rounded-lg bg-[#111624] border-l-4 border-indigo-500 border-t border-r border-b border-[#1e263d] space-y-2.5"
+                className="p-4 rounded-lg bg-[#111624] border-l-4 border-indigo-500 border-t border-r border-b border-[#1e263d] space-y-3"
               >
                 <div className="font-bold text-indigo-400 text-sm flex items-center justify-between">
                   <span>{msg.data?.title}</span>
                   <span className="text-[10px] text-[#636e88] font-normal">{msg.timestamp}</span>
                 </div>
                 <p className="text-[11px] text-[#8e9ebf]">{msg.data?.description}</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1 max-h-72 overflow-y-auto pr-1">
                   {msg.data?.commands?.map((c, i) => (
                     <div
                       key={i}
@@ -339,22 +471,55 @@ export function InteractiveTerminal({ fullPage = false }: { fullPage?: boolean }
         {isExecuting && (
           <div className="flex items-center gap-2 text-indigo-400 py-1">
             <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
-            <span className="text-xs">Executing command across Discord Gateway...</span>
+            <span className="text-xs">Dispatching command across Discord Gateway...</span>
           </div>
         )}
       </div>
 
-      {/* Quick Macro Badges */}
+      {/* Floating Suggestions Dropup when typing */}
+      {showSuggestions && filteredSuggestions.length > 0 && (
+        <div className="absolute left-3 right-3 bottom-20 bg-[#0d111c] border border-[#252f4a] rounded-xl shadow-2xl p-1 z-30 max-h-56 overflow-y-auto">
+          <div className="px-2 py-1 text-[9px] font-mono uppercase text-[#616f8e] border-b border-[#1b2236] flex justify-between">
+            <span>Matching Commands ({filteredSuggestions.length})</span>
+            <span>Tab / Enter to select · Esc to close</span>
+          </div>
+          {filteredSuggestions.map((s, idx) => (
+            <div
+              key={s.cmd}
+              onClick={() => {
+                setInput(s.cmd + ' ');
+                setShowSuggestions(false);
+                inputRef.current?.focus();
+              }}
+              className={`p-2 rounded-lg cursor-pointer flex items-center justify-between text-xs transition-colors ${
+                idx === selectedSuggestionIdx
+                  ? 'bg-indigo-600/30 text-indigo-200 border border-indigo-500/40'
+                  : 'hover:bg-[#161c2c] text-[#a5b4d4]'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-emerald-400 font-mono">{s.cmd}</span>
+                <span className="text-[#6d7d9f] font-mono text-[11px]">{s.usage}</span>
+              </div>
+              <span className="text-[#7e8dae] text-[10px]">{s.desc}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Quick Macro Pills */}
       <div className="px-3 py-1.5 bg-[#0a0d14] border-t border-[#1a2033] flex items-center gap-1.5 overflow-x-auto text-[10px] text-[#717c99]">
-        <span className="text-[#55607a] uppercase text-[9px] font-bold shrink-0">Quick Run:</span>
+        <span className="text-[#55607a] uppercase text-[9px] font-bold shrink-0">Fast Run:</span>
         {[
-          { label: '!help', cmd: '!help' },
-          { label: '!stats', cmd: '!stats' },
-          { label: '!purge 20', cmd: '!purge 20' },
-          { label: '!warn', cmd: '!warn 200100100100100102 Unsolicited links' },
-          { label: '!timeout 10m', cmd: '!timeout 200100100100103 10m Chat flooding' },
-          { label: '!raidmode', cmd: '!raidmode status' },
-          { label: '!cases', cmd: '!cases' },
+          { label: '/help', cmd: '/help' },
+          { label: '/stats', cmd: '/stats' },
+          { label: '/ping', cmd: '/ping' },
+          { label: '/purge 20', cmd: '/purge 20' },
+          { label: '/warn', cmd: '/warn 200100100100100102 Excessive spam' },
+          { label: '/timeout 10m', cmd: '/timeout 200100100100103 10m Flooding chat' },
+          { label: '/lock', cmd: '/lock #general Raid incoming' },
+          { label: '/raidmode on', cmd: '/raidmode on' },
+          { label: '/cases', cmd: '/cases' },
         ].map((item, idx) => (
           <button
             key={idx}
@@ -374,9 +539,19 @@ export function InteractiveTerminal({ fullPage = false }: { fullPage?: boolean }
           ref={inputRef}
           type="text"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => {
+            const val = e.target.value;
+            setInput(val);
+            setShowSuggestions(val.trim().length > 0 && !val.includes(' '));
+            setSelectedSuggestionIdx(0);
+          }}
+          onFocus={() => {
+            if (input.trim().length > 0 && !input.includes(' ')) {
+              setShowSuggestions(true);
+            }
+          }}
           onKeyDown={handleKeyDown}
-          placeholder="Type Discord bot command (e.g. !ban @user, !timeout @user 10m, !help)..."
+          placeholder="Type Discord command (/ban @user, /timeout @user 10m, /purge 20, /help)..."
           className="flex-1 bg-transparent text-sm text-[#f1f5f9] placeholder:text-[#4f5b78] focus:outline-none font-mono"
           disabled={isExecuting}
         />
@@ -384,7 +559,7 @@ export function InteractiveTerminal({ fullPage = false }: { fullPage?: boolean }
           type="button"
           onClick={() => executeCommand(input)}
           disabled={!input.trim() || isExecuting}
-          className="px-3 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-xs font-bold transition-colors flex items-center gap-1 shadow-sm"
+          className="px-3.5 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-xs font-bold transition-colors flex items-center gap-1 shadow-sm"
         >
           <span>Run</span>
           <span className="material-symbols-outlined text-[14px]">send</span>

@@ -320,6 +320,26 @@ export default function GuildSettingsPage() {
               </span>
             </div>
           </div>
+
+          {/* Quick link to Embed Builder */}
+          <div className="p-4 rounded-xl bg-surface-container-low border border-border-subtle flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-indigo-500/15 text-indigo-400 flex items-center justify-center">
+                <span className="material-symbols-outlined text-[20px]">dashboard_customize</span>
+              </div>
+              <div>
+                <span className="text-xs font-bold text-on-surface block">Discord Embed & Message Builder</span>
+                <span className="text-[11px] text-outline block">Design welcome cards, rule boards, and announcements with live preview</span>
+              </div>
+            </div>
+            <a
+              href="/dashboard/embeds"
+              className="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-xs font-semibold text-primary border border-border-subtle flex items-center gap-1 transition-colors"
+            >
+              <span>Open Embed Builder</span>
+              <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+            </a>
+          </div>
         </form>
       )}
     </div>

@@ -296,6 +296,11 @@ export default function ModerationCommandCenterPage() {
       } else if (actionModal.actionType === 'BAN' || actionModal.actionType === 'SOFTBAN') {
         payload.targetUserId = actionTargetId.trim() || '200100100100100101';
         payload.deleteMessageSeconds = parseInt(banDeleteDays, 10) * 86400;
+      } else if (actionModal.actionType === 'NICKNAME') {
+        payload.targetUserId = actionTargetId.trim() || '200100100100100101';
+        payload.nickname = newNickname.trim();
+      } else if (actionModal.actionType === 'QUARANTINE') {
+        payload.targetUserId = actionTargetId.trim() || '200100100100100101';
       } else {
         payload.targetUserId = actionTargetId.trim() || '200100100100100101';
       }
