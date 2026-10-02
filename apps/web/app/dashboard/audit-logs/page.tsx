@@ -136,6 +136,57 @@ export default function AuditLogsPage() {
     }
   };
 
+  const handleExportCsv = useCallback(() => {
+    if (filteredLogs.length === 0) return;
+
+    const escapeCsv = (val: unknown): string => {
+      if (val === null || val === undefined) return '';
+      const str = typeof val === 'object' ? JSON.stringify(val) : String(val);
+      if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const headers = [
+      'Log ID',
+      'Timestamp (UTC)',
+      'Category',
+      'Action',
+      'Actor ID',
+      'Actor Tag',
+      'Target ID',
+      'Target Tag',
+      'Reason',
+      'Details',
+    ];
+
+    const rows = filteredLogs.map((entry) => [
+      escapeCsv(entry.id),
+      escapeCsv(entry.createdAt),
+      escapeCsv(entry.category),
+      escapeCsv(entry.action),
+      escapeCsv(entry.actorId),
+      escapeCsv(entry.actorTag || ''),
+      escapeCsv(entry.targetId || ''),
+      escapeCsv(entry.targetTag || ''),
+      escapeCsv(entry.reason || ''),
+      escapeCsv(entry.details && Object.keys(entry.details).length > 0 ? JSON.stringify(entry.details) : ''),
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    link.download = `audit-logs-${selectedGuildId || 'guild'}-${dateStamp}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [filteredLogs, selectedGuildId]);
+
   return (
     <div className="flex flex-col w-full pb-16">
       {/* Header */}
@@ -161,6 +212,26 @@ export default function AuditLogsPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            disabled={filteredLogs.length === 0}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-mono border border-outline-variant/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group cursor-pointer"
+            title={
+              filteredLogs.length === 0
+                ? 'No audit records to export'
+                : `Download ${filteredLogs.length} audit record(s) as CSV`
+            }
+          >
+            <span className="material-symbols-outlined text-[16px] text-primary group-hover:scale-110 transition-transform">
+              download
+            </span>
+            <span>Download CSV</span>
+            <span className="px-1.5 py-0.2 rounded bg-surface-container-highest text-[10px] text-outline font-mono">
+              {filteredLogs.length}
+            </span>
+          </button>
+
           <button
             type="button"
             onClick={() => loadAudits()}

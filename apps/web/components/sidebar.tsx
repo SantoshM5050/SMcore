@@ -22,48 +22,31 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    title: 'Overview',
+    title: 'Operations',
     items: [
-      { name: 'Overview', href: '/dashboard', icon: 'dashboard' },
+      { name: 'Command Center', href: '/dashboard', icon: 'dashboard' },
+      { name: 'Bot CLI Terminal', href: '/dashboard/terminal', icon: 'terminal', badge: 'CLI' },
     ],
   },
   {
-    title: 'Moderation',
+    title: 'Moderation Modules',
     items: [
       { name: 'Cases & Punishments', href: '/dashboard/moderation', icon: 'gavel' },
-    ],
-  },
-  {
-    title: 'AutoMod & Security',
-    items: [
-      { name: 'AutoMod Engine', href: '/dashboard/automod', icon: 'smart_toy' },
+      { name: 'AutoMod Policy Engine', href: '/dashboard/automod', icon: 'smart_toy' },
       { name: 'Anti-Raid & Quarantine', href: '/dashboard/security', icon: 'shield' },
     ],
   },
   {
-    title: 'Ticketing',
+    title: 'Helpdesk & Records',
     items: [
-      { name: 'Ticket Command Center', href: '/dashboard/tickets', icon: 'confirmation_number' },
-    ],
-  },
-  {
-    title: 'Logging & Audit',
-    items: [
+      { name: 'Ticket Management', href: '/dashboard/tickets', icon: 'confirmation_number' },
       { name: 'Audit Trail', href: '/dashboard/audit-logs', icon: 'history_edu' },
     ],
   },
   {
-    title: 'Settings',
+    title: 'Administration',
     items: [
       { name: 'Guild Configuration', href: '/dashboard/settings', icon: 'tune' },
-    ],
-  },
-  {
-    title: 'Upcoming Modules',
-    items: [
-      { name: 'Forum Logging Hub', href: '#', icon: 'forum', badge: 'Soon', disabled: true },
-      { name: 'Staff & RBAC Matrix', href: '#', icon: 'badge', badge: 'Soon', disabled: true },
-      { name: 'Intelligence & Trends', href: '#', icon: 'monitoring', badge: 'Soon', disabled: true },
     ],
   },
 ];
@@ -132,7 +115,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 SMCore
               </span>
               <span className="text-[10px] font-mono text-outline tracking-wider uppercase">
-                SecOps v4.8
+                Discord Governance
               </span>
             </div>
           </div>

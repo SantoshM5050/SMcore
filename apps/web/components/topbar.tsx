@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import Image from 'next/image';
 import { useGuild } from '../lib/context/guildContext';
 import { useAuth } from '../lib/context/authContext';
@@ -101,6 +102,16 @@ export function Topbar({ onToggleMobileSidebar }: TopbarProps) {
               <span>Database unavailable</span>
             </div>
           )}
+
+          {/* Interactive Bot CLI Launcher */}
+          <Link
+            href="/dashboard/terminal"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 text-xs font-mono font-medium transition-colors"
+            title="Open Interactive Discord CLI Console"
+          >
+            <span className="material-symbols-outlined text-[16px]">terminal</span>
+            <span className="hidden sm:inline">Bot CLI</span>
+          </Link>
 
           {/* Quick Search trigger */}
           <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-lg bg-surface-container border border-border-subtle text-outline text-xs">

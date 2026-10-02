@@ -8,6 +8,7 @@ import { StatCard } from '@/components/ui/statCard';
 import { StatusBadge } from '@/components/ui/statusBadge';
 import { LoadingState } from '@/components/ui/loadingState';
 import { EmptyState } from '@/components/ui/emptyState';
+import { InteractiveTerminal } from '@/components/terminal/interactiveTerminal';
 
 export default function DashboardOverviewPage() {
   const { selectedGuildId, availableGuilds, health, isDbOffline, isLoadingGuilds } = useGuild();
@@ -133,6 +134,13 @@ export default function DashboardOverviewPage() {
 
         {/* Quick Route Launchers */}
         <div className="flex flex-wrap items-center gap-1.5 bg-surface-container-lowest p-1.5 rounded-xl border border-border-subtle">
+          <Link
+            href="/dashboard/terminal"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 text-xs font-semibold transition-colors"
+          >
+            <span className="material-symbols-outlined text-[16px] text-indigo-400">terminal</span>
+            <span>Bot CLI</span>
+          </Link>
           <Link
             href="/dashboard/moderation"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold transition-colors"
@@ -583,6 +591,24 @@ export default function DashboardOverviewPage() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Live Interactive CLI Console Section */}
+      <div className="px-4 sm:px-6 pt-2 pb-6">
+        <div className="flex items-center justify-between pb-3">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-indigo-400 text-[20px]">terminal</span>
+            <h2 className="font-display text-base font-bold text-on-surface">Interactive Discord Bot CLI Terminal</h2>
+          </div>
+          <Link
+            href="/dashboard/terminal"
+            className="text-xs text-primary hover:text-primary-light font-mono font-medium flex items-center gap-1"
+          >
+            <span>Full Screen Shell</span>
+            <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+          </Link>
+        </div>
+        <InteractiveTerminal fullPage={false} />
       </div>
     </div>
   );

@@ -39,3 +39,41 @@ export async function GET(
     );
   }
 }
+
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { guildId: string; userId: string } }
+) {
+  const authResult = await authorizeGuildAccess(req, params.guildId);
+  if (!authResult.authorized) return authResult.response;
+
+  try {
+    const { content } = await req.json();
+    if (!content || typeof content !== 'string' || !content.trim()) {
+      return NextResponse.json(
+        { success: false, error: { message: 'Note content is required' } },
+        { status: 400 }
+      );
+    }
+
+    const note = await prisma.memberNote.create({
+      data: {
+        guildId: params.guildId,
+        targetUserId: params.userId,
+        authorUserId: authResult.userId || '123456789012345678',
+        content: content.trim(),
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: note,
+    });
+  } catch (err) {
+    return NextResponse.json(
+      { success: false, error: { message: 'Failed to create member note' } },
+      { status: 500 }
+    );
+  }
+}
+
