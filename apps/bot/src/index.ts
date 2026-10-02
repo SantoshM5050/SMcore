@@ -21,8 +21,8 @@ async function main(): Promise<void> {
   registerMessageCreateEvent(client);
   registerGuildMemberAddEvent(client);
 
-  // Start internal HTTP bridge & health server with live Discord client
-  const healthServer = startHealthServer(config.BOT_PORT, client);
+  const port = Number(process.env.PORT) || config.BOT_PORT || 3001;
+  const healthServer = startHealthServer(port, client);
 
   // Graceful shutdown handling
   const shutdown = async (signal: string) => {

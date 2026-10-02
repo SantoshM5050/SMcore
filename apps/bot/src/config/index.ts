@@ -10,7 +10,7 @@ dotenv.config();
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
-  BOT_PORT: z.coerce.number().default(3001),
+  BOT_PORT: z.coerce.number().default(Number(process.env.PORT) || 3001),
   
   // Discord Credentials
   DISCORD_BOT_TOKEN: z.string().min(1, 'DISCORD_BOT_TOKEN is required in .env'),

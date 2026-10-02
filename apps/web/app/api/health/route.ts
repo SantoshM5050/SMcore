@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@smcore/database';
+import { getBotApiUrl } from '@/lib/api/botBridgeUrl';
 
 export async function GET() {
   const startTime = Date.now();
@@ -24,11 +25,11 @@ export async function GET() {
   let guildCount = 0;
 
   try {
-    const botPort = process.env.BOT_PORT || '3001';
+    const botUrl = getBotApiUrl();
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1500);
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
 
-    const res = await fetch(`http://localhost:${botPort}/telemetry`, {
+    const res = await fetch(`${botUrl}/telemetry`, {
       signal: controller.signal,
     }).catch(() => null);
     clearTimeout(timeoutId);

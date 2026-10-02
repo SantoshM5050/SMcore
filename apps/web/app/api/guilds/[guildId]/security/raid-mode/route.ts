@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { authorizeGuildAccess } from '@/lib/auth/authorize';
+import { getBotApiUrl } from '@/lib/api/botBridgeUrl';
 
 interface RouteContext {
   params: { guildId: string };
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       );
     }
 
-    const botPort = process.env.BOT_PORT || '3001';
+    const botUrl = getBotApiUrl();
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 4000);
 
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       headers['x-internal-secret'] = process.env.SESSION_SECRET;
     }
 
-    const botRes = await fetch(`http://localhost:${botPort}/guilds/${guildId}/security/raid-mode`, {
+    const botRes = await fetch(`${botUrl}/guilds/${guildId}/security/raid-mode`, {
       method: 'POST',
       headers,
       body: JSON.stringify(parseResult.data),

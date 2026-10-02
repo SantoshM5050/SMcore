@@ -9,6 +9,7 @@ import {
   mapDiscordGuild,
 } from '@/lib/auth/discord';
 import { prisma } from '@smcore/database';
+import { getBotApiUrl } from '@/lib/api/botBridgeUrl';
 
 /**
  * Shared Discord OAuth2 callback handler.
@@ -92,19 +93,20 @@ export async function handleDiscordCallback(req: NextRequest) {
     let botPresentMap = new Map<string, boolean>();
 
     try {
-      const botPort = process.env.BOT_PORT || '3001';
+      const botUrl = getBotApiUrl();
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1500);
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
 
-      const botRes = await fetch(`http://localhost:${botPort}/guilds`, {
+      const botRes = await fetch(`${botUrl}/guilds`, {
         signal: controller.signal,
       }).catch(() => null);
       clearTimeout(timeoutId);
 
       if (botRes && botRes.ok) {
         const botJson = await botRes.json().catch(() => null);
-        if (botJson && Array.isArray(botJson.data)) {
-          for (const bg of botJson.data as { id: string }[]) {
+        const rawGuilds = botJson && (Array.isArray(botJson.data) ? botJson.data : Array.isArray(botJson.guilds) ? botJson.guilds : null);
+        if (rawGuilds) {
+          for (const bg of rawGuilds as { id: string }[]) {
             if (manageableGuildIds.includes(bg.id)) {
               botPresentMap.set(bg.id, true);
             }
